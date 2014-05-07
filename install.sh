@@ -12,6 +12,10 @@ backupfile() {
     mv $tosave $backup
 }
 
+# Submodules
+git submodule init
+git submodule update --init --recursive
+
 for file in gitconfig \
             hgrc \
             vim \
@@ -38,3 +42,6 @@ for file in gitconfig \
     echo "Creating symlink $file -> $path"
     ln -s $file $path
 done
+
+# Setting up YouCompleteMe
+cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh
