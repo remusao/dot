@@ -12,10 +12,11 @@ backupfile() {
     mv $tosave $backup
 }
 
-# Submodules
+# Pull Submodules
 git submodule init
 git submodule update --init --recursive
 
+# Create symlinks to config files
 for file in emacs \
             gitconfig \
             hgrc \
@@ -27,7 +28,7 @@ for file in emacs \
             xinitrc \
             zshrc \
             zshrc.pre-oh-my-zsh; do
-    # Add home prefix and '.' in front of file name
+    # Add $HOME prefix and '.' in front of file name
     path=${HOME}/.${file}
     file=`pwd`/${file}
     # Check if file already exists

@@ -58,15 +58,10 @@ plugins=(git)
 
 
 source $ZSH/oh-my-zsh.sh
-source ~/.profile
 
 # Customize to your needs...
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl:/home/berson_r/build/julia
 export LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
-
-# Activate syltools
-source /usr/share/syltools/latest/bin/syltools_activate
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/share/syltools/latest/lib/
 
 export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 export PATH=$PATH:$HOME/usr/bin # Add ~/usr/bin to path
@@ -78,4 +73,4 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
 export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
-source ~/.local/bin/virtualenvwrapper.sh
+source `which virtualenvwrapper.sh`
