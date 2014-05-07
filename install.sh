@@ -16,8 +16,11 @@ backupfile() {
 git submodule init
 git submodule update --init --recursive
 
-for file in gitconfig \
+for file in emacs \
+            gitconfig \
             hgrc \
+            i3 \
+            i3status.conf \
             vim \
             vimrc \
             Xdefaults \
