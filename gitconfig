@@ -1,0 +1,18 @@
+[user]
+    name = Remi Berson
+    email = 1299873+remusao@users.noreply.github.com
+[color]
+    branch = auto
+    diff = auto
+    interactive = auto
+    status = auto
+    ui = auto
+[alias]
+    st = status
+    ci = commit
+    co = checkout
+    br = branch
+[core]
+    editor = vim
+[merge]
+    tool = vimdiff
