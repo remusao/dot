@@ -1,0 +1,13 @@
+[ui]
+username = Remus - Remi Berson <remi.berson@gmail.com>
+merge = vimdiff
+
+[extensions]
+color =
+
+[color]
+status.modified = blue bold
+status.added = green
+status.removed = red
+status.unknown = black bold
+status.deleted = red bold
