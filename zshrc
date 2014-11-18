@@ -26,37 +26,12 @@ alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 xset b off
 xset r rate 300 100
 
-# Set to this to use case-sensitive completion
-# CASE_SENSITIVE="true"
-
-# Comment this out to disable bi-weekly auto-update checks
-# DISABLE_AUTO_UPDATE="true"
-
-# Uncomment to change how often before auto-updates occur? (in days)
-# export UPDATE_ZSH_DAYS=13
-
-# Uncomment following line if you want to disable colors in ls
-# DISABLE_LS_COLORS="true"
-
-# Uncomment following line if you want to disable autosetting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment following line if you want to disable command autocorrection
-# DISABLE_CORRECTION="true"
-
-# Uncomment following line if you want red dots to be displayed while waiting for completion
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment following line if you want to disable marking untracked files under
-# VCS as dirty. This makes repository status check for large repositories much,
-# much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
+export TERMINAL=urxvt
 
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 plugins=(git)
-
 
 source $ZSH/oh-my-zsh.sh
 
@@ -67,6 +42,7 @@ export LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
 export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 export PATH=$PATH:$HOME/usr/bin # Add ~/usr/bin to path
 export PATH=$PATH:$HOME/.local/bin # Add ~/.local/bin to path
+export PATH=$PATH:/opt/ghc/7.8.2/bin # Add latest version of GHC
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
@@ -75,3 +51,9 @@ export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
 source `which virtualenvwrapper.sh`
+
+# Extra configuration
+if [ -e "$HOME/.zshlocal" ];
+then
+    source $HOME/.zshlocal
+fi

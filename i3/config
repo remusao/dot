@@ -8,8 +8,24 @@
 # i3 config file (v4)
 #
 # Please see http://i3wm.org/docs/userguide.html for a complete reference!
+#
+# Wallpaper
+exec --no-startup-id nitrogen --restore
 
 set $mod Mod4
+set $TERMINAL urxvt
+
+# Multiscreen
+workspace 1 output DVI-I-1
+workspace 2 output DVI-I-1
+workspace 3 output DVI-I-1
+workspace 4 output VGA-0
+workspace 5 output VGA-0
+workspace 6 output VGA-0
+workspace 7 output VGA-0
+workspace 8 output VGA-0
+workspace 9 output VGA-0
+
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below. ISO 10646 = Unicode
