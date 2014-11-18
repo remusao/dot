@@ -17,7 +17,7 @@ Bundle 'scrooloose/syntastic'
 Bundle 'plasticboy/vim-markdown'
 Bundle 'Valloric/YouCompleteMe'
 Bundle 'kien/ctrlp.vim'
-Bundle 'scooloose/nerdtree'
+Bundle 'JuliaLang/julia-vim'
 
 filetype plugin indent on " enable detection, plugins and indenting in one step
 set background=dark
@@ -38,6 +38,8 @@ set anti enc=utf-8
 set guifont=Source\ Code\ Pro\ 13
 
 "" --- CONFIGURE PLUGINS --- ""
+"" Julia
+let g:latex_to_unicode_tab = 0
 "" vim-markdown
 let g:vim_markdown_folding_disabled=1
 
