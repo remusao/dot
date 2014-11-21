@@ -23,7 +23,6 @@ URxvt*foreground: grey75
 URxvt*background: grey13
 URxvt*saveLines: 7777
 URxvt*cursorBlink: false
-URxvt*termName: rxvt-256color
 URxvt*font: xft:Dejavu Sans Mono:pixelsize=13
 URxvt*boldFont: xft:Dejavu Sans Mono:pixelsize=13
 URxvt*colorBD: orange
@@ -44,6 +43,7 @@ URxvt*matcher.pattern.1: \\bhttps?:\/\/(www.youtube|youtube).com\/watch\\?v=([\\
 URxvt*matcher.launcher.1: mtube $0
 URxvt*matcher.pattern.2: \\bhttps?:\/\/[\\w-.]*\/[\\w./?&@#-]*.(jpg|jpeg|png)
 URxvt*matcher.launcher.2: feh $0
+URxvt.termName: rxvt-unicode-256color
 
 ! colors
 ! black

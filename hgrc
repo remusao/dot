@@ -4,6 +4,9 @@ merge = vimdiff
 
 [extensions]
 color =
+rebase =
+pager =
+graphlog =
 
 [color]
 status.modified = blue bold
