@@ -26,8 +26,6 @@ alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 xset b off
 xset r rate 300 100
 
-export TERMINAL=urxvt
-
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
@@ -52,7 +50,7 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
 export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
-source `which virtualenvwrapper.sh`
+source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];
