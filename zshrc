@@ -50,7 +50,7 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
 export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
-source `which virtualenvwrapper.sh`
+source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];
