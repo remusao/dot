@@ -37,12 +37,14 @@ source $ZSH/oh-my-zsh.sh
 
 # Customize to your needs...
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl:/home/berson_r/build/julia
-export LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
+export LD_RUN_PATH=$LD_RUN_PATH:$HOME/usr/lib:$HOME/.local/lib
 
 export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 export PATH=$PATH:$HOME/usr/bin # Add ~/usr/bin to path
 export PATH=$PATH:$HOME/.local/bin # Add ~/.local/bin to path
 export PATH=$PATH:/opt/ghc/7.8.2/bin # Add latest version of GHC
+export PATH=/usr/lib/jvm/java-7-oracle/bin:$PATH
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs

@@ -168,3 +168,7 @@ endif " has autocmd
 
 "Limit the width of text for mutt to 80 columns
 au BufRead /tmp/mutt-* set tw=80
+
+     
+" Git commit preference
+autocmd Filetype gitcommit setlocal spell textwidth=72
