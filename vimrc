@@ -19,6 +19,7 @@ Bundle 'Valloric/YouCompleteMe'
 Bundle 'kien/ctrlp.vim'
 Bundle 'scooloose/nerdtree'
 Bundle 'JuliaLang/julia-vim'
+Bundle 'KabbAmine/zeavim.vim'
 
 filetype plugin indent on " enable detection, plugins and indenting in one step
 set background=dark
