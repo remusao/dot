@@ -35,12 +35,6 @@ source $ZSH/oh-my-zsh.sh
 
 # Customize to your needs...
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
-export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
-export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin # User installed gems
-export PATH=$PATH:$HOME/usr/bin # ~/usr/bin to path
-export PATH=$PATH:$HOME/dev/public/julia
-export PATH=$PATH:$HOME/dev/public/Nim/bin
-export PATH=$PATH:$HOME/.nimble/bin
 export PATH=$HOME/.linuxbrew/bin:$PATH # linuxbrew
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
@@ -49,6 +43,24 @@ export LIBRARY_PATH=$LD_LIBRARY_PATH
 export C_INCLUDE_PATH=$HOME/usr/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
+export PATH=$PATH:$HOME/dev/public/julia # Julia compiler
+export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
+export PATH=$PATH:$HOME/usr/bin # Add ~/usr/bin to path
+export PATH=$PATH:$HOME/.local/bin # Add ~/.local/bin to path
+export PATH=$PATH:/opt/ghc/7.8.2/bin # Add latest version of GHC
+export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin # Ruby gems
+export PATH=$PATH:$HOME/dev/public/Nim/bin # Nim compiler
+export PATH=$PATH:$HOME/.nimble/bin
+export PATH="$HOME/.linuxbrew/bin:$PATH"
+
+# Linux brew
+export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
+export INFOPATH="$HOME/.linuxbrew/share/info:$INFOPATH"
+
+# Go
+export PATH=$PATH:/home/berson_r/.linuxbrew/opt/go/libexec/bin
+export GOPATH=$HOME/.go
+export PATH=$PATH:$GOPATH/bin
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
