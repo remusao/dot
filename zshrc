@@ -43,15 +43,16 @@ export LIBRARY_PATH=$LD_LIBRARY_PATH
 export C_INCLUDE_PATH=$HOME/usr/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
-export PATH=$PATH:$HOME/dev/public/julia # Julia compiler
-export PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
-export PATH=$PATH:$HOME/usr/bin # Add ~/usr/bin to path
-export PATH=$PATH:$HOME/.local/bin # Add ~/.local/bin to path
-export PATH=$PATH:/opt/ghc/7.8.2/bin # Add latest version of GHC
-export PATH=$PATH:$HOME/.gem/ruby/1.9.1/bin # Ruby gems
-export PATH=$PATH:$HOME/dev/public/Nim/bin # Nim compiler
-export PATH=$PATH:$HOME/.nimble/bin
-export PATH="$HOME/.linuxbrew/bin:$PATH"
+export PATH=$HOME/.linuxbrew/bin:$PATH
+export PATH=$HOME/usr/bin:$PATH             # ~/usr/bin
+export PATH=$HOME/.local/bin:$PATH          # ~/.local/bin
+export PATH=$HOME/dev/public/julia:$PATH    # Julia compiler
+export PATH=$HOME/.rvm/bin:$PATH            # RVM
+export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
+export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
+export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
+export PATH=/opt/cabal/1.22/bin/:$PATH
+export PATH=/opt/ghc/7.8.4/bin/:$PATH
 
 # Linux brew
 export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
