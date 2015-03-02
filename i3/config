@@ -14,7 +14,6 @@ exec --no-startup-id nitrogen --restore
 exec --no-startup-id nm-applet
 
 set $mod Mod4
-set $TERMINAL urxvt
 
 # Multiscreen
 workspace 1 output DVI-I-1
