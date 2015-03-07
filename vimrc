@@ -121,12 +121,12 @@ Plugin 'nanotech/jellybeans.vim'
 Plugin 'morhetz/gruvbox'
 Plugin 'altercation/vim-colors-solarized'
 Plugin 'tomasr/molokai'
-
+Plugin 'SirVer/ultisnips'
+Plugin 'honza/vim-snippets'
 
 
 call vundle#end()
 filetype plugin indent on " enable detection, plugins and indenting in one step
-set background=dark
 
 " Set encoding
 set encoding=utf-8
@@ -156,6 +156,13 @@ endif
 
 
 "" --- CONFIGURE PLUGINS --- ""
+
+" ----- SirVer/ultisnips settings -----
+"
+let g:UltiSnipsExpandTrigger="<c-0>"
+let g:UltiSnipsJumpForwardTrigger="<c-b>"
+let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+
 
 " ----- Raimondi/delimitMate settings -----
 "

@@ -22,7 +22,7 @@ for file in emacs \
             hgrc \
             i3 \
             i3status.conf \
-            terminator \
+            config \
             vim \
             vimrc \
             Xdefaults \
