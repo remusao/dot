@@ -6,6 +6,8 @@
 " This must be first, because it changes other options as a side effect.
 set nocompatible
 
+set antialias
+
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
 set history=1000 " keep 1000 lines of command line history
@@ -18,7 +20,7 @@ set splitright " Vertical splits use right half of screen
 set timeoutlen=100 " Lower ^[ timeout
 set fillchars=fold:\ , " get rid of obnoxious '-' characters in folds
 set tildeop " use ~ to toggle case as an operator, not a motion
-if exists('&breakindent')
+if exists('breakindent')
     set breakindent " Indent wrapped lines up to the same level
 endif
 " Tab settings
@@ -44,7 +46,7 @@ set showmatch " set show matching parenthesis
 set smartcase " ignore case if search pattern is all lowercase, " case-sensitive otherwise
 set smartindent
 set smarttab " insert tabs on the start of a line according to shiftwidth, not tabstop
-set wildignore=*.swp,*.bak,*.pyc,*.class " Ignore this extension in file searching
+set wildignore=*.swp,*.bak,*.pyc,*.class,*.so,*.zip " Ignore this extension in file searching
 " Complete options (disable preview scratch window)
 set completeopt=menu,menuone,longest
 " Limit popup menu height
@@ -54,10 +56,16 @@ set switchbuf=useopen " reveal already opened files from the
 " quickfix window instead of opening new
 " buffers
 set wildmenu " make tab completion for files/buffers act like bash
-set wildmode=list:full " show a list when pressing tab and complete
+set wildmode=list:longest,full
 " first full match
 set cursorline " underline the current line, for quick orientation
 set title
+set pastetoggle=<F12>
+
+" Workaround vim-commentary for Haskell
+autocmd FileType haskell setlocal commentstring=--\ %s
+" Workaround broken colour highlighting in Haskell
+autocmd FileType haskell,rust setlocal nospell
 
 
 " Make these commonly mistyped commands still work
@@ -97,8 +105,6 @@ Plugin 'plasticboy/vim-markdown'
 Plugin 'Valloric/YouCompleteMe'
 Plugin 'JuliaLang/julia-vim'
 Plugin 'KabbAmine/zeavim.vim'
-Plugin 'altercation/vim-colors-solarized'
-Plugin 'tomasr/molokai'
 Plugin 'kien/ctrlp.vim'
 Plugin 'chrisbra/csv.vim'
 Plugin 'airblade/vim-gitgutter'
@@ -111,6 +117,10 @@ Plugin 'sheerun/vim-polyglot'
 Plugin 'ntpeters/vim-better-whitespace'
 Plugin 'tpope/vim-surround'
 Plugin 'godlygeek/tabular'
+Plugin 'nanotech/jellybeans.vim'
+Plugin 'morhetz/gruvbox'
+Plugin 'altercation/vim-colors-solarized'
+Plugin 'tomasr/molokai'
 
 
 
@@ -121,6 +131,29 @@ set background=dark
 " Set encoding
 set encoding=utf-8
 set fileencoding=utf-8
+
+""" Syntax Coloration
+syntax on
+set background=dark
+set t_Co=256
+" using Inconsolata font in gvim
+set anti enc=utf-8
+if has("gui_running")
+    let g:solarized_termcolors=256
+    let g:solarized_termtrans=1
+    let g:solarized_contrast="normal"
+    let g:solarized_visibility="normal"
+    color solarized " Load a colorscheme"
+    set guifont=Inconsolata\ Medium\ 16
+    set guioptions-=m  "remove menu bar
+    set guioptions-=T  "remove toolbar
+    set guioptions-=r  "remove right-hand scroll bar
+    set guioptions-=L  "remove left-hand scroll bar
+else
+    colorscheme jellybeans
+    hi Normal ctermbg=NONE
+endif
+
 
 "" --- CONFIGURE PLUGINS --- ""
 
@@ -138,7 +171,14 @@ augroup END
 " ----- kien/ctrlp settings -----
 "
 let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
-let g:ctrlp_user_command = "ag"
+if executable('ag')
+    let g:ctrlp_user_command = "ag"
+  " Use Ag over Grep
+  set grepprg=ag\ --nogroup\ --nocolor
+
+  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
+  let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+endif
 
 " ----- airblade/vim-gitgutter settings -----
 " Required after having changed the colorscheme
@@ -190,20 +230,10 @@ augroup mySyntastic
     au FileType tex let b:syntastic_mode = "passive"
 augroup END
 
-
-""" Syntax Coloration
-syntax on
-set background=dark
-set t_Co=256
-colorscheme jellybeans
-hi Normal ctermbg=NONE
-" using Source Code Pro
-set anti enc=utf-8
-set guifont=Source\ Code\ Pro\ 13
-
 "" Julia
 let g:julia_latex_to_unicode = 0
 let g:latex_to_unicode_tab = 0
+
 "" vim-markdown
 let g:vim_markdown_folding_disabled=1
 
@@ -213,12 +243,8 @@ let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_autoclose_preview_window_after_insertion = 1
 
 
-"" Powerline
-let g:Powerline_symbols = 'fancy'
-
 ""python highlighting extras
 let python_highlight_all = 1
-set wildignore+=*/tmp/*,*.so,*.swp,*.zip     " MacOSX/Linux
 
 """ Additionnal Mappings
 nnoremap ; :
