@@ -123,6 +123,7 @@ Plugin 'altercation/vim-colors-solarized'
 Plugin 'tomasr/molokai'
 Plugin 'SirVer/ultisnips'
 Plugin 'honza/vim-snippets'
+Plugin 'terryma/vim-multiple-cursors'
 
 
 call vundle#end()
@@ -179,10 +180,8 @@ augroup END
 "
 let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
 if executable('ag')
-    let g:ctrlp_user_command = "ag"
   " Use Ag over Grep
   set grepprg=ag\ --nogroup\ --nocolor
-
   " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
   let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
 endif
@@ -230,8 +229,9 @@ let g:airline#extensions#tabline#enabled = 1
 
 " ----- scrooloose/syntastic settings -----
 let g:syntastic_python_checkers = ['pylint']
+let g:syntastic_check_on_open = 1
+let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_error_symbol = '✘'
-let g:syntastic_warning_symbol = "▲"
 augroup mySyntastic
     au!
     au FileType tex let b:syntastic_mode = "passive"
