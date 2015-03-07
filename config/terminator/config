@@ -7,7 +7,7 @@
   [[default]]
     scrollbar_position = hidden
     use_system_font = False
-    font = Inconsolata Medium 13
+    font = Inconsolata Medium 14
     background_type = transparent
     background_image = None
     show_titlebar = False
