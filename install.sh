@@ -49,4 +49,4 @@ for file in emacs \
 done
 
 # Setting up YouCompleteMe
-cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh
+cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer
