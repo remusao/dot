@@ -48,5 +48,8 @@ for file in emacs \
     ln -s $file $path
 done
 
-# Setting up YouCompleteMe
+# Install vim plugins
+vim +PluginInstall +qall
+
+# Setting up YouCompletMe
 cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer
