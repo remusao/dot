@@ -22,7 +22,7 @@ for file in emacs \
             hgrc \
             i3 \
             i3status.conf \
-            terminator \
+            config \
             vim \
             vimrc \
             Xdefaults \
@@ -48,5 +48,8 @@ for file in emacs \
     ln -s $file $path
 done
 
-# Setting up YouCompleteMe
-cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh
+# Install vim plugins
+vim +PluginInstall +qall
+
+# Setting up YouCompletMe
+cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer
