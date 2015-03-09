@@ -1,83 +1,38 @@
-" This must be first, because it changes other options as side effect
-set nocompatible " Break Vi backward compatibility
+" ####################
+" # General Settings #
+" ####################
 
+" Use Vim settings, rather than Vi settings (much better!).
+" This must be first, because it changes other options as a side effect.
+set nocompatible
 
-" Enable Vundle
-filetype off
-set rtp+=~/.vim/bundle/vundle
-call vundle#rc()
+set antialias
 
-" let Vundle manage Vundle, required
-Bundle 'gmarik/vundle'
-
-Bundle 'tpope/vim-fugitive'
-Bundle 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
-Bundle 'altercation/vim-colors-solarized'
-Bundle 'scrooloose/syntastic'
-Bundle 'plasticboy/vim-markdown'
-Bundle 'Valloric/YouCompleteMe'
-Bundle 'kien/ctrlp.vim'
-Bundle 'JuliaLang/julia-vim'
-Bundle 'KabbAmine/zeavim.vim'
-
-filetype plugin indent on " enable detection, plugins and indenting in one step
-set background=dark
-
-" Set encoding
-set encoding=utf-8
-set fileencoding=utf-8
-
-""" Syntax Coloration
-syntax on
-set background=dark
-set t_Co=256
-autocmd ColorScheme * highlight ExtraWhitespace ctermbg=red guibg=red
-colorscheme jellybeans
-hi Normal ctermbg=NONE
-" using Source Code Pro
-set anti enc=utf-8
-set guifont=Source\ Code\ Pro\ 13
-
-"" --- CONFIGURE PLUGINS --- ""
-"" Julia
-let g:julia_latex_to_unicode = 0
-let g:latex_to_unicode_tab = 0
-"" vim-markdown
-let g:vim_markdown_folding_disabled=1
-
-"" Syntastic
-let g:syntastic_python_checkers = ['pylint']
-
-"" YouCompleteMe
-let g:ycm_min_num_of_chars_for_completion = 1
-let g:ycm_autoclose_preview_window_after_completion = 1
-let g:ycm_autoclose_preview_window_after_insertion = 1
-
-"" ctrlp.vim
-let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
-
-"" Powerline
-let g:Powerline_symbols = 'fancy'
-
-"python remove trailing whitespace
-autocmd BufWritePre *.py normal m`:%s/\s\+$//e ``
-""python highlighting extras
-let python_highlight_all = 1
-set wildignore+=*/tmp/*,*.so,*.swp,*.zip     " MacOSX/Linux
-
-" General options
-set tabstop=4 " a tab is four spaces
-set softtabstop=4 " when hitting <BS>, pretend like a tab is removed, even if spaces
-set shiftwidth=4 " number of spaces to use for autoindenting
+" allow backspacing over everything in insert mode
+set backspace=indent,eol,start
+set history=1000 " keep 1000 lines of command line history
+set number " show line numbers
+set ruler " show the cursor position all the time
+set showcmd " display incomplete commands
+set incsearch " do incremental searching
+set scrolloff=3 " don't let the cursor touch the edge of the viewport
+set splitright " Vertical splits use right half of screen
+set timeoutlen=100 " Lower ^[ timeout
+set fillchars=fold:\ , " get rid of obnoxious '-' characters in folds
+set tildeop " use ~ to toggle case as an operator, not a motion
+if exists('breakindent')
+    set breakindent " Indent wrapped lines up to the same level
+endif
+" Tab settings
+set expandtab " Expand tabs into spaces
+set tabstop=4 " default to 4 spaces for a hard tab
+set softtabstop=4 " default to 4 spaces for the soft tab
+set shiftwidth=4 " for when <TAB> is pressed at the beginning of a line
 set autoindent " always set autoindenting on
-set backspace=indent,eol,start " allow backspacing over everything in insert mode
 set copyindent " copy the previous indentation on autoindenting
-set expandtab
 set hidden
 set hlsearch is " highlight search terms
 set ignorecase " ignore case when searching
-set incsearch " show search matches as you type
-set laststatus=2
 if v:version >= 730
     set undofile " keep a persistent backup file
     set undodir=~/.vim/.undo,~/tmp,/tmp
@@ -86,15 +41,12 @@ set nobackup
 set noswapfile
 set directory=~/.vim/.tmp,~/tmp,/tmp " store swap files in one of these directories
 set nowrap " don't wrap lines
-set number " always show line numbers
-set ruler
 set shiftround " use multiple of shiftwidth when indenting with '<' and '>'
-set showcmd
 set showmatch " set show matching parenthesis
 set smartcase " ignore case if search pattern is all lowercase, " case-sensitive otherwise
 set smartindent
 set smarttab " insert tabs on the start of a line according to shiftwidth, not tabstop
-set wildignore=*.swp,*.bak,*.pyc,*.class " Ignore this extension in file searching
+set wildignore=*.swp,*.bak,*.pyc,*.class,*.so,*.zip " Ignore this extension in file searching
 " Complete options (disable preview scratch window)
 set completeopt=menu,menuone,longest
 " Limit popup menu height
@@ -104,15 +56,201 @@ set switchbuf=useopen " reveal already opened files from the
 " quickfix window instead of opening new
 " buffers
 set wildmenu " make tab completion for files/buffers act like bash
-set wildmode=list:full " show a list when pressing tab and complete
+set wildmode=list:longest,full
 " first full match
 set cursorline " underline the current line, for quick orientation
 set title
+set pastetoggle=<F12>
 
-"highlight WhitespaceEOL ctermbg=red guibg=red
-"match WhitespaceEOL /\s\+$/
-highlight ExtraWhitespace ctermbg=red guibg=red
-match ExtraWhitespace /\s\+$\| \+\ze\t/
+" Workaround vim-commentary for Haskell
+autocmd FileType haskell setlocal commentstring=--\ %s
+" Workaround broken colour highlighting in Haskell
+autocmd FileType haskell,rust setlocal nospell
+
+
+" Make these commonly mistyped commands still work
+command! WQ wq
+command! Wq wq
+command! Wqa wqa
+command! W w
+command! Q q
+
+" open help in a new tab
+cabbrev help tab help
+
+" Make navigating long, wrapped lines behave like normal lines
+noremap <silent> k gk
+noremap <silent> j gj
+noremap <silent> 0 g0
+noremap <silent> $ g$
+noremap <silent> ^ g^
+noremap <silent> _ g_
+
+" use 'Y' to yank to the end of a line, instead of the whole line
+noremap <silent> Y y$
+
+" Enable Vundle
+filetype off
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+
+" let Vundle manage Vundle, required
+Plugin 'gmarik/Vundle.vim'
+
+Plugin 'JuliaLang/julia-vim'
+Plugin 'Raimondi/delimitMate'
+Plugin 'SirVer/ultisnips'
+Plugin 'Valloric/YouCompleteMe'
+Plugin 'airblade/vim-gitgutter'
+Plugin 'altercation/vim-colors-solarized'
+Plugin 'bling/vim-airline'
+Plugin 'chrisbra/csv.vim'
+Plugin 'godlygeek/tabular'
+Plugin 'honza/vim-snippets'
+Plugin 'jistr/vim-nerdtree-tabs'
+Plugin 'kien/ctrlp.vim'
+Plugin 'majutsushi/tagbar'
+Plugin 'morhetz/gruvbox'
+Plugin 'nanotech/jellybeans.vim'
+Plugin 'ntpeters/vim-better-whitespace'
+Plugin 'plasticboy/vim-markdown'
+Plugin 'scrooloose/nerdtree'
+Plugin 'scrooloose/syntastic'
+Plugin 'sheerun/vim-polyglot'
+Plugin 'terryma/vim-multiple-cursors'
+Plugin 'tomasr/molokai'
+Plugin 'tpope/vim-fugitive'
+Plugin 'tpope/vim-surround'
+Plugin 'xolox/vim-easytags'
+Plugin 'xolox/vim-misc'
+
+
+call vundle#end()
+filetype plugin indent on " enable detection, plugins and indenting in one step
+
+" Set encoding
+set encoding=utf-8
+set fileencoding=utf-8
+
+""" Syntax Coloration
+syntax on
+set background=dark
+set t_Co=256
+" using Inconsolata font in gvim
+set anti enc=utf-8
+if has("gui_running")
+    let g:solarized_termcolors=256
+    let g:solarized_termtrans=1
+    let g:solarized_contrast="normal"
+    let g:solarized_visibility="normal"
+    color solarized " Load a colorscheme"
+    set guifont=Inconsolata\ Medium\ 16
+    set guioptions-=m  "remove menu bar
+    set guioptions-=T  "remove toolbar
+    set guioptions-=r  "remove right-hand scroll bar
+    set guioptions-=L  "remove left-hand scroll bar
+else
+    colorscheme jellybeans
+    hi Normal ctermbg=NONE
+endif
+
+
+"" --- CONFIGURE PLUGINS --- ""
+
+" ----- SirVer/ultisnips settings -----
+"
+let g:UltiSnipsExpandTrigger="<c-0>"
+let g:UltiSnipsJumpForwardTrigger="<c-b>"
+let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+
+
+" ----- Raimondi/delimitMate settings -----
+"
+let delimitMate_expand_cr = 1
+augroup mydelimitMate
+ au!
+ au FileType markdown let b:delimitMate_nesting_quotes = ["`"]
+ au FileType tex let b:delimitMate_quotes = ""
+ au FileType tex let b:delimitMate_matchpairs = "(:),[:],{:},`:'"
+ au FileType python let b:delimitMate_nesting_quotes = ['"', "'"]
+augroup END
+
+" ----- kien/ctrlp settings -----
+"
+let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
+if executable('ag')
+  " Use Ag over Grep
+  set grepprg=ag\ --nogroup\ --nocolor
+  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
+  let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+endif
+
+" ----- airblade/vim-gitgutter settings -----
+" Required after having changed the colorscheme
+hi clear SignColumn
+" In vim-airline, only display "hunks" if the diff is non-zero
+let g:airline#extensions#hunks#non_zero_only = 1
+
+" ----- xolox/vim-easytags settings -----
+" Where to look for tags files
+set tags=./tags;,~/.vimtags
+" Sensible defaults
+let g:easytags_events = ['BufReadPost', 'BufWritePost']
+let g:easytags_async = 1
+let g:easytags_dynamic_files = 2
+let g:easytags_resolve_links = 1
+let g:easytags_suppress_ctags_warning = 1
+
+" ----- majutsushi/tagbar settings -----
+" Open/close tagbar with \b
+nmap <F8> :TagbarToggle<CR>
+" Uncomment to open tagbar automatically whenever possible
+"autocmd BufEnter * nested :call tagbar#autoopen(0)
+
+" ----- jistr/vim-nerdtree-tabs -----
+" Open/close NERDTree Tabs with \t
+nmap <silent> <leader>t :NERDTreeTabsToggle<CR>
+" To have NERDTree always open on startup
+let g:nerdtree_tabs_open_on_console_startup = 0
+
+
+" ----- airblade/vim-gitgutter settings -----
+"
+let g:gitgutter_max_signs = 500  " default value
+let g:gitgutter_realtime = 0
+let g:gitgutter_eager = 0
+
+" ----- bling/vim-airline settings -----
+"
+set laststatus=2
+let g:airline_detect_paste=1
+let g:airline#extensions#tabline#enabled = 1
+
+" ----- scrooloose/syntastic settings -----
+let g:syntastic_python_checkers = ['pylint']
+let g:syntastic_check_on_open = 1
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_error_symbol = '✘'
+augroup mySyntastic
+    au!
+    au FileType tex let b:syntastic_mode = "passive"
+augroup END
+
+"" Julia
+let g:julia_latex_to_unicode = 0
+let g:latex_to_unicode_tab = 0
+
+"" vim-markdown
+let g:vim_markdown_folding_disabled=1
+
+"" YouCompleteMe
+let g:ycm_min_num_of_chars_for_completion = 1
+let g:ycm_autoclose_preview_window_after_completion = 1
+let g:ycm_autoclose_preview_window_after_insertion = 1
+
+
+""python highlighting extras
+let python_highlight_all = 1
 
 """ Additionnal Mappings
 nnoremap ; :
@@ -120,12 +258,6 @@ nmap <silent> ./ :nohlsearch<CR>
 
 """ Define map <Leader>
 let mapleader = ","
-
-""" --- PLUGINS OPTIONS ---
-
-" Strip all trailing whitespace from a file, using ,w
-nnoremap ,W :%s/\s\+$//<CR>:let @/=''<CR>
-
 
 
 " In many terminal emulators the mouse works just fine, thus enable it.
@@ -168,6 +300,5 @@ endif " has autocmd
 "Limit the width of text for mutt to 80 columns
 au BufRead /tmp/mutt-* set tw=80
 
-     
 " Git commit preference
 autocmd Filetype gitcommit setlocal spell textwidth=72
