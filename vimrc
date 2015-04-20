@@ -15,7 +15,6 @@ set number " show line numbers
 set ruler " show the cursor position all the time
 set showcmd " display incomplete commands
 set incsearch " do incremental searching
-set scrolloff=3 " don't let the cursor touch the edge of the viewport
 set splitright " Vertical splits use right half of screen
 set timeoutlen=100 " Lower ^[ timeout
 set fillchars=fold:\ , " get rid of obnoxious '-' characters in folds

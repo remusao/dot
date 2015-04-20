@@ -22,6 +22,8 @@ alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
 alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
+alias vim='vim -w ~/.vimlog "$@"'
+alias emacs='emacs -nw'
 
 xset b off
 xset r rate 300 100
