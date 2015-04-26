@@ -22,6 +22,7 @@ alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
 alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
+alias fuck='$(thefuck $(fc -ln -1))'
 
 xset b off
 xset r rate 300 100
