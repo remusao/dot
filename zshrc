@@ -24,6 +24,7 @@ alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 # alias vim='vim -w ~/.vimlog "$@"'
 alias emacs='emacs -nw'
+alias fuck='$(thefuck $(fc -ln -1))'
 
 xset b off
 xset r rate 300 100
