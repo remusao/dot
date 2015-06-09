@@ -22,7 +22,7 @@ alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
 alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
-alias vim='vim -w ~/.vimlog "$@"'
+# alias vim='vim -w ~/.vimlog "$@"'
 alias emacs='emacs -nw'
 
 xset b off
@@ -53,8 +53,9 @@ export PATH=$HOME/.rvm/bin:$PATH            # RVM
 export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
 export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
 export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
-export PATH=/opt/cabal/1.22/bin/:$PATH
-export PATH=/opt/ghc/7.10.1/bin/:$PATH
+# export PATH=/opt/cabal/1.22/bin/:$PATH
+# export PATH=/opt/ghc/7.10.1/bin/:$PATH
+if [ -e /home/berson_r/.nix-profile/etc/profile.d/nix.sh ]; then . /home/berson_r/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
 
 # Linux brew
 export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
