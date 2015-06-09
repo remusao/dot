@@ -60,7 +60,7 @@ export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="$HOME/.linuxbrew/share/info:$INFOPATH"
 
 # Go
-export PATH=$PATH:/home/berson_r/.linuxbrew/opt/go/libexec/bin
+export PATH=$PATH:$HOME/.linuxbrew/opt/go/libexec/bin
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
@@ -71,6 +71,8 @@ export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
 source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
+
+source $HOME/.nix-profile/etc/profile.d/nix.sh
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];
