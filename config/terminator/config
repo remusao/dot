@@ -7,9 +7,10 @@
   [[default]]
     scrollbar_position = hidden
     use_system_font = False
-    font = Inconsolata Medium 16
+    font = Inconsolata Medium 14
     background_type = transparent
     background_image = None
+    scroll_on_output = False
     show_titlebar = False
     copy_on_selection = True
     scrollback_infinite = True
