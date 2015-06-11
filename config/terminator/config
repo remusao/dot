@@ -13,6 +13,7 @@
     scroll_on_output = False
     show_titlebar = False
     copy_on_selection = True
+    cursor_blink = False
     scrollback_infinite = True
 [layouts]
   [[default]]

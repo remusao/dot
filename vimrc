@@ -15,7 +15,6 @@ set number " show line numbers
 set ruler " show the cursor position all the time
 set showcmd " display incomplete commands
 set incsearch " do incremental searching
-set scrolloff=3 " don't let the cursor touch the edge of the viewport
 set splitright " Vertical splits use right half of screen
 set timeoutlen=100 " Lower ^[ timeout
 set fillchars=fold:\ , " get rid of obnoxious '-' characters in folds
@@ -89,44 +88,61 @@ noremap <silent> _ g_
 " use 'Y' to yank to the end of a line, instead of the whole line
 noremap <silent> Y y$
 
-" Enable Vundle
+" Enable undle
 filetype off
 set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+set runtimepath+=~/.vim/bundle/neobundle.vim/
+call neobundle#begin(expand('~/.vim/bundle/'))
 
-" let Vundle manage Vundle, required
-Plugin 'gmarik/Vundle.vim'
+" Let NeoBundle manage NeoBundle
+" Required:
+NeoBundleFetch 'Shougo/neobundle.vim'
 
-Plugin 'JuliaLang/julia-vim'
-Plugin 'Raimondi/delimitMate'
-Plugin 'SirVer/ultisnips'
-Plugin 'Valloric/YouCompleteMe'
-Plugin 'airblade/vim-gitgutter'
-Plugin 'altercation/vim-colors-solarized'
-Plugin 'bling/vim-airline'
-Plugin 'chrisbra/csv.vim'
-Plugin 'godlygeek/tabular'
-Plugin 'honza/vim-snippets'
-Plugin 'jistr/vim-nerdtree-tabs'
-Plugin 'kien/ctrlp.vim'
-Plugin 'majutsushi/tagbar'
-Plugin 'morhetz/gruvbox'
-Plugin 'nanotech/jellybeans.vim'
-Plugin 'ntpeters/vim-better-whitespace'
-Plugin 'plasticboy/vim-markdown'
-Plugin 'scrooloose/nerdtree'
-Plugin 'scrooloose/syntastic'
-Plugin 'sheerun/vim-polyglot'
-Plugin 'terryma/vim-multiple-cursors'
-Plugin 'tomasr/molokai'
-Plugin 'tpope/vim-fugitive'
-Plugin 'tpope/vim-surround'
-Plugin 'xolox/vim-easytags'
-Plugin 'xolox/vim-misc'
+NeoBundle 'Shougo/vimproc.vim', {
+\ 'build' : {
+\     'windows' : 'tools\\update-dll-mingw',
+\     'cygwin' : 'make -f make_cygwin.mak',
+\     'mac' : 'make -f make_mac.mak',
+\     'linux' : 'make',
+\     'unix' : 'gmake',
+\    },
+\ }
+NeoBundle 'Shougo/unite.vim'
+NeoBundle 'Shougo/vimfiler.vim'
+NeoBundle 'Shougo/vimshell.vim'
+NeoBundle 'JuliaLang/julia-vim'
+NeoBundle 'Raimondi/delimitMate'
+NeoBundle 'SirVer/ultisnips'
+NeoBundle 'Valloric/YouCompleteMe'
+NeoBundle 'airblade/vim-gitgutter'
+NeoBundle 'altercation/vim-colors-solarized'
+NeoBundle 'bling/vim-airline'
+NeoBundle 'chrisbra/csv.vim'
+NeoBundle 'eagletmt/ghcmod-vim'
+NeoBundle 'godlygeek/tabular'
+NeoBundle 'honza/vim-snippets'
+NeoBundle 'jistr/vim-nerdtree-tabs'
+NeoBundle 'kien/ctrlp.vim'
+NeoBundle 'majutsushi/tagbar'
+NeoBundle 'morhetz/gruvbox'
+NeoBundle 'nanotech/jellybeans.vim'
+NeoBundle 'ntpeters/vim-better-whitespace'
+NeoBundle 'plasticboy/vim-markdown'
+NeoBundle 'scrooloose/nerdtree'
+NeoBundle 'scrooloose/syntastic'
+NeoBundle 'sheerun/vim-polyglot'
+NeoBundle 'terryma/vim-multiple-cursors'
+NeoBundle 'tomasr/molokai'
+NeoBundle 'tpope/vim-fugitive'
+NeoBundle 'tpope/vim-surround'
+NeoBundle 'xolox/vim-easytags'
+NeoBundle 'xolox/vim-misc'
+NeoBundle 'rking/ag.vim'
 
+call neobundle#end()
 
-call vundle#end()
 filetype plugin indent on " enable detection, plugins and indenting in one step
+NeoBundleCheck
 
 " Set encoding
 set encoding=utf-8
@@ -156,6 +172,11 @@ endif
 
 
 "" --- CONFIGURE PLUGINS --- ""
+
+" ----- ghc-mod -----
+"
+autocmd BufWritePost *.hs GhcModCheckAndLintAsync
+
 
 " ----- SirVer/ultisnips settings -----
 "

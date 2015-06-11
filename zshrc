@@ -22,6 +22,8 @@ alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
 alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
+# alias vim='vim -w ~/.vimlog "$@"'
+alias emacs='emacs -nw'
 alias fuck='$(thefuck $(fc -ln -1))'
 
 xset b off
@@ -52,8 +54,7 @@ export PATH=$HOME/.rvm/bin:$PATH            # RVM
 export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
 export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
 export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
-export PATH=/opt/cabal/1.22/bin/:$PATH
-export PATH=/opt/ghc/7.8.4/bin/:$PATH
+if [ -e /home/berson_r/.nix-profile/etc/profile.d/nix.sh ]; then . /home/berson_r/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
 
 # Linux brew
 export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
@@ -71,8 +72,6 @@ export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
 source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
-
-source $HOME/.nix-profile/etc/profile.d/nix.sh
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];
