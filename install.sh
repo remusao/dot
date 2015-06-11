@@ -23,6 +23,7 @@ for file in emacs \
             i3 \
             i3status.conf \
             config \
+            nixpkgs \
             vim \
             vimrc \
             Xdefaults \
