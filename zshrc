@@ -52,8 +52,6 @@ export PATH=$HOME/.rvm/bin:$PATH            # RVM
 export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
 export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
 export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
-export PATH=/opt/cabal/1.22/bin/:$PATH
-export PATH=/opt/ghc/7.10.1/bin/:$PATH
 
 # Linux brew
 export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
