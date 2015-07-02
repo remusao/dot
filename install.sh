@@ -23,6 +23,7 @@ for file in emacs \
             i3 \
             i3status.conf \
             config \
+            nixpkgs \
             vim \
             vimrc \
             Xdefaults \
@@ -49,7 +50,7 @@ for file in emacs \
 done
 
 # Install vim plugins
-vim +PluginInstall +qall
+vim +NeoBundleInstall +qall
 
 # Setting up YouCompletMe
 cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer

@@ -1,15 +1,14 @@
-  (setq auto-mode-alist (cons '("\\.ml[iylp]?\\'" . tuareg-mode) auto-mode-alist))
-  (autoload 'tuareg-mode "tuareg" "Major mode for editing Caml code" t)
-  (autoload 'camldebug "camldebug" "Run the Caml debugger" t)
+(setq auto-mode-alist (cons '("\\.ml[iylp]?\\'" . tuareg-mode) auto-mode-alist))
+(autoload 'tuareg-mode "tuareg" "Major mode for editing Caml code" t)
+(autoload 'camldebug "camldebug" "Run the Caml debugger" t)
 
+(require 'package)
+(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+(package-initialize)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GNUS MODE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(add-hook 'text-mode-hook 'y-text-mode-hook)
-(setq user-mail-address "vincent.latrouite@epita.fr")
-(setq user-full-name "Vincent Latrouite")
-(setq gnus-select-method '(nntp "news.epita.fr"))
 
 ;;on charge automatiquement la autosave
 (setq gnus-always-read-dribble-file t)
