@@ -50,7 +50,7 @@ for file in emacs \
 done
 
 # Install vim plugins
-vim +PluginInstall +qall
+vim +NeoBundleInstall +qall
 
 # Setting up YouCompletMe
 cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer
