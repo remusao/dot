@@ -88,9 +88,8 @@ noremap <silent> _ g_
 " use 'Y' to yank to the end of a line, instead of the whole line
 noremap <silent> Y y$
 
-" Enable undle
+" Enable neobundle
 filetype off
-set rtp+=~/.vim/bundle/Vundle.vim
 set runtimepath+=~/.vim/bundle/neobundle.vim/
 call neobundle#begin(expand('~/.vim/bundle/'))
 
@@ -107,27 +106,35 @@ NeoBundle 'Shougo/vimproc.vim', {
 \     'unix' : 'gmake',
 \    },
 \ }
-NeoBundle 'Shougo/unite.vim'
-NeoBundle 'Shougo/vimfiler.vim'
-NeoBundle 'Shougo/vimshell.vim'
+
 NeoBundle 'JuliaLang/julia-vim'
 NeoBundle 'Raimondi/delimitMate'
+NeoBundle 'Shougo/neocomplcache.vim' " required by neco-ghc
+NeoBundle 'Shougo/unite.vim'
+NeoBundle 'Shougo/vimfiler.vim'
+NeoBundle 'Shougo/vimproc' " required by ghcmod-vim
+NeoBundle 'Shougo/vimshell.vim'
 NeoBundle 'SirVer/ultisnips'
 NeoBundle 'Valloric/YouCompleteMe'
 NeoBundle 'airblade/vim-gitgutter'
 NeoBundle 'altercation/vim-colors-solarized'
 NeoBundle 'bling/vim-airline'
 NeoBundle 'chrisbra/csv.vim'
+NeoBundle 'dag/vim2hs'
 NeoBundle 'eagletmt/ghcmod-vim'
+NeoBundle 'eagletmt/neco-ghc'
+NeoBundle 'eagletmt/tinytest' " required for ghcmod-vim
 NeoBundle 'godlygeek/tabular'
 NeoBundle 'honza/vim-snippets'
 NeoBundle 'jistr/vim-nerdtree-tabs'
 NeoBundle 'kien/ctrlp.vim'
 NeoBundle 'majutsushi/tagbar'
+NeoBundle 'merijn/haskellFoldIndent'
 NeoBundle 'morhetz/gruvbox'
 NeoBundle 'nanotech/jellybeans.vim'
 NeoBundle 'ntpeters/vim-better-whitespace'
 NeoBundle 'plasticboy/vim-markdown'
+NeoBundle 'rking/ag.vim'
 NeoBundle 'scrooloose/nerdtree'
 NeoBundle 'scrooloose/syntastic'
 NeoBundle 'sheerun/vim-polyglot'
@@ -137,7 +144,7 @@ NeoBundle 'tpope/vim-fugitive'
 NeoBundle 'tpope/vim-surround'
 NeoBundle 'xolox/vim-easytags'
 NeoBundle 'xolox/vim-misc'
-NeoBundle 'rking/ag.vim'
+NeoBundle 'satiani/async-scp-vim'
 
 call neobundle#end()
 
@@ -175,7 +182,8 @@ endif
 
 " ----- ghc-mod -----
 "
-autocmd BufWritePost *.hs GhcModCheckAndLintAsync
+autocmd BufWritePost *.hs,.hsc GhcModCheckAndLintAsync
+
 
 
 " ----- SirVer/ultisnips settings -----
@@ -249,7 +257,7 @@ let g:airline#extensions#tabline#enabled = 1
 
 " ----- scrooloose/syntastic settings -----
 let g:syntastic_python_checkers = ['pylint']
-let g:syntastic_check_on_open = 1
+let g:syntastic_haskell_checkers = ["ghc_mod", "hint"]
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_error_symbol = '✘'
 augroup mySyntastic
