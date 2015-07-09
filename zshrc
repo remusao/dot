@@ -54,7 +54,6 @@ export PATH=$HOME/.rvm/bin:$PATH            # RVM
 export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
 export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
 export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
-if [ -e /home/berson_r/.nix-profile/etc/profile.d/nix.sh ]; then . /home/berson_r/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
 
 # Linux brew
 export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
