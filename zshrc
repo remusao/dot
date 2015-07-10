@@ -62,7 +62,7 @@ export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="$HOME/.linuxbrew/share/info:$INFOPATH"
 
 # Go
-export PATH=$PATH:/home/berson_r/.linuxbrew/opt/go/libexec/bin
+export PATH=$PATH:$HOME/.linuxbrew/opt/go/libexec/bin
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
