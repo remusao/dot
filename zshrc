@@ -32,7 +32,9 @@ xset r rate 300 100
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git)
+plugins=(git cabal autojump command-not-found common-aliases docker fabric\
+         git-extras history pep8 pip python screen sublime sudo supervisor\
+         vagrant virtualenvwrapper web-search)
 
 source $ZSH/oh-my-zsh.sh
 
