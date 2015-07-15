@@ -38,7 +38,9 @@ xset r rate 300 100
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git)
+plugins=(git cabal autojump command-not-found common-aliases docker fabric\
+         git-extras history pep8 pip python screen sublime sudo supervisor\
+         vagrant virtualenvwrapper web-search)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -66,7 +68,7 @@ export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="$HOME/.linuxbrew/share/info:$INFOPATH"
 
 # Go
-export PATH=$PATH:/home/berson_r/.linuxbrew/opt/go/libexec/bin
+export PATH=$PATH:$HOME/.linuxbrew/opt/go/libexec/bin
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
