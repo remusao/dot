@@ -112,7 +112,6 @@ NeoBundle 'Raimondi/delimitMate'
 NeoBundle 'Shougo/neocomplcache.vim' " required by neco-ghc
 NeoBundle 'Shougo/unite.vim'
 NeoBundle 'Shougo/vimfiler.vim'
-NeoBundle 'Shougo/vimproc' " required by ghcmod-vim
 NeoBundle 'Shougo/vimshell.vim'
 NeoBundle 'SirVer/ultisnips'
 NeoBundle 'Valloric/YouCompleteMe'
@@ -121,15 +120,12 @@ NeoBundle 'altercation/vim-colors-solarized'
 NeoBundle 'bling/vim-airline'
 NeoBundle 'chrisbra/csv.vim'
 NeoBundle 'dag/vim2hs'
-NeoBundle 'eagletmt/ghcmod-vim'
 NeoBundle 'eagletmt/neco-ghc'
-NeoBundle 'eagletmt/tinytest' " required for ghcmod-vim
 NeoBundle 'godlygeek/tabular'
 NeoBundle 'honza/vim-snippets'
 NeoBundle 'jistr/vim-nerdtree-tabs'
 NeoBundle 'kien/ctrlp.vim'
 NeoBundle 'majutsushi/tagbar'
-NeoBundle 'merijn/haskellFoldIndent'
 NeoBundle 'morhetz/gruvbox'
 NeoBundle 'nanotech/jellybeans.vim'
 NeoBundle 'ntpeters/vim-better-whitespace'
@@ -256,7 +252,7 @@ let g:airline#extensions#tabline#enabled = 1
 
 " ----- scrooloose/syntastic settings -----
 let g:syntastic_python_checkers = ['pylint']
-let g:syntastic_haskell_checkers = ["ghc_mod", "hint"]
+let g:syntastic_haskell_checkers = ["hint"]
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_error_symbol = '✘'
 augroup mySyntastic
