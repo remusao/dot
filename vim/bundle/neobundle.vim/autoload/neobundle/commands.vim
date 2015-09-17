@@ -42,7 +42,7 @@ function! neobundle#commands#install(bang, bundle_names) "{{{
   let bundle_names = split(a:bundle_names)
 
   let bundles = !a:bang ?
-        \ neobundle#get_not_installed_bundles(bundle_names) :
+        \ neobundle#get_force_not_installed_bundles(bundle_names) :
         \ empty(bundle_names) ?
         \ neobundle#config#get_neobundles() :
         \ neobundle#config#fuzzy_search(bundle_names)
@@ -345,16 +345,14 @@ endfunction"}}}
 function! neobundle#commands#rollback(bundle_name) "{{{
   let bundle = get(neobundle#config#search_simple([a:bundle_name]), 0, {})
   if empty(bundle) || !isdirectory(bundle.path)
-    call neobundle#util#print_error(
-          \ '[neobundle] ' . a:bundle_name . ' is not found.')
+    call neobundle#util#print_error(a:bundle_name . ' is not found.')
     return
   endif
 
   call neobundle#installer#_load_install_info([bundle])
 
   if len(bundle.revisions) <= 1
-    call neobundle#util#print_error(
-          \ '[neobundle] No revision information.')
+    call neobundle#util#print_error('No revision information.')
     return
   endif
 
@@ -386,7 +384,7 @@ function! neobundle#commands#rollback(bundle_name) "{{{
     let type = neobundle#config#get_types(bundle.type)
     if !has_key(type, 'get_revision_lock_command')
       call neobundle#util#print_error(
-            \ '[neobundle] ' . a:bundle_name . ' is not supported this feature.')
+            \ a:bundle_name . ' is not supported this feature.')
       return
     endif
 
@@ -470,15 +468,18 @@ function! neobundle#commands#save_cache() "{{{
   endif
 
   let cache = neobundle#commands#get_cache_file()
+
+  " Set function prefixes before save cache
+  call neobundle#autoload#_set_function_prefixes(
+        \ neobundle#config#get_autoload_bundles())
+
   let bundles = deepcopy(neobundle#config#get_neobundles())
   " Clear hooks.  Because, VimL cannot save functions in JSON.
   for bundle in bundles
     let bundle.hooks = {}
   endfor
 
-  redir => current_vim
-  silent! version
-  redir END
+  let current_vim = neobundle#util#redir('version')
 
   call writefile( [s:get_cache_version(),
         \ v:progname, current_vim, string(bundles)], cache)
@@ -490,9 +491,7 @@ function! neobundle#commands#load_cache(...) "{{{
     return 1
   endif
 
-  redir => current_vim
-  silent! version
-  redir END
+  let current_vim = neobundle#util#redir('version')
 
   try
     let list = readfile(cache)
@@ -520,7 +519,7 @@ function! neobundle#commands#load_cache(...) "{{{
     endfor
   catch
     call neobundle#util#print_error(
-          \ '[neobundle] Error occurred while loading cache : ' . v:errmsg)
+          \ 'Error occurred while loading cache : ' . v:errmsg)
     call neobundle#commands#clear_cache()
     return 1
   endtry
@@ -712,7 +711,7 @@ function! s:cmp_vimproc(a, b) "{{{
 endfunction"}}}
 
 function! s:get_cache_version()"{{{
-  return str2nr(printf('%02d%02d', 2, 0))
+  return str2nr(printf('%02d%02d', 2, 2))
 endfunction "}}}
 
 let &cpo = s:save_cpo
