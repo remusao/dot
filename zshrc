@@ -6,8 +6,9 @@
 # Optionally, if you set this to "random", it'll load a random theme each
 # time that oh-my-zsh is loaded.
 # ZSH_THEME="gallois"
-#
-source .zprezto/init.zsh
+
+export LC_ALL="en_US.UTF-8"
+source ~/.zprezto/init.zsh
 
 export LANG=en_US.UTF-8
 
