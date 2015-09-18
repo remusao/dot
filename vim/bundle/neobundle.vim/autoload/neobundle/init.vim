@@ -34,6 +34,13 @@ function! neobundle#init#_rc(path) "{{{
   if path =~ '/$'
     let path = path[: -2]
   endif
+
+  if path == ''
+    call neobundle#util#print_error(
+          \ 'neobundle#rc() argument is empty.')
+    return
+  endif
+
   call neobundle#set_neobundle_dir(path)
 
   " Join to the tail in runtimepath.
@@ -71,6 +78,7 @@ function! neobundle#init#_bundle(bundle) "{{{
           \ 'rtp' : '',
           \ 'depends' : [],
           \ 'lazy' : 0,
+          \ 'fetch' : 0,
           \ 'force' : 0,
           \ 'gui' : 0,
           \ 'terminal' : 0,
@@ -97,6 +105,7 @@ function! neobundle#init#_bundle(bundle) "{{{
           \ 'install_rev' : '',
           \ 'install_process_timeout'
           \    : g:neobundle#install_process_timeout,
+          \ 'refcnt' : 1,
           \ }
   call extend(bundle, a:bundle)
 
@@ -146,7 +155,7 @@ function! neobundle#init#_bundle(bundle) "{{{
     " Chomp.
     let bundle.rtp = bundle.rtp[: -2]
   endif
-  if bundle.normalized_name ==# 'neobundle'
+  if bundle.normalized_name ==# 'neobundle' || bundle.fetch
     " Do not add runtimepath.
     let bundle.rtp = ''
   endif
