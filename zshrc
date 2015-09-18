@@ -1,14 +1,11 @@
-# Path to your oh-my-zsh configuration.
-# ZSH=$HOME/.oh-my-zsh
-
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
-# ZSH_THEME="gallois"
-
 export LC_ALL="en_US.UTF-8"
-source ~/.zprezto/init.zsh
+
+
+# source ~/.zprezto/init.zsh
+ZSH=$HOME/.oh-my-zsh
+ZSH_THEME="eastwood"
+DEFAULT_USER="berson_r"
+source ~/.oh-my-zsh/oh-my-zsh.sh
 
 export LANG=en_US.UTF-8
 
@@ -17,8 +14,6 @@ export EDITOR='vim'
 
 
 # Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
 alias c='clear'
 alias df='df -h'
 alias du='du -sh'
@@ -36,15 +31,6 @@ alias fuck='$(thefuck $(fc -ln -1))'
 
 xset b off
 xset r rate 300 100
-
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git cabal autojump command-not-found common-aliases docker fabric\
-         git-extras history pep8 pip python screen sublime sudo supervisor\
-         vagrant virtualenvwrapper web-search)
-
-# source $ZSH/oh-my-zsh.sh
 
 # Customize to your needs...
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
@@ -87,5 +73,3 @@ if [ -e "$HOME/.zshlocal" ];
 then
     source $HOME/.zshlocal
 fi
-
-source .zpreztorc
