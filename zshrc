@@ -3,7 +3,7 @@ export LC_ALL="en_US.UTF-8"
 
 # source ~/.zprezto/init.zsh
 ZSH=$HOME/.oh-my-zsh
-ZSH_THEME="eastwood"
+ZSH_THEME="flazz"
 DEFAULT_USER="berson_r"
 source ~/.oh-my-zsh/oh-my-zsh.sh
 
