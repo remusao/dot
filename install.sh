@@ -17,12 +17,22 @@ git submodule init
 git submodule update --init --recursive
 
 # git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+
 # Install custom fonts
 if test ! -d fonts ; then
     git clone https://github.com/powerline/fonts.git
+    ./fonts/install.sh
 fi
-./fonts/install.sh
-sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+
+# Install oh-my-zsh
+if test ! -d ~/.oh-my-zsh ; then
+    sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+fi
+
+# Install powerlevel9k prompt
+if test ! -d ~/.powerlevel9k ; then
+    git clone https://github.com/bhilburn/powerlevel9k.git ~/.powerlevel9k
+fi
 
 # Create symlinks to config files
 #            zlogin \
