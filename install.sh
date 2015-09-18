@@ -16,8 +16,6 @@ backupfile() {
 git submodule init
 git submodule update --init --recursive
 
-# git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-
 # Install custom fonts
 if test ! -d /tmp/fonts ; then
     git clone https://github.com/powerline/fonts.git /tmp/fonts
@@ -29,12 +27,10 @@ if test ! -d ~/.oh-my-zsh ; then
     sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 fi
 
+# Install zsh prompt
 if test ! -d ~/.oh-my-zsh/custom/themes/powerlevel9k ; then
     git clone https://github.com/bhilburn/powerlevel9k.git ~/.oh-my-zsh/custom/themes/powerlevel9k
 fi
-
-# git clone https://github.com/gabrielelana/awesome-terminal-fonts.git
-# ./awesome-terminal-fonts/install.sh
 
 # Create symlinks to config files
 #            zlogin \
