@@ -31,7 +31,6 @@ alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
 alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
-# alias vim='vim -w ~/.vimlog "$@"'
 alias emacs='emacs -nw'
 alias fuck='$(thefuck $(fc -ln -1))'
 
@@ -57,9 +56,9 @@ export LIBRARY_PATH=$LD_LIBRARY_PATH
 export C_INCLUDE_PATH=$HOME/usr/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
+export PATH=$PATH:$HOME/.local/bin          # ~/.local/bin
 export PATH=$HOME/.linuxbrew/bin:$PATH
 export PATH=$HOME/usr/bin:$PATH             # ~/usr/bin
-export PATH=$HOME/.local/bin:$PATH          # ~/.local/bin
 export PATH=$HOME/dev/public/julia:$PATH    # Julia compiler
 export PATH=$HOME/.rvm/bin:$PATH            # RVM
 export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
