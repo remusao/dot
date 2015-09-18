@@ -16,20 +16,26 @@ backupfile() {
 git submodule init
 git submodule update --init --recursive
 
+git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+
 # Create symlinks to config files
-for file in emacs \
+for file in Xdefaults \
+            config \
+            emacs \
             gitconfig \
             hgrc \
             i3 \
             i3status.conf \
-            config \
             nixpkgs \
             vim \
             vimrc \
-            Xdefaults \
             xinitrc \
-            zshrc \
-            zshrc.pre-oh-my-zsh; do
+            zlogin \
+            zlogout \
+            zpreztorc \
+            zprofile \
+            zshenv \
+            zshrc ; do
     # Add $HOME prefix and '.' in front of file name
     path=${HOME}/.${file}
     file=`pwd`/${file}
@@ -51,6 +57,3 @@ done
 
 # Install vim plugins
 vim +NeoBundleInstall +qall
-
-# Setting up YouCompletMe
-cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer

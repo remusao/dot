@@ -36,7 +36,7 @@ function! neobundle#parser#bundle(arg, ...) "{{{
     if !neobundle#config#within_block()
           \ && !bundle.lazy && has('vim_starting')
       call neobundle#util#print_error(
-            \ '[neobundle] `NeoBundle` commands must be executed within' .
+            \ '`NeoBundle` commands must be executed within' .
             \ ' a neobundle#begin/end block.  Please check your usage.')
     endif
   endif
@@ -71,6 +71,7 @@ function! neobundle#parser#fetch(arg) "{{{
   endif
 
   " Clear runtimepath.
+  let bundle.fetch = 1
   let bundle.rtp = ''
 
   call neobundle#config#add(bundle)
@@ -208,13 +209,13 @@ function! neobundle#parser#load_toml(filename, default) "{{{
     let toml = neobundle#TOML#parse_file(neobundle#util#expand(a:filename))
   catch /vital: Text.TOML:/
     call neobundle#util#print_error(
-          \ '[neobundle] Invalid toml format: ' . a:filename)
+          \ 'Invalid toml format: ' . a:filename)
     call neobundle#util#print_error(v:exception)
     return 1
   endtry
   if type(toml) != type({}) || !has_key(toml, 'plugins')
     call neobundle#util#print_error(
-          \ '[neobundle] Invalid toml file: ' . a:filename)
+          \ 'Invalid toml file: ' . a:filename)
     return 1
   endif
 
@@ -222,8 +223,29 @@ function! neobundle#parser#load_toml(filename, default) "{{{
   for plugin in toml.plugins
     if !has_key(plugin, 'repository')
       call neobundle#util#print_error(
-            \ '[neobundle] No repository plugin data: ' . a:filename)
+            \ 'No repository plugin data: ' . a:filename)
       return 1
+    endif
+
+    if has_key(plugin, 'depends')
+      let _ = []
+      for depend in neobundle#util#convert2list(plugin.depends)
+        if type(depend) == type('') || type(depend) == type([])
+          call add(_, depend)
+        elseif type(depend) == type({})
+          if !has_key(depend, 'repository')
+            call neobundle#util#print_error(
+                  \ 'No repository plugin data: ' . a:filename)
+            return 1
+          endif
+
+          call add(_, [depend.repository, depend])
+        endif
+
+        unlet depend
+      endfor
+
+      let plugin.depends = _
     endif
 
     let options = extend(plugin, a:default, 'keep')
@@ -274,16 +296,6 @@ function! neobundle#parser#path(path, ...) "{{{
   endif
 
   return detect
-endfunction"}}}
-
-function! neobundle#parser#_function_prefix(name) "{{{
-  let function_prefix = tolower(fnamemodify(a:name, ':r'))
-  let function_prefix = substitute(function_prefix,
-        \'^vim-\|-vim$', '','')
-  let function_prefix = substitute(function_prefix,
-        \'^unite-', 'unite#sources#','')
-  let function_prefix = tr(function_prefix, '-', '_')
-  return function_prefix
 endfunction"}}}
 
 function! s:parse_options(opts) "{{{
@@ -356,7 +368,7 @@ function! neobundle#parser#_parse_recipe(recipe) "{{{
 
   if !filereadable(path)
     call neobundle#util#print_error(printf(
-          \ '[neobundle] The recipe file "%s" is not found.', a:recipe))
+          \ 'The recipe file "%s" is not found.', a:recipe))
     return {}
   endif
 
@@ -364,10 +376,9 @@ function! neobundle#parser#_parse_recipe(recipe) "{{{
           \ "v:val !~ '^\\s*\\%(#.*\\)\\?$'"), ''))
 
   if !has_key(data, 'name') || !has_key(data, 'path')
+    call neobundle#util#print_error(path)
     call neobundle#util#print_error(
-          \ '[neobundle] ' . path)
-    call neobundle#util#print_error(
-          \ '[neobundle] The recipe file format is wrong.')
+          \ 'The recipe file format is wrong.')
     return {}
   endif
 

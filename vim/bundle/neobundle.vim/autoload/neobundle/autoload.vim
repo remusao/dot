@@ -48,8 +48,12 @@ function! neobundle#autoload#init()
   augroup neobundle-explorer
     autocmd!
   augroup END
-  for event in ['BufRead', 'BufCreate', 'BufEnter', 'BufWinEnter', 'BufNew', 'VimEnter']
-    execute 'autocmd neobundle-explorer' event "* call neobundle#autoload#explorer(
+  for event in [
+        \ 'BufRead', 'BufCreate', 'BufEnter',
+        \ 'BufWinEnter', 'BufNew', 'VimEnter'
+        \ ]
+    execute 'autocmd neobundle-explorer' event
+          \ "* call neobundle#autoload#explorer(
           \ expand('<afile>'), ".string(event) . ")"
   endfor
 
@@ -95,11 +99,20 @@ endfunction
 
 function! neobundle#autoload#function()
   let function = expand('<amatch>')
-  let function_prefix = get(split(function, '#'), 0, '') . '#'
+  let function_prefix = substitute(function, '[^#]*$', '', '')
+  if function_prefix =~# '^neobundle#'
+        \ || function_prefix ==# 'vital#'
+        \ || has('vim_starting')
+    return
+  endif
 
-  let bundles = filter(neobundle#config#get_autoload_bundles(),
-        \ "get(v:val.autoload, 'function_prefix', '').'#' ==# function_prefix ||
-        \  (has_key(v:val.autoload, 'functions') &&
+  let bundles = neobundle#config#get_autoload_bundles()
+  call neobundle#autoload#_set_function_prefixes(bundles)
+
+  let bundles = filter(bundles,
+        \ "index(v:val.autoload.function_prefixes,
+        \        function_prefix) >= 0
+        \ || (has_key(v:val.autoload, 'functions') &&
         \    index(v:val.autoload.functions, function) >= 0)")
   call neobundle#config#source_bundles(bundles)
 endfunction
@@ -179,7 +192,8 @@ function! neobundle#autoload#explorer(path, event)
   endif
 
   let path = neobundle#util#expand(path)
-  if !(isdirectory(path) || (!filereadable(path) && path =~ '^\h\w\+://'))
+  if !(isdirectory(path)
+        \ || (!filereadable(path) && path =~ '^\h\w\+://'))
     return
   endif
 
@@ -258,7 +272,7 @@ function! s:get_input()
   let type_num = type(0)
   while 1
     let char = getchar()
-    let input .= type(char) == type_num ? nr2char(char) : char
+    let input .= (type(char) == type_num) ? nr2char(char) : char
 
     let idx = stridx(input, termstr)
     if idx >= 1
@@ -277,6 +291,19 @@ function! s:get_lazy_bundles()
   return filter(neobundle#config#get_neobundles(),
         \ "!neobundle#config#is_sourced(v:val.name)
         \ && v:val.rtp != '' && v:val.lazy")
+endfunction
+
+function! neobundle#autoload#_set_function_prefixes(bundles) abort
+  for bundle in filter(copy(a:bundles),
+        \ "!has_key(v:val.autoload, 'function_prefixes')")
+    let bundle.autoload.function_prefixes =
+          \ neobundle#util#uniq(map(split(globpath(
+          \  bundle.path, 'autoload/**/*.vim', 1), "\n"),
+          \  "substitute(matchstr(
+          \   neobundle#util#substitute_path_separator(
+          \         fnamemodify(v:val, ':r')),
+          \         '/autoload/\\zs.*$'), '/', '#', 'g').'#'"))
+  endfor
 endfunction
 
 let &cpo = s:save_cpo
