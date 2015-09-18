@@ -16,6 +16,12 @@ backupfile() {
 git submodule init
 git submodule update --init --recursive
 
+git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+setopt EXTENDED_GLOB
+for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
+      ln -s "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile:t}"
+done
+
 # Create symlinks to config files
 for file in emacs \
             gitconfig \
@@ -51,6 +57,3 @@ done
 
 # Install vim plugins
 vim +NeoBundleInstall +qall
-
-# Setting up YouCompletMe
-cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer
