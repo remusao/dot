@@ -19,9 +19,9 @@ git submodule update --init --recursive
 # git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
 
 # Install custom fonts
-if test ! -d fonts ; then
-    git clone https://github.com/powerline/fonts.git
-    ./fonts/install.sh
+if test ! -d /tmp/fonts ; then
+    git clone https://github.com/powerline/fonts.git /tmp/fonts
+    /tmp/fonts/install.sh
 fi
 
 # Install oh-my-zsh
