@@ -1,11 +1,13 @@
 # Path to your oh-my-zsh configuration.
-ZSH=$HOME/.oh-my-zsh
+# ZSH=$HOME/.oh-my-zsh
 
 # Set name of the theme to load.
 # Look in ~/.oh-my-zsh/themes/
 # Optionally, if you set this to "random", it'll load a random theme each
 # time that oh-my-zsh is loaded.
-ZSH_THEME="gallois"
+# ZSH_THEME="gallois"
+#
+source .zprezto/init.zsh
 
 export LANG=en_US.UTF-8
 
@@ -42,7 +44,7 @@ plugins=(git cabal autojump command-not-found common-aliases docker fabric\
          git-extras history pep8 pip python screen sublime sudo supervisor\
          vagrant virtualenvwrapper web-search)
 
-source $ZSH/oh-my-zsh.sh
+# source $ZSH/oh-my-zsh.sh
 
 # Customize to your needs...
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
@@ -85,3 +87,5 @@ if [ -e "$HOME/.zshlocal" ];
 then
     source $HOME/.zshlocal
 fi
+
+source .zpreztorc

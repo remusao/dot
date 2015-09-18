@@ -114,7 +114,7 @@ NeoBundle 'Shougo/unite.vim'
 NeoBundle 'Shougo/vimfiler.vim'
 NeoBundle 'Shougo/vimshell.vim'
 NeoBundle 'SirVer/ultisnips'
-NeoBundle 'Valloric/YouCompleteMe', { 'build_commands' : 'cmake' }
+NeoBundle 'Valloric/YouCompleteMe', { 'build' : {'unix': './install.py --clang-completer --system-libclang --omnisharp-completer'}}
 NeoBundle 'airblade/vim-gitgutter'
 NeoBundle 'altercation/vim-colors-solarized'
 NeoBundle 'bling/vim-airline'
