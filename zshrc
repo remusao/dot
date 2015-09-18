@@ -4,8 +4,10 @@ export LC_ALL="en_US.UTF-8"
 # source ~/.zprezto/init.zsh
 ZSH=$HOME/.oh-my-zsh
 DEFAULT_USER="berson_r"
+ZSH_THEME="powerlevel9k/powerlevel9k"
+POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
+POWERLEVEL9K_MODE='compatible'
 source ~/.oh-my-zsh/oh-my-zsh.sh
-source ~/.powerlevel9k/powerlevel9k.zsh-theme
 
 export LANG=en_US.UTF-8
 

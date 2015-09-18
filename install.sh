@@ -21,18 +21,20 @@ git submodule update --init --recursive
 # Install custom fonts
 if test ! -d /tmp/fonts ; then
     git clone https://github.com/powerline/fonts.git /tmp/fonts
-    /tmp/fonts/install.sh
 fi
+/tmp/fonts/install.sh
 
 # Install oh-my-zsh
 if test ! -d ~/.oh-my-zsh ; then
     sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 fi
 
-# Install powerlevel9k prompt
-if test ! -d ~/.powerlevel9k ; then
-    git clone https://github.com/bhilburn/powerlevel9k.git ~/.powerlevel9k
+if test ! -d ~/.oh-my-zsh/custom/themes/powerlevel9k ; then
+    git clone https://github.com/bhilburn/powerlevel9k.git ~/.oh-my-zsh/custom/themes/powerlevel9k
 fi
+
+# git clone https://github.com/gabrielelana/awesome-terminal-fonts.git
+# ./awesome-terminal-fonts/install.sh
 
 # Create symlinks to config files
 #            zlogin \
@@ -68,7 +70,7 @@ for file in Xdefaults \
         fi
     fi
     echo "Creating symlink $file -> $path"
-    ln -s $file $path
+    ln -sf $file $path
 done
 
 # Install vim plugins
