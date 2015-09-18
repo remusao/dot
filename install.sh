@@ -18,9 +18,11 @@ git submodule update --init --recursive
 
 # git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
 # Install custom fonts
-git clone https://github.com/powerline/fonts.git
+if test ! -d fonts ; then
+    git clone https://github.com/powerline/fonts.git
+fi
 ./fonts/install.sh
-curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh
+sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 
 # Create symlinks to config files
 #            zlogin \
