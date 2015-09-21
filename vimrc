@@ -99,13 +99,10 @@ NeoBundleFetch 'Shougo/neobundle.vim'
 
 NeoBundle 'Shougo/vimproc.vim', {
 \ 'build' : {
-\     'windows' : 'tools\\update-dll-mingw',
-\     'cygwin' : 'make -f make_cygwin.mak',
-\     'mac' : 'make -f make_mac.mak',
-\     'linux' : 'make',
-\     'unix' : 'gmake',
+\     'linux' : 'make'
 \    },
 \ }
+let g:neobundle#install_process_timeout = 1500
 
 NeoBundle 'JuliaLang/julia-vim'
 NeoBundle 'Raimondi/delimitMate'
@@ -271,6 +268,7 @@ let g:vim_markdown_folding_disabled=1
 let g:ycm_min_num_of_chars_for_completion = 1
 let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_autoclose_preview_window_after_insertion = 1
+let g:ycm_collect_identifiers_from_tags_files = 1
 
 
 ""python highlighting extras
