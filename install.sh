@@ -33,11 +33,6 @@ if test ! -d ~/.oh-my-zsh/custom/themes/powerlevel9k ; then
 fi
 
 # Create symlinks to config files
-#            zlogin \
-#            zlogout \
-#            zpreztorc \
-#            zprofile \
-#            zshenv \
 for file in Xdefaults \
             config \
             emacs \
