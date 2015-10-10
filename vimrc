@@ -88,9 +88,8 @@ noremap <silent> _ g_
 " use 'Y' to yank to the end of a line, instead of the whole line
 noremap <silent> Y y$
 
-" Enable undle
+" Enable neobundle
 filetype off
-set rtp+=~/.vim/bundle/Vundle.vim
 set runtimepath+=~/.vim/bundle/neobundle.vim/
 call neobundle#begin(expand('~/.vim/bundle/'))
 
@@ -100,25 +99,25 @@ NeoBundleFetch 'Shougo/neobundle.vim'
 
 NeoBundle 'Shougo/vimproc.vim', {
 \ 'build' : {
-\     'windows' : 'tools\\update-dll-mingw',
-\     'cygwin' : 'make -f make_cygwin.mak',
-\     'mac' : 'make -f make_mac.mak',
-\     'linux' : 'make',
-\     'unix' : 'gmake',
+\     'linux' : 'make'
 \    },
 \ }
+let g:neobundle#install_process_timeout = 1500
+
+NeoBundle 'JuliaLang/julia-vim'
+NeoBundle 'Raimondi/delimitMate'
+NeoBundle 'Shougo/neocomplcache.vim' " required by neco-ghc
 NeoBundle 'Shougo/unite.vim'
 NeoBundle 'Shougo/vimfiler.vim'
 NeoBundle 'Shougo/vimshell.vim'
-NeoBundle 'JuliaLang/julia-vim'
-NeoBundle 'Raimondi/delimitMate'
 NeoBundle 'SirVer/ultisnips'
-NeoBundle 'Valloric/YouCompleteMe'
+NeoBundle 'Valloric/YouCompleteMe', { 'build' : {'unix': './install.py --clang-completer --system-libclang --omnisharp-completer'}}
 NeoBundle 'airblade/vim-gitgutter'
 NeoBundle 'altercation/vim-colors-solarized'
 NeoBundle 'bling/vim-airline'
 NeoBundle 'chrisbra/csv.vim'
-NeoBundle 'eagletmt/ghcmod-vim'
+NeoBundle 'dag/vim2hs'
+NeoBundle 'eagletmt/neco-ghc'
 NeoBundle 'godlygeek/tabular'
 NeoBundle 'honza/vim-snippets'
 NeoBundle 'jistr/vim-nerdtree-tabs'
@@ -128,6 +127,7 @@ NeoBundle 'morhetz/gruvbox'
 NeoBundle 'nanotech/jellybeans.vim'
 NeoBundle 'ntpeters/vim-better-whitespace'
 NeoBundle 'plasticboy/vim-markdown'
+NeoBundle 'rking/ag.vim'
 NeoBundle 'scrooloose/nerdtree'
 NeoBundle 'scrooloose/syntastic'
 NeoBundle 'sheerun/vim-polyglot'
@@ -137,7 +137,6 @@ NeoBundle 'tpope/vim-fugitive'
 NeoBundle 'tpope/vim-surround'
 NeoBundle 'xolox/vim-easytags'
 NeoBundle 'xolox/vim-misc'
-NeoBundle 'rking/ag.vim'
 
 call neobundle#end()
 
@@ -175,7 +174,8 @@ endif
 
 " ----- ghc-mod -----
 "
-autocmd BufWritePost *.hs GhcModCheckAndLintAsync
+autocmd BufWritePost *.hs,.hsc GhcModCheckAndLintAsync
+
 
 
 " ----- SirVer/ultisnips settings -----
@@ -249,7 +249,7 @@ let g:airline#extensions#tabline#enabled = 1
 
 " ----- scrooloose/syntastic settings -----
 let g:syntastic_python_checkers = ['pylint']
-let g:syntastic_check_on_open = 1
+let g:syntastic_haskell_checkers = ["hint"]
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_error_symbol = '✘'
 augroup mySyntastic
@@ -268,6 +268,7 @@ let g:vim_markdown_folding_disabled=1
 let g:ycm_min_num_of_chars_for_completion = 1
 let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_autoclose_preview_window_after_insertion = 1
+let g:ycm_collect_identifiers_from_tags_files = 1
 
 
 ""python highlighting extras
