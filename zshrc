@@ -1,15 +1,20 @@
-# Path to your oh-my-zsh configuration.
-ZSH=$HOME/.oh-my-zsh
+export LC_ALL="en_US.UTF-8"
 
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
-ZSH_THEME="gallois"
+
+# source ~/.zprezto/init.zsh
+ZSH=$HOME/.oh-my-zsh
+DEFAULT_USER="berson_r"
+ZSH_THEME="powerlevel9k/powerlevel9k"
+POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
+source ~/.oh-my-zsh/oh-my-zsh.sh
+
+export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+export EDITOR='vim'
+
 
 # Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
 alias c='clear'
 alias df='df -h'
 alias du='du -sh'
@@ -22,21 +27,11 @@ alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
 alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
-# alias vim='vim -w ~/.vimlog "$@"'
 alias emacs='emacs -nw'
 alias fuck='$(thefuck $(fc -ln -1))'
 
 xset b off
 xset r rate 300 100
-
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git cabal autojump command-not-found common-aliases docker fabric\
-         git-extras history pep8 pip python screen sublime sudo supervisor\
-         vagrant virtualenvwrapper web-search)
-
-source $ZSH/oh-my-zsh.sh
 
 # Customize to your needs...
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
@@ -48,9 +43,9 @@ export LIBRARY_PATH=$LD_LIBRARY_PATH
 export C_INCLUDE_PATH=$HOME/usr/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
+export PATH=$PATH:$HOME/.local/bin          # ~/.local/bin
 export PATH=$HOME/.linuxbrew/bin:$PATH
 export PATH=$HOME/usr/bin:$PATH             # ~/usr/bin
-export PATH=$HOME/.local/bin:$PATH          # ~/.local/bin
 export PATH=$HOME/dev/public/julia:$PATH    # Julia compiler
 export PATH=$HOME/.rvm/bin:$PATH            # RVM
 export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
@@ -79,3 +74,11 @@ if [ -e "$HOME/.zshlocal" ];
 then
     source $HOME/.zshlocal
 fi
+
+# History management
+HISTFILE=$HOME/.zsh_history    # enable history saving on shell exit
+setopt APPEND_HISTORY          # append rather than overwrite history file.
+HISTSIZE=100000                # lines of history to maintain memory
+SAVEHIST=100000                # lines of history to maintain in history file.
+setopt HIST_EXPIRE_DUPS_FIRST  # allow dups, but expire old ones when I hit HISTSIZE
+setopt EXTENDED_HISTORY        # save timestamp and runtime information

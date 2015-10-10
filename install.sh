@@ -16,20 +16,35 @@ backupfile() {
 git submodule init
 git submodule update --init --recursive
 
+# Install custom fonts
+if test ! -d /tmp/fonts ; then
+    git clone https://github.com/powerline/fonts.git /tmp/fonts
+fi
+/tmp/fonts/install.sh
+
+# Install oh-my-zsh
+if test ! -d ~/.oh-my-zsh ; then
+    sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+fi
+
+# Install zsh prompt
+if test ! -d ~/.oh-my-zsh/custom/themes/powerlevel9k ; then
+    git clone https://github.com/bhilburn/powerlevel9k.git ~/.oh-my-zsh/custom/themes/powerlevel9k
+fi
+
 # Create symlinks to config files
-for file in emacs \
+for file in Xdefaults \
+            config \
+            emacs \
             gitconfig \
             hgrc \
             i3 \
             i3status.conf \
-            config \
             nixpkgs \
             vim \
             vimrc \
-            Xdefaults \
             xinitrc \
-            zshrc \
-            zshrc.pre-oh-my-zsh; do
+            zshrc ; do
     # Add $HOME prefix and '.' in front of file name
     path=${HOME}/.${file}
     file=`pwd`/${file}
@@ -46,11 +61,8 @@ for file in emacs \
         fi
     fi
     echo "Creating symlink $file -> $path"
-    ln -s $file $path
+    ln -sf $file $path
 done
 
 # Install vim plugins
 vim +NeoBundleInstall +qall
-
-# Setting up YouCompletMe
-cd ${HOME}/.vim/bundle/YouCompleteMe && ./install.sh --clang-completer
