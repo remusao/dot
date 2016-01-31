@@ -51,6 +51,8 @@ NeoBundle 'tpope/vim-fugitive'
 NeoBundle 'tpope/vim-surround'
 NeoBundle 'xolox/vim-easytags'
 NeoBundle 'xolox/vim-misc'
+NeoBundle 'MarcWeber/vim-addon-mw-utils'
+NeoBundle 'honza/vim-snippets'
 
 call neobundle#end()
 
@@ -169,4 +171,16 @@ let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_autoclose_preview_window_after_insertion = 1
 let g:ycm_collect_identifiers_from_tags_files = 1
 
+""" Super tab
+let g:SuperTabDefaultCompletionType = '<c-x><c-o>'
 
+if has("gui_running")
+  imap <c-space> <c-r>=SuperTabAlternateCompletion("\<lt>c-x>\<lt>c-o>")<cr>
+else " no gui
+  if has("unix")
+    inoremap <Nul> <c-r>=SuperTabAlternateCompletion("\<lt>c-x>\<lt>c-o>")<cr>
+  endif
+endif
+
+let g:haskellmode_completion_ghc = 1
+autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
