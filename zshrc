@@ -61,6 +61,9 @@ export PATH=$PATH:$HOME/.linuxbrew/opt/go/libexec/bin
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
+# Haskell
+export PATH=$HOME/.stack/programs/x86_64-linux/ghc-7.10.3/bin:$PATH
+
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
