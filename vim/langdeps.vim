@@ -1,4 +1,3 @@
-
 ""python highlighting extras
 let python_highlight_all = 1
 
