@@ -10,6 +10,7 @@ set history=1000 " keep 1000 lines of command line history
 set number " show line numbers
 set ruler " show the cursor position all the time
 set showcmd " display incomplete commands
+set showmode
 set incsearch " do incremental searching
 set splitright " Vertical splits use right half of screen
 set timeoutlen=100 " Lower ^[ timeout
@@ -56,10 +57,52 @@ set wildmode=list:longest,full
 set cursorline " underline the current line, for quick orientation
 set title
 set pastetoggle=<F12>
+set clipboard=unnamedplus,autoselect
 
 
 " Set encoding
 set encoding=utf-8
 set fileencoding=utf-8
+set fileformat=unix
 
+"" In many terminal emulators the mouse works just fine, thus enable it.
+if has('mouse')
+  set mouse=a
+endif
 
+" Limit the width of text for mutt to 80 columns
+au BufRead /tmp/mutt-* set tw=80
+
+"" Git commit preference
+autocmd Filetype gitcommit setlocal spell textwidth=80
+
+if has("autocmd")
+    " When editing a file, always jump to the last known cursor position.
+    " Don't do it when the position is invalid or when inside an event handler
+    " (happens when dropping a file on gvim).
+    autocmd BufReadPost *
+                \ if line("'\"") > 0 && line("'\"") <= line("$") |
+                \ execute "normal! g`\"" |
+                \ endif
+
+    " When editing a new file, load skeleton if any.
+    " If we find <+FILENAME+> in skeleton, replace it by the filename.
+    " If we find <+HEADERNAME+> in skeleton, replace it by the filename
+    " uppercase with . replaced by _ (foo.h become FOO_H).
+    autocmd BufNewFile *
+                \ let skel = $HOME . "/.vim/skeletons/skel." . expand("%:e") |
+                \ if filereadable(skel) |
+                \ execute "silent! 0read " . skel |
+                \ let fn = expand("%") |
+                \ let hn = substitute(expand("%"), "\\w", "\\u\\0", "g") |
+                \ let hn = substitute(hn, "\\.", "_", "g") |
+                \ let hn = substitute(hn, "/", "_", "g") |
+                \ let cn = expand("%:t:r") |
+                \ %s/<+FILENAME+>/\=fn/Ige |
+                \ %s/<+HEADERNAME+>/\=hn/Ige |
+                \ %s/<+CLASSNAME+>/\=cn/Ige |
+                \ unlet fn hn cn |
+                \ endif |
+                \ unlet skel |
+                \ goto 1
+endif " has autocmd
