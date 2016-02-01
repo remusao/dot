@@ -107,6 +107,7 @@ let g:airline#extensions#tabline#enabled = 1
 " ----- scrooloose/syntastic settings -----
 let g:syntastic_python_checkers = ['pylint']
 let g:syntastic_haskell_checkers = ["hdevtools", "hlint"]
+let g:hdevtools_options = '-g -Wall'
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 0
 let g:syntastic_check_on_open = 1
