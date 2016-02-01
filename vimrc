@@ -1,17 +1,17 @@
 source ~/.vim/options.vim
-source ~/.vim/plugins.vim
-source ~/.vim/colors.vim
-source ~/.vim/filetype.vim
-source ~/.vim/langdeps.vim
+source ~/.vim/install_plugins.vim
+source ~/.vim/colorscheme.vim
+source ~/.vim/config_plugins.vim
 source ~/.vim/mappings.vim
+source ~/.vim/filetype.vim
 
 " Limit the width of text for mutt to 80 columns
 au BufRead /tmp/mutt-* set tw=80
 
-" Git commit preference
+"" Git commit preference
 autocmd Filetype gitcommit setlocal spell textwidth=72
 
-" In many terminal emulators the mouse works just fine, thus enable it.
+"" In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
   set mouse=a
 endif

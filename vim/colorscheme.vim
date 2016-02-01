@@ -1,16 +1,12 @@
 """ Syntax Coloration
-syntax on
+syntax enable
 set background=dark
 set t_Co=256
 set anti enc=utf-8
 colorscheme jellybeans
-hi Normal ctermbg=NONE
+let g:jellybeans_use_lowcolor_black = 0
 if has("gui_running")
-    let g:solarized_termcolors=256
-    let g:solarized_termtrans=1
-    let g:solarized_contrast="normal"
-    let g:solarized_visibility="normal"
-    color solarized " Load a colorscheme"
+    colorscheme solarized
     set guifont=Inconsolata\ Medium\ 16
     set guioptions-=m  "remove menu bar
     set guioptions-=T  "remove toolbar
