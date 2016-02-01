@@ -71,6 +71,9 @@ export PATH=$PATH:$HOME/.linuxbrew/opt/go/libexec/bin
 export GOPATH=$HOME/.go
 export PATH=$PATH:$GOPATH/bin
 
+# Haskell
+export PATH=$HOME/.stack/programs/x86_64-linux/ghc-7.10.3/bin:$PATH
+
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
@@ -84,3 +87,11 @@ if [ -e "$HOME/.zshlocal" ];
 then
     source $HOME/.zshlocal
 fi
+
+# History management
+HISTFILE=$HOME/.zsh_history    # enable history saving on shell exit
+setopt APPEND_HISTORY          # append rather than overwrite history file.
+HISTSIZE=100000                # lines of history to maintain memory
+SAVEHIST=100000                # lines of history to maintain in history file.
+setopt HIST_EXPIRE_DUPS_FIRST  # allow dups, but expire old ones when I hit HISTSIZE
+setopt EXTENDED_HISTORY        # save timestamp and runtime information
