@@ -30,6 +30,12 @@ alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias emacs='emacs -nw'
 alias fuck='$(thefuck $(fc -ln -1))'
 
+alias g='git status -sb'
+alias gh='git hist'
+alias gp='git pull'
+alias gc='git commit'
+
+
 xset b off
 xset r rate 300 100
 
@@ -44,17 +50,21 @@ export C_INCLUDE_PATH=$HOME/usr/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
 export PATH=$PATH:$HOME/.local/bin          # ~/.local/bin
-export PATH=$HOME/.linuxbrew/bin:$PATH
 export PATH=$HOME/usr/bin:$PATH             # ~/usr/bin
 export PATH=$HOME/dev/public/julia:$PATH    # Julia compiler
-export PATH=$HOME/.rvm/bin:$PATH            # RVM
-export PATH=$HOME/.gem/ruby/1.9.1/bin:$PATH # Ruby gems
 export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
 export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
+
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
 
 # Linux brew
 export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
 export INFOPATH="$HOME/.linuxbrew/share/info:$INFOPATH"
+
+# Haskell
+export PATH=$PATH:$HOME/.stack/programs/x86_64-linux/ghc-7.10.3/bin
 
 # Go
 export PATH=$PATH:$HOME/.linuxbrew/opt/go/libexec/bin
