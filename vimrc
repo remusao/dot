@@ -177,7 +177,7 @@ endif
 
 " ----- ghc-mod -----
 "
-autocmd BufWritePost *.hs,.hsc GhcModCheckAndLintAsync
+" autocmd BufWritePost *.hs,.hsc GhcModCheckAndLintAsync
 
 
 
