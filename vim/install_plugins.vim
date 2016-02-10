@@ -22,9 +22,6 @@ NeoBundle 'tomtom/tlib_vim'
 NeoBundle 'Shougo/unite.vim'
 NeoBundle 'Raimondi/delimitMate' " Automatic closing of quotes, parenthesis, brackets, etc.
 NeoBundle 'Shougo/neocomplete.vim' " Auto-completion engine
-NeoBundle 'Shougo/neosnippet'
-NeoBundle 'Shougo/neosnippet-snippets'
-NeoBundle 'honza/vim-snippets'
 NeoBundle 'Shougo/vimshell.vim' " Shell integration in Vim
 NeoBundle 'airblade/vim-gitgutter' " Show git diff in Vim
 NeoBundle 'bling/vim-airline' " Vim powerline
@@ -41,6 +38,10 @@ NeoBundle 'sheerun/vim-polyglot'
 NeoBundle 'terryma/vim-multiple-cursors' " Multi cursors
 NeoBundle 'vim-airline/vim-airline'
 NeoBundle 'vim-airline/vim-airline-themes'
+NeoBundle 'jlanzarotta/bufexplorer'
+NeoBundle 'Rip-Rip/clang_complete'
+NeoBundle 'hdima/python-syntax'
+NeoBundle 'vim-scripts/LargeFile'
 
 " Colors
 NeoBundle 'altercation/vim-colors-solarized'
