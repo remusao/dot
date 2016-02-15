@@ -5,19 +5,25 @@
 " https://github.com/Shougo/neocomplete.vim.git
 " Disable AutoComplPop
 let g:acp_enableAtStartup = 0
-" Use neocomplete
 let g:neocomplete#enable_at_startup = 1
 " Use smartcase
 let g:neocomplete#enable_smart_case = 1
+let g:neocomplete#enable_auto_select = 1
 " Set minimum syntax keyword length.
 let g:neocomplete#sources#syntax#min_keyword_length = 2
+let g:neocomplete#auto_completion_start_length = 2
 let g:neocomplete#lock_buffer_name_pattern = '\*ku\*'
+" increase limit for tag cache files
+let g:neocomplete#sources#tags#cache_limit_size = 16777216 " 16MB
+let g:neocomplete#enable_fuzzy_completion = 0
+
 " Define dictionary.
 let g:neocomplete#sources#dictionary#dictionaries = {
       \ 'default' : '',
       \ 'vimshell' : '~/.vim/.cache/vimshell_hist',
       \ 'scheme' : '~/.vim/.cache/gosh_completions'
       \ }
+
 " Define keyword.
 if !exists('g:neocomplete#keyword_patterns')
   let g:neocomplete#keyword_patterns = {}
@@ -50,17 +56,9 @@ inoremap <expr><BS> neocomplete#smart_close_popup()."\<C-h>"
 autocmd FileType css setlocal omnifunc=csscomplete#CompleteCSS
 autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
 autocmd FileType javascript setlocal omnifunc=javascriptcomplete#CompleteJS
-autocmd FileType python setlocal omnifunc=pythoncomplete#Complete
+autocmd FileType python setlocal omnifunc=jedi#completions
 autocmd FileType xml setlocal omnifunc=xmlcomplete#CompleteTags
 autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
-
-" Enable heavy omni completion.
-if !exists('g:neocomplete#sources#omni#input_patterns')
-  let g:neocomplete#sources#omni#input_patterns = {}
-endif
-let g:neocomplete#sources#omni#input_patterns.php = '[^. \t]->\h\w*\|\h\w*::'
-let g:neocomplete#sources#omni#input_patterns.c = '[^.[:digit:] *\t]\%(\.\|->\)'
-let g:neocomplete#sources#omni#input_patterns.cpp = '[^.[:digit:] *\t]\%(\.\|->\)\|\h\w*::'
 
 " Key bindings
 inoremap <expr><CR>  pumvisible() ? neocomplete#close_popup() : "\<CR>"
@@ -188,17 +186,45 @@ let g:bufExplorerSplitVertical=1     " Split vertically.
 let g:bufExplorerUseCurrentWindow=1  " Open in new window.
 autocmd BufWinEnter \[Buf\ List\] setl nonumber
 
-" TODO, detect clang library
+" clang-complete {{{
 let g:clang_use_library=1
-let g:clang_library_path = "/usr/lib/llvm-3.6/lib/"
-let g:clang_snippets = 1
-let g:clang_snippets_engine = 'clang_complete'
+let g:clang_library_path = "/usr/lib/llvm-3.4/lib/"
+let g:clang_snippets = 0
+let g:clang_user_options = '-std=c++11'
 " to work with noecomplete
-let g:neocomplcache_force_overwrite_completefunc=1
-let g:neocomplete#force_overwrite_completefunc=1
-let g:clang_complete_auto=0
-let g:clang_auto_select=0
+if !exists('g:neocomplete#force_omni_input_patterns')
+      let g:neocomplete#force_omni_input_patterns = {}
+endif
+let g:neocomplete#force_omni_input_patterns.c =
+      \ '[^.[:digit:] *\t]\%(\.\|->\)\w*'
+let g:neocomplete#force_omni_input_patterns.cpp =
+      \ '[^.[:digit:] *\t]\%(\.\|->\)\w*\|\h\w*::\w*'
+let g:neocomplete#force_omni_input_patterns.objc =
+      \ '\[\h\w*\s\h\?\|\h\w*\%(\.\|->\)'
+let g:neocomplete#force_omni_input_patterns.objcpp =
+      \ '\[\h\w*\s\h\?\|\h\w*\%(\.\|->\)\|\h\w*::\w*'
+let g:clang_complete_auto = 0
+let g:clang_auto_select = 0
+let g:clang_omnicppcomplete_compliance = 0
+let g:clang_make_default_keymappings = 0
 
+" vim-python {{{
 let python_highlight_all = 1
 
+" vim LargeFile
 let g:LargeFile = 50
+
+" incsearch {{{
+let g:incsearch#consistent_n_direction = 1
+
+map /  <Plug>(incsearch-forward)
+map ?  <Plug>(incsearch-backward)
+map g/ <Plug>(incsearch-stay)
+
+" jedi-vim {{{
+autocmd FileType python setlocal omnifunc=jedi#completions
+let g:jedi#completions_enabled = 0
+let g:jedi#auto_vim_configuration = 0
+let g:jedi#smart_auto_mappings = 0
+let g:neocomplete#force_omni_input_patterns.python =
+\ '\%([^. \t]\.\|^\s*@\|^\s*from\s.\+import \|^\s*from \|^\s*import \)\w*'

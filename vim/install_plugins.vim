@@ -42,9 +42,19 @@ NeoBundle 'tpope/vim-eunuch'
 NeoBundle 'tpope/vim-repeat'
 NeoBundle 'tpope/vim-abolish'
 NeoBundle 'jlanzarotta/bufexplorer'
-NeoBundle 'Rip-Rip/clang_complete'
+NeoBundleLazy 'Rip-Rip/clang_complete', {
+      \ 'autoload' : {
+      \     'filetypes' : ['c', 'cpp'],
+      \    },
+      \ }
 NeoBundle 'hdima/python-syntax'
 NeoBundle 'vim-scripts/LargeFile'
+NeoBundle 'haya14busa/incsearch.vim'
+NeoBundleLazy 'davidhalter/jedi-vim', {
+      \ 'autoload' : {
+      \     'filetypes' : ['python', 'python3'],
+      \    },
+      \ }
 
 " Colors
 NeoBundle 'altercation/vim-colors-solarized'
@@ -56,7 +66,9 @@ NeoBundle 'JuliaLang/julia-vim'
 " Haskell
 NeoBundle 'dag/vim2hs'
 NeoBundle 'eagletmt/ghcmod-vim'
-NeoBundle 'eagletmt/neco-ghc'
+NeoBundleLazy 'eagletmt/neco-ghc', { 'autoload' : {
+      \ 'filetypes' : 'haskell'
+      \ }}
 
 call neobundle#end()
 
