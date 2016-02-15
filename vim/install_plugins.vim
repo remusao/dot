@@ -41,6 +41,9 @@ NeoBundle 'sheerun/vim-polyglot'
 NeoBundle 'terryma/vim-multiple-cursors' " Multi cursors
 NeoBundle 'vim-airline/vim-airline'
 NeoBundle 'vim-airline/vim-airline-themes'
+NeoBundle 'tpope/vim-eunuch'
+NeoBundle 'tpope/vim-repeat'
+NeoBundle 'tpope/vim-abolish'
 
 " Colors
 NeoBundle 'altercation/vim-colors-solarized'

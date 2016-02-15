@@ -42,7 +42,7 @@ endfunction
 inoremap <expr><C-h> neocomplete#smart_close_popup()."\<C-h>"
 inoremap <expr><BS> neocomplete#smart_close_popup()."\<C-h>"
 " Close popup by <Space>.
-inoremap <expr><Space> pumvisible() ? "\<C-y>" : "\<Space>"
+" inoremap <expr><Space> pumvisible() ? "\<C-y>" : "\<Space>"
 
 " Enable omni completion.
 autocmd FileType css setlocal omnifunc=csscomplete#CompleteCSS
@@ -107,13 +107,16 @@ let g:airline#extensions#tabline#enabled = 1
 " ----- scrooloose/syntastic settings -----
 let g:syntastic_python_checkers = ['pylint']
 let g:syntastic_haskell_checkers = ["hdevtools", "hlint"]
-let g:hdevtools_options = '-g -Wall'
+let g:syntastic_haskell_hdevtools_args = '-g -Wall'
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 0
 let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 0
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_error_symbol = '✘'
+
+"let g:syntastic_cpp_compiler = 'clang++'
+let g:syntastic_cpp_compiler_options = " -std=c++11 -Wall -Wextra"
 
 set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
