@@ -35,7 +35,6 @@ alias gh='git hist'
 alias gp='git pull'
 alias gc='git commit'
 
-
 xset b off
 xset r rate 300 100
 
@@ -54,25 +53,6 @@ export PATH=$HOME/usr/bin:$PATH             # ~/usr/bin
 export PATH=$HOME/dev/public/julia:$PATH    # Julia compiler
 export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
 export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
-
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
-
-# Linux brew
-export MANPATH="$HOME/.linuxbrew/share/man:$MANPATH"
-export INFOPATH="$HOME/.linuxbrew/share/info:$INFOPATH"
-
-# Haskell
-export PATH=$PATH:$HOME/.stack/programs/x86_64-linux/ghc-7.10.3/bin
-
-# Go
-export PATH=$PATH:$HOME/.linuxbrew/opt/go/libexec/bin
-export GOPATH=$HOME/.go
-export PATH=$PATH:$GOPATH/bin
-
-# Haskell
-export PATH=$HOME/.stack/programs/x86_64-linux/ghc-7.10.3/bin:$PATH
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
