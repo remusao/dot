@@ -1,3 +1,4 @@
+export TERM='xterm-256color'
 export LC_ALL="en_US.UTF-8"
 
 
@@ -12,7 +13,6 @@ export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
 export EDITOR='vim'
-
 
 # Example aliases
 alias c='clear'
