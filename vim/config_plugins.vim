@@ -228,3 +228,9 @@ let g:jedi#auto_vim_configuration = 0
 let g:jedi#smart_auto_mappings = 0
 let g:neocomplete#force_omni_input_patterns.python =
 \ '\%([^. \t]\.\|^\s*@\|^\s*from\s.\+import \|^\s*from \|^\s*import \)\w*'
+
+" vim-notes
+let g:notes_directories = ['~/Dropbox/Notes']
+let g:notes_suffix = '.md'
+let g:notes_word_boundaries = 1
+let g:notes_smart_quotes = 1
