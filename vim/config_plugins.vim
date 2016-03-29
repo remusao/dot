@@ -5,32 +5,34 @@
     " https://github.com/Shougo/neocomplete.vim.git
     " Disable AutoComplPop
     let g:acp_enableAtStartup = 0
+    " Use neocomplete
     let g:neocomplete#enable_at_startup = 1
     " Use smartcase
     let g:neocomplete#enable_smart_case = 1
     let g:neocomplete#enable_auto_select = 1
+    let g:neocomplete#enable_auto_delimiter = 1
     " Set minimum syntax keyword length.
     let g:neocomplete#sources#syntax#min_keyword_length = 2
     let g:neocomplete#auto_completion_start_length = 2
     let g:neocomplete#lock_buffer_name_pattern = '\*ku\*'
     " increase limit for tag cache files
     let g:neocomplete#sources#tags#cache_limit_size = 16777216 " 16MB
-    let g:neocomplete#enable_fuzzy_completion = 0
 
     " Define dictionary.
     let g:neocomplete#sources#dictionary#dictionaries = {
         \ 'default' : '',
-        \ 'vimshell' : '~/.cache/vim/vimshell_hist',
-        \ 'scheme' : '~/.cache/vim/gosh_completions'
+        \ 'vimshell' : expand('~/cache/vim/vimshell_hist'),
+        \ 'scheme' : expand('~/.cache/vim/gosh_completions')
         \ }
 
     " Define keyword.
     if !exists('g:neocomplete#keyword_patterns')
-    let g:neocomplete#keyword_patterns = {}
+        let g:neocomplete#keyword_patterns = {}
     endif
     let g:neocomplete#keyword_patterns['default'] = '\h\w*'
+
     " set cache dir
-    let g:neocomplete#data_directory = '~/.vim/.cache/neocomplete'
+    let g:neocomplete#data_directory = expand('~/.cache/vim/neocomplete')
 
     " Plugin key-mappings.
     inoremap <expr><C-g>     neocomplete#undo_completion()
@@ -40,17 +42,10 @@
     " <CR>: close popup and save indent.
     inoremap <silent> <CR> <C-r>=<SID>my_cr_function()<CR>
     function! s:my_cr_function()
-    return (pumvisible() ? "\<C-y>" : "" ) . "\<CR>"
-    " For no inserting <CR> key.
-    "return pumvisible() ? "\<C-y>" : "\<CR>"
+        return (pumvisible() ? "\<C-y>" : "" ) . "\<CR>"
+        " For no inserting <CR> key.
+        "return pumvisible() ? "\<C-y>" : "\<CR>"
     endfunction
-    " <TAB>: completion.
-    "inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
-    " <C-h>, <BS>: close popup and delete backword char.
-    inoremap <expr><C-h> neocomplete#smart_close_popup()."\<C-h>"
-    inoremap <expr><BS> neocomplete#smart_close_popup()."\<C-h>"
-    " Close popup by <Space>.
-    " inoremap <expr><Space> pumvisible() ? "\<C-y>" : "\<Space>"
 
     " Enable omni completion.
     autocmd FileType css setlocal omnifunc=csscomplete#CompleteCSS
@@ -61,11 +56,21 @@
     autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
 
     " Key bindings
-    inoremap <expr><CR>  pumvisible() ? neocomplete#close_popup() : "\<CR>"
-    inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
-    inoremap <expr><BS>  pumvisible() ? neocomplete#smart_close_popup()."\<C-h>" : "\<BS>"
-    inoremap <expr><C-y>  neocomplete#close_popup()
-    inoremap <expr><C-c>  neocomplete#cancel_popup()
+    inoremap <expr><Space> pumvisible() ? "\<C-y><Space>" : "\<Space>"
+    inoremap <expr><CR>    pumvisible() ? neocomplete#close_popup() : "\<CR>"
+    inoremap <expr><TAB>   pumvisible() ? "\<C-n>" : "\<TAB>"
+    inoremap <expr><BS>    pumvisible() ? neocomplete#smart_close_popup()."\<C-h>" : "\<BS>"
+    inoremap <expr><C-y>   neocomplete#close_popup()
+    inoremap <expr><C-c>   neocomplete#cancel_popup()
+    " <C-h>, <BS>: close popup and delete backword char.
+    inoremap <expr><C-h>   neocomplete#smart_close_popup()."\<C-h>"
+    inoremap <expr><BS>    neocomplete#smart_close_popup()."\<C-h>"
+
+
+    " Enable heavy omni completion.
+    if !exists('g:neocomplete#sources#omni#input_patterns')
+          let g:neocomplete#sources#omni#input_patterns = {}
+    endif
 " }}}
 
 
