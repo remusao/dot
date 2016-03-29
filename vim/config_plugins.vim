@@ -20,8 +20,8 @@
     " Define dictionary.
     let g:neocomplete#sources#dictionary#dictionaries = {
         \ 'default' : '',
-        \ 'vimshell' : '~/.vim/.cache/vimshell_hist',
-        \ 'scheme' : '~/.vim/.cache/gosh_completions'
+        \ 'vimshell' : '~/.cache/vim/vimshell_hist',
+        \ 'scheme' : '~/.cache/vim/gosh_completions'
         \ }
 
     " Define keyword.
