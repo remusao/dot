@@ -10,6 +10,8 @@
 """"""""""""""""""""""""""""""""""""""""""""""
 " Global
 
+autocmd BufNewFile,BufRead */.git/COMMIT_EDITMSG setlocal filetype=notes
+
 augroup filetypedetect
   au BufNewFile,BufRead *.c,*.h                             setf c
   au BufNewFile,BufRead *.hcc,*.hh,*.hpp,*.hxx,*.cc,*.cpp   set filetype=cpp
