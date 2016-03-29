@@ -9,11 +9,20 @@
 #
 # Please see http://i3wm.org/docs/userguide.html for a complete reference!
 #
-# Wallpaper
-exec --no-startup-id nitrogen --restore
-exec --no-startup-id nm-applet
 
 set $mod Mod4
+
+# Set windows on specific workspace
+assign [class="(?i)terminator"] 1
+assign [class="(?i)firefox"] 2
+assign [class="(?i)chromium-browser"] 2
+assign [class="(?i)thunderbird"] 3
+assign [class="(?i)skype"] 4
+assign [class="(?i)slack"] 4
+assign [class="(?i)spotify"] 5
+assign [class="(?i)steam"] 6
+
+
 
 # Multiscreen
 workspace 1 output DVI-I-1
@@ -51,9 +60,9 @@ bindsym $mod+Shift+q kill
 # Multimedia keys
 
 # Pulse Audio controls
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume 0 +5% #increase sound volume
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume 0 -5% #decrease sound volume
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute 0 toggle # mute sound
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -- +5% # increase sound volume
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -- -5% # decrease sound volume
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle # mute sound
 
 # Sreen brightness controls
 bindsym XF86MonBrightnessUp exec xbacklight -inc 20 # increase screen brightness
@@ -181,6 +190,21 @@ mode "resize" {
 }
 
 bindsym $mod+r mode "resize"
+
+
+# Execute specific applications
+exec --no-startup-id xset b off
+exec --no-startup-id xset r rate 300 100 # Set initial delay 300ms, repeat 100ms
+exec --no-startup-id setxkbmap us
+exec --no-startup-id nitrogen --restore
+exec --no-startup-id nm-applet
+exec --no-startup-id terminator
+exec --no-startup-id firefox
+exec --no-startup-id thunderbird
+exec --no-startup-id slack
+exec --no-startup-id dropbox start
+
+
 
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
