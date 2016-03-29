@@ -18,20 +18,18 @@ let g:neobundle#install_process_timeout = 1500
 NeoBundle 'MarcWeber/vim-addon-mw-utils'
 NeoBundle 'xolox/vim-misc'
 NeoBundle 'tomtom/tlib_vim'
+NeoBundle 'Shougo/unite.vim'
 
 NeoBundle 'Raimondi/delimitMate' " Automatic closing of quotes, parenthesis, brackets, etc.
 NeoBundle 'Shougo/neocomplete.vim' " Auto-completion engine
-NeoBundle 'Shougo/unite.vim'
 NeoBundle 'Shougo/vimshell.vim' " Shell integration in Vim
 NeoBundle 'airblade/vim-gitgutter' " Show git diff in Vim
 NeoBundle 'bling/vim-airline' " Vim powerline
-NeoBundle 'chrisbra/csv.vim' " A Filetype plugin for csv files
 NeoBundle 'ctrlpvim/ctrlp.vim' " File searching from Vim
 NeoBundle 'godlygeek/tabular' " Align stuff
 NeoBundle 'jistr/vim-nerdtree-tabs' " :NERDTreeTabsToggle to display in all tabs
 NeoBundle 'jlanzarotta/bufexplorer'
 NeoBundle 'ntpeters/vim-better-whitespace' " Highlight and strip trailing whitespaces
-NeoBundle 'plasticboy/vim-markdown' " Deal with markdown files
 NeoBundle 'rking/ag.vim' " Silver searcher from Vim
 NeoBundle 'scrooloose/nerdtree' " Nerdtree
 NeoBundle 'scrooloose/syntastic' " Syntax checking
@@ -44,31 +42,71 @@ NeoBundle 'vim-airline/vim-airline'
 NeoBundle 'vim-airline/vim-airline-themes'
 NeoBundle 'xolox/vim-notes'
 NeoBundle 'xolox/vim-shell'
-NeoBundleLazy 'Rip-Rip/clang_complete', {
-      \ 'autoload' : {
-      \     'filetypes' : ['c', 'cpp'],
-      \    },
-      \ }
-NeoBundle 'hdima/python-syntax'
 NeoBundle 'vim-scripts/LargeFile'
 NeoBundle 'haya14busa/incsearch.vim'
-NeoBundleLazy 'davidhalter/jedi-vim', {
-      \ 'autoload' : {
-      \     'filetypes' : ['python', 'python3'],
-      \    },
-      \ }
 NeoBundle 'Konfekt/FastFold'
 
 " Colors
 NeoBundle 'altercation/vim-colors-solarized'
 NeoBundle 'nanotech/jellybeans.vim'
 
+
+" Markdown
+NeoBundleLazy 'plasticboy/vim-markdown', {
+      \ 'autoload' : {
+      \     'filetypes' : ['markdown'],
+      \    },
+      \ }
+
+
+" CSV
+NeoBundleLazy 'chrisbra/csv.vim', {
+      \ 'autoload' : {
+      \     'filetypes' : ['csv'],
+      \    },
+      \ }
+
+
+" c/cpp
+NeoBundleLazy 'Rip-Rip/clang_complete', {
+      \ 'autoload' : {
+      \     'filetypes' : ['c', 'cpp'],
+      \    },
+      \ }
+
+
+" Python
+NeoBundleLazy 'hdima/python-syntax', {
+      \ 'autoload' : {
+      \     'filetypes' : ['python', 'python3'],
+      \    },
+      \ }
+NeoBundleLazy 'davidhalter/jedi-vim', {
+      \ 'autoload' : {
+      \     'filetypes' : ['python', 'python3'],
+      \    },
+      \ }
+
+
 " Julia
-NeoBundle 'JuliaLang/julia-vim'
+NeoBundleLazy 'JuliaLang/julia-vim', {
+      \ 'autoload' : {
+      \     'filetypes' : ['julia'],
+      \    },
+      \ }
+
 
 " Haskell
-NeoBundle 'dag/vim2hs'
-NeoBundle 'eagletmt/ghcmod-vim'
+NeoBundleLazy 'dag/vim2hs', {
+      \ 'autoload' : {
+      \     'filetypes' : ['haskell'],
+      \    },
+      \ }
+NeoBundleLazy 'eagletmt/ghcmod-vim', {
+      \ 'autoload' : {
+      \     'filetypes' : ['haskell'],
+      \    },
+      \ }
 NeoBundleLazy 'eagletmt/neco-ghc', { 'autoload' : {
       \ 'filetypes' : 'haskell'
       \ }}
