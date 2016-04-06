@@ -1,8 +1,11 @@
 export TERM='xterm-256color'
 export LC_ALL="en_US.UTF-8"
 
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv context dir vcs)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status battery time)
+POWERLEVEL9K_STATUS_VERBOSE=false
+POWERLEVEL9K_MODE='awesome-patched'
 
-# source ~/.zprezto/init.zsh
 ZSH=$HOME/.oh-my-zsh
 DEFAULT_USER="berson_r"
 ZSH_THEME="powerlevel9k/powerlevel9k"
@@ -13,12 +16,12 @@ export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
 export EDITOR='vim'
+export PIP_REQUIRE_VIRTUALENV=true
 
 # Example aliases
 alias c='clear'
 alias df='df -h'
 alias du='du -sh'
-alias ls='ls -h --color=auto'
 alias g++='g++ -Wall -Wextra -pedantic -std=c++11'
 alias reload='. ${HOME}/.zshrc'
 alias se='apt-cache search'
@@ -41,6 +44,7 @@ xset r rate 300 100
 # Customize to your needs...
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
 export PATH=$HOME/.linuxbrew/bin:$PATH # linuxbrew
+export PATH=$HOME/anaconda3/bin:$PATH # Anaconda
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
 export LD_RUN_PATH=$LD_RUN_PATH:$HOME/usr/lib:$HOME/.local/lib
@@ -50,6 +54,7 @@ export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
 export PATH=$PATH:$HOME/.local/bin          # ~/.local/bin
 export PATH=$HOME/usr/bin:$PATH             # ~/usr/bin
+export PATH=$HOME/usr/local/bin:$PATH       # Use local first
 export PATH=$HOME/dev/public/julia:$PATH    # Julia compiler
 export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
 export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
