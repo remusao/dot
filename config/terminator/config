@@ -1,27 +1,30 @@
 [global_config]
+  borderless = True
   geometry_hinting = False
   tab_position = hidden
-  borderless = True
 [keybindings]
-[profiles]
-  [[default]]
-    scrollbar_position = hidden
-    use_system_font = False
-    font = Inconsolata for Powerline Medium 14
-    background_darkness = 0.85
-    background_type = transparent
-    background_image = None
-    scroll_on_output = False
-    show_titlebar = False
-    copy_on_selection = True
-    cursor_blink = False
-    scrollback_infinite = True
 [layouts]
   [[default]]
     [[[child1]]]
-      type = Terminal
       parent = window0
+      type = Terminal
     [[[window0]]]
-      type = Window
       parent = ""
+      type = Window
 [plugins]
+[profiles]
+  [[default]]
+    background_color = "#002b36"
+    background_darkness = 0.85
+    background_image = None
+    background_type = transparent
+    copy_on_selection = True
+    cursor_blink = False
+    font = Inconsolata for Powerline Medium 13
+    foreground_color = "#839496"
+    palette = "#073642:#dc322f:#859900:#b58900:#268bd2:#d33682:#2aa198:#eee8d5:#002b36:#cb4b16:#586e75:#657b83:#839496:#6c71c4:#93a1a1:#fdf6e3"
+    scroll_on_output = False
+    scrollback_infinite = True
+    scrollbar_position = hidden
+    show_titlebar = False
+    use_system_font = False
