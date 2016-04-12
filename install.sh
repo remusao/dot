@@ -13,8 +13,8 @@ backupfile() {
 }
 
 # Pull Submodules
-git submodule init
-git submodule update --init --recursive
+# git submodule init
+#git submodule update --init --recursive
 
 # Install custom fonts
 if test ! -d /tmp/fonts ; then

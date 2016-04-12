@@ -4,7 +4,6 @@ export LC_ALL="en_US.UTF-8"
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv context dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status battery time)
 POWERLEVEL9K_STATUS_VERBOSE=false
-POWERLEVEL9K_MODE='awesome-patched'
 
 ZSH=$HOME/.oh-my-zsh
 DEFAULT_USER="berson_r"
