@@ -52,11 +52,11 @@ NeoBundle 'nanotech/jellybeans.vim'
 
 
 " Markdown
-" NeoBundleLazy 'plasticboy/vim-markdown', {
-"       \ 'autoload' : {
-"       \     'filetypes' : ['markdown'],
-"       \    },
-"       \ }
+NeoBundleLazy 'plasticboy/vim-markdown', {
+      \ 'autoload' : {
+      \     'filetypes' : ['markdown'],
+      \    },
+      \ }
 
 
 " CSV
