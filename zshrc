@@ -1,17 +1,19 @@
 export TERM='xterm-256color'
-export LC_ALL="en_US.UTF-8"
 
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+
+ZSH=$HOME/.oh-my-zsh
+DEFAULT_USER="remi"
+
+# Configure zsh theme
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv context dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status battery time)
 POWERLEVEL9K_STATUS_VERBOSE=false
-
-ZSH=$HOME/.oh-my-zsh
-DEFAULT_USER="berson_r"
-ZSH_THEME="powerlevel9k/powerlevel9k"
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
+ZSH_THEME="powerlevel9k/powerlevel9k"
+ZSH_THEME="powerlevel9k/powerlevel9k"
 source ~/.oh-my-zsh/oh-my-zsh.sh
-
-export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
 export EDITOR='vim'
@@ -30,20 +32,16 @@ alias upgrade='sudo apt-get upgrade'
 alias lock='gnome-screensaver-command -l'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias emacs='emacs -nw'
-alias fuck='$(thefuck $(fc -ln -1))'
 
 alias g='git status -sb'
 alias gh='git hist'
 alias gp='git pull'
 alias gc='git commit'
 
+alias ltev='. ~/.local/bin/load_cluster_env.sh test && unset CLIQZ_DMZ_GATEWAY'
+
 xset b off
 xset r rate 300 100
-
-# Customize to your needs...
-export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/core_perl
-export PATH=$HOME/.linuxbrew/bin:$PATH # linuxbrew
-export PATH=$HOME/anaconda3/bin:$PATH # Anaconda
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
 export LD_RUN_PATH=$LD_RUN_PATH:$HOME/usr/lib:$HOME/.local/lib
@@ -51,12 +49,10 @@ export LIBRARY_PATH=$LD_LIBRARY_PATH
 export C_INCLUDE_PATH=$HOME/usr/include:$C_INCLUDE_PATH
 export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
-export PATH=$PATH:$HOME/.local/bin          # ~/.local/bin
-export PATH=$HOME/usr/bin:$PATH             # ~/usr/bin
+# Extend PATH
+export PATH=$PATH:/usr/local/sbin:/usr/bin
 export PATH=$HOME/usr/local/bin:$PATH       # Use local first
-export PATH=$HOME/dev/public/julia:$PATH    # Julia compiler
-export PATH=$HOME/dev/public/Nim/bin:$PATH  # Nim compiler
-export PATH=$HOME/.nimble/bin:$PATH         # Nim nimble packages
+export PATH=$HOME/.local/bin:$PATH          # ~/.local/bin
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
