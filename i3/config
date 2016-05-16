@@ -198,7 +198,6 @@ exec --no-startup-id terminator
 exec --no-startup-id firefox
 exec --no-startup-id thunderbird
 exec --no-startup-id slack
-exec --no-startup-id cryptkeeper
 exec --no-startup-id firejail --private=~/.dropbox-sandbox "dropbox start -i && sleep inf"
 # cryfs ~/Dropbox/Encrypted ~/Private
 
