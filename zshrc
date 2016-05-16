@@ -4,11 +4,11 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
 ZSH=$HOME/.oh-my-zsh
-DEFAULT_USER="remi"
+DEFAULT_USER="berson_r"
 
 # Configure zsh theme
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv context dir vcs)
-POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status battery time)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status time)
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 ZSH_THEME="powerlevel9k/powerlevel9k"
