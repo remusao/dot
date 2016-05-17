@@ -257,8 +257,8 @@
 
 
 " vim-notes {{{
-    let g:notes_directories = ['~/Dropbox/Notes']
-    let g:notes_suffix = '.md'
+    let g:notes_directories = ['~/Notes']
+    let g:notes_suffix = '.note'
     let g:notes_word_boundaries = 1
     let g:notes_smart_quotes = 1
 " }}}

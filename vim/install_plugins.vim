@@ -45,6 +45,7 @@ NeoBundle 'xolox/vim-shell'
 NeoBundle 'vim-scripts/LargeFile'
 NeoBundle 'haya14busa/incsearch.vim'
 NeoBundle 'Konfekt/FastFold'
+NeoBundle 'editorconfig/editorconfig-vim'
 
 " Colors
 NeoBundle 'altercation/vim-colors-solarized'
@@ -110,6 +111,8 @@ NeoBundleLazy 'eagletmt/ghcmod-vim', {
 NeoBundleLazy 'eagletmt/neco-ghc', { 'autoload' : {
       \ 'filetypes' : 'haskell'
       \ }}
+
+NeoBundle 'pangloss/vim-javascript'
 
 call neobundle#end()
 
