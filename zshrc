@@ -51,8 +51,9 @@ export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
 # Extend PATH
 export PATH=$PATH:/usr/local/sbin:/usr/bin
-export PATH=$HOME/usr/local/bin:$PATH       # Use local first
-export PATH=$HOME/.local/bin:$PATH          # ~/.local/bin
+export PATH=$HOME/usr/local/bin:$PATH           # Use local first
+export PATH=$HOME/.local/bin:$PATH              # ~/.local/bin
+export PATH=$HOME/.local/spark-1.6.1/bin:$PATH  # ~/.local/spark-1.6.1/
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
