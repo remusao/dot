@@ -38,7 +38,7 @@ workspace 9 output HDMI1
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below. ISO 10646 = Unicode
 # font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
-font pango:DejaVu Sans Mono 16
+font pango:DejaVu Sans Mono 10
 
 bindsym $mod+Mod1+Left workspace prev_on_output
 bindsym $mod+Mod1+Right workspace next_on_output
@@ -196,10 +196,11 @@ exec --no-startup-id setxkbmap us
 exec --no-startup-id nitrogen --restore
 exec --no-startup-id nm-applet
 exec --no-startup-id terminator
-exec --no-startup-id firefox
-exec --no-startup-id thunderbird
+exec --no-startup-id firejail firefox
+exec --no-startup-id firejail thunderbird
 exec --no-startup-id slack
-exec --no-startup-id dropbox start
+exec --no-startup-id firejail --private=~/.dropbox-sandbox "dropbox start -i && sleep inf"
+# cryfs ~/Dropbox/Encrypted ~/Private
 
 
 
