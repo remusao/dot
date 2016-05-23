@@ -196,10 +196,10 @@ exec --no-startup-id setxkbmap us
 exec --no-startup-id nitrogen --restore
 exec --no-startup-id nm-applet
 exec --no-startup-id terminator
-exec --no-startup-id firejail firefox
-exec --no-startup-id firejail thunderbird
 exec --no-startup-id slack
-exec --no-startup-id firejail --private=~/.dropbox-sandbox "dropbox start -i && sleep inf"
+exec --no-startup-id dropbox
+exec --no-startup-id firefox
+exec --no-startup-id thunderbird
 # cryfs ~/Dropbox/Encrypted ~/Private
 
 
