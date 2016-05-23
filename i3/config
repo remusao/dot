@@ -24,24 +24,31 @@ assign [class="(?i)steam"] 6
 
 
 # Multiscreen
-workspace 1 output eDP1
-workspace 2 output eDP1
-workspace 3 output eDP1
-workspace 4 output eDP1
-workspace 5 output eDP1
-workspace 6 output HDMI1
-workspace 7 output HDMI1
-workspace 8 output HDMI1
-workspace 9 output HDMI1
+workspace 1 output HDMI1
+workspace 2 output HDMI1
+workspace 3 output HDMI1
+workspace 4 output HDMI1
+workspace 5 output HDMI1
+workspace 6 output eDP1
+workspace 7 output eDP1
+workspace 8 output eDP1
+workspace 9 output eDP1
 
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below. ISO 10646 = Unicode
 # font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
-font pango:DejaVu Sans Mono 10
+font pango:DejaVu Sans Mono 16
+# font pango:System San Francisco Display,FontAwesome 14
 
 bindsym $mod+Mod1+Left workspace prev_on_output
 bindsym $mod+Mod1+Right workspace next_on_output
+
+# Lock screen
+bindsym $mod+c exec i3lock --color 475263
+
+# Adjust screen color
+exec --no-startup-id redshift || redshift -l 47.22:8.33
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
@@ -188,7 +195,6 @@ mode "resize" {
 
 bindsym $mod+r mode "resize"
 
-
 # Execute specific applications
 exec --no-startup-id xset b off
 exec --no-startup-id xset r rate 300 100 # Set initial delay 300ms, repeat 100ms
@@ -196,13 +202,11 @@ exec --no-startup-id setxkbmap us
 exec --no-startup-id nitrogen --restore
 exec --no-startup-id nm-applet
 exec --no-startup-id terminator
-exec --no-startup-id firejail firefox
-exec --no-startup-id firejail thunderbird
 exec --no-startup-id slack
-exec --no-startup-id firejail --private=~/.dropbox-sandbox "dropbox start -i && sleep inf"
-# cryfs ~/Dropbox/Encrypted ~/Private
-
-
+exec --no-startup-id thunderbird
+exec --no-startup-id firefox
+exec --no-startup-id dropbox
+exec --no-startup-id spotify
 
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
