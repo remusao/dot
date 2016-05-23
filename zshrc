@@ -4,7 +4,7 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
 ZSH=$HOME/.oh-my-zsh
-DEFAULT_USER="berson_r"
+DEFAULT_USER="remi"
 
 # Configure zsh theme
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv context dir vcs)
@@ -29,7 +29,7 @@ alias se='apt-cache search'
 alias inst='sudo apt-get install'
 alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
-alias lock='gnome-screensaver-command -l'
+alias lock='i3lock --color 475263'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias emacs='emacs -nw'
 
