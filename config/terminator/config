@@ -19,7 +19,7 @@
     background_type = transparent
     copy_on_selection = True
     cursor_blink = False
-    font = Inconsolata for Powerline Medium 16
+    font = Inconsolata for Powerline Medium 15
     scroll_on_output = False
     scrollback_infinite = True
     scrollbar_position = hidden
