@@ -36,6 +36,7 @@ fi
 for file in Xdefaults \
             config \
             emacs \
+            fonts \
             gitconfig \
             hgrc \
             i3 \
