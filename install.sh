@@ -13,10 +13,11 @@ backupfile() {
 }
 
 # Pull Submodules
-# git submodule init
-#git submodule update --init --recursive
+git submodule init
+git submodule update --init --recursive
 
 # Install custom fonts
+echo "Install fonts"
 if test ! -d /tmp/fonts ; then
     git clone https://github.com/powerline/fonts.git /tmp/fonts
 fi
@@ -33,10 +34,9 @@ if test ! -d ~/.oh-my-zsh/custom/themes/powerlevel9k ; then
 fi
 
 # Create symlinks to config files
-for file in Xdefaults \
+for file in Xresources \
             config \
             emacs \
-            fonts \
             gitconfig \
             hgrc \
             i3 \
