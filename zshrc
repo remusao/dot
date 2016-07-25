@@ -7,9 +7,11 @@ ZSH=$HOME/.oh-my-zsh
 DEFAULT_USER="remi"
 
 # Configure zsh theme
-POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv context dir vcs)
-POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status time)
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv node_version context dir vcs)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(background_jobs status vi_mode time)
+POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
 POWERLEVEL9K_STATUS_VERBOSE=false
+POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 ZSH_THEME="powerlevel9k/powerlevel9k"
 source ~/.oh-my-zsh/oh-my-zsh.sh
@@ -24,7 +26,7 @@ alias df='df -h'
 alias du='du -sh'
 alias g++='g++ -Wall -Wextra -pedantic -std=c++11'
 alias reload='. ${HOME}/.zshrc'
-alias se='apt-cache search'
+alias se='sudo apt-cache search'
 alias inst='sudo apt-get install'
 alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
