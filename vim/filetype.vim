@@ -17,6 +17,7 @@ augroup filetypedetect
   au BufNewFile,BufRead *.hcc,*.hh,*.hpp,*.hxx,*.cc,*.cpp   set filetype=cpp
   au BufNewFile,BufRead *.hs                                set filetype=haskell
   au BufNewFile,BufRead *.jl                                set filetype=julia
+  au BufNewFile,BufRead *.jsm,*.js,*.es                     set filetype=javascript
   au BufRead,BufNewFile *.aasm                              set filetype=asm
   au BufRead,BufNewFile *.ll,*.yy                           set filetype=cpp
   au BufRead,BufNewFile *.mak,*.mako                        set filetype=mako
