@@ -46,6 +46,7 @@ NeoBundle 'vim-scripts/LargeFile'
 NeoBundle 'haya14busa/incsearch.vim'
 NeoBundle 'Konfekt/FastFold'
 NeoBundle 'editorconfig/editorconfig-vim'
+NeoBundle 'chrisbra/Colorizer'
 
 " Colors
 NeoBundle 'altercation/vim-colors-solarized'
