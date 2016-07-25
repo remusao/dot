@@ -12,7 +12,6 @@ POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status time)
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 ZSH_THEME="powerlevel9k/powerlevel9k"
-ZSH_THEME="powerlevel9k/powerlevel9k"
 source ~/.oh-my-zsh/oh-my-zsh.sh
 
 # Preferred editor for local and remote sessions
@@ -39,6 +38,7 @@ alias gp='git pull'
 alias gc='git commit'
 
 alias ltev='. ~/.local/bin/load_cluster_env.sh test && unset CLIQZ_DMZ_GATEWAY'
+alias lpev='. ~/.local/bin/load_cluster_env.sh primary && unset CLIQZ_DMZ_GATEWAY'
 
 xset b off
 xset r rate 300 100
@@ -54,6 +54,7 @@ export PATH=$PATH:/usr/local/sbin:/usr/bin
 export PATH=$HOME/usr/local/bin:$PATH           # Use local first
 export PATH=$HOME/.local/bin:$PATH              # ~/.local/bin
 export PATH=$HOME/.local/spark-1.6.1/bin:$PATH  # ~/.local/spark-1.6.1/
+export PATH=$HOME/.local/nodejs/bin:$PATH       # nodejs packages (npm)
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
@@ -76,3 +77,6 @@ HISTSIZE=100000                # lines of history to maintain memory
 SAVEHIST=100000                # lines of history to maintain in history file.
 setopt HIST_EXPIRE_DUPS_FIRST  # allow dups, but expire old ones when I hit HISTSIZE
 setopt EXTENDED_HISTORY        # save timestamp and runtime information
+
+export NVM_DIR="/home/remi/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
