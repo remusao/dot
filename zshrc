@@ -7,8 +7,8 @@ ZSH=$HOME/.oh-my-zsh
 DEFAULT_USER="remi"
 
 # Configure zsh theme
-POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(virtualenv node_version context dir vcs)
-POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(background_jobs status vi_mode time)
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir vcs)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(background_jobs status vi_mode virtualenv node_version time)
 POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false

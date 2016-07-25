@@ -12,8 +12,8 @@
     " let g:neocomplete#enable_auto_select = 1
     let g:neocomplete#enable_auto_delimiter = 1
     " Set minimum syntax keyword length.
-    let g:neocomplete#sources#syntax#min_keyword_length = 2
-    let g:neocomplete#auto_completion_start_length = 2
+    let g:neocomplete#sources#syntax#min_keyword_length = 3
+    let g:neocomplete#auto_completion_start_length = 3
     let g:neocomplete#lock_buffer_name_pattern = '\*ku\*'
     " increase limit for tag cache files
     let g:neocomplete#sources#tags#cache_limit_size = 16777216 " 16MB
@@ -150,7 +150,7 @@
 " syntastic {{{
     let g:syntastic_python_checkers = ['pylint']
     let g:syntastic_haskell_checkers = ["hdevtools", "hlint"]
-    let g:syntastic_javascript_checkers = ['jshint'] " , 'eslint']
+    let g:syntastic_javascript_checkers = ['eslint']
     let g:syntastic_haskell_hdevtools_args = '-g -Wall'
     let g:syntastic_always_populate_loc_list = 1
     let g:syntastic_auto_loc_list = 0
@@ -262,4 +262,20 @@
     let g:notes_suffix = '.note'
     let g:notes_word_boundaries = 1
     let g:notes_smart_quotes = 1
+" }}}
+
+" vim-multiple-cursors {{{
+	" Called once right before you start selecting multiple cursors
+	function! Multiple_cursors_before()
+	  if exists(':NeoCompleteLock') == 2
+	    exe 'NeoCompleteLock'
+	  endif
+	endfunction
+
+	" Called once only when the multiple selection is canceled (default <Esc>)
+	function! Multiple_cursors_after()
+	  if exists(':NeoCompleteUnlock') == 2
+	    exe 'NeoCompleteUnlock'
+	  endif
+	endfunction
 " }}}
