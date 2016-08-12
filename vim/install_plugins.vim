@@ -20,19 +20,19 @@ NeoBundle 'xolox/vim-misc'
 NeoBundle 'tomtom/tlib_vim'
 NeoBundle 'Shougo/unite.vim'
 
-NeoBundle 'Raimondi/delimitMate' " Automatic closing of quotes, parenthesis, brackets, etc.
-NeoBundle 'Shougo/neocomplete.vim' " Auto-completion engine
-NeoBundle 'Shougo/vimshell.vim' " Shell integration in Vim
-NeoBundle 'airblade/vim-gitgutter' " Show git diff in Vim
-NeoBundle 'bling/vim-airline' " Vim powerline
-NeoBundle 'ctrlpvim/ctrlp.vim' " File searching from Vim
-NeoBundle 'godlygeek/tabular' " Align stuff
+NeoBundle 'Raimondi/delimitMate' 	" Automatic closing of quotes, parenthesis, brackets, etc.
+NeoBundle 'Shougo/neocomplete.vim' 	" Auto-completion engine
+NeoBundle 'Shougo/vimshell.vim' 	" Shell integration in Vim
+NeoBundle 'airblade/vim-gitgutter' 	" Show git diff in Vim
+NeoBundle 'bling/vim-airline' 		" Vim powerline
+NeoBundle 'ctrlpvim/ctrlp.vim' 		" File searching from Vim
+NeoBundle 'godlygeek/tabular' 		" Align stuff
 NeoBundle 'jistr/vim-nerdtree-tabs' " :NERDTreeTabsToggle to display in all tabs
 NeoBundle 'jlanzarotta/bufexplorer'
 NeoBundle 'ntpeters/vim-better-whitespace' " Highlight and strip trailing whitespaces
-NeoBundle 'rking/ag.vim' " Silver searcher from Vim
-NeoBundle 'scrooloose/nerdtree' " Nerdtree
-NeoBundle 'scrooloose/syntastic' " Syntax checking
+NeoBundle 'rking/ag.vim' 			" Silver searcher from Vim
+NeoBundle 'scrooloose/nerdtree' 	" Nerdtree
+NeoBundle 'scrooloose/syntastic' 	" Syntax checking
 NeoBundle 'sheerun/vim-polyglot'
 NeoBundle 'terryma/vim-multiple-cursors' " Multi cursors
 NeoBundle 'tpope/vim-abolish'

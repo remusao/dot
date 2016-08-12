@@ -8,6 +8,7 @@ set antialias
 set backspace=indent,eol,start
 set history=1000 " keep 1000 lines of command line history
 set number " show line numbers
+set relativenumber
 set ruler " show the cursor position all the time
 set showcmd " display incomplete commands
 set showmode
@@ -29,6 +30,7 @@ set copyindent " copy the previous indentation on autoindenting
 set hidden
 set hlsearch is " highlight search terms
 set ignorecase " ignore case when searching
+set clipboard=unnamedplus,autoselect
 if v:version >= 730
     set undofile " keep a persistent backup file
     set undodir=~/.vim/.undo,~/tmp,/tmp
@@ -57,7 +59,7 @@ set wildmode=list:longest,full
 set cursorline " underline the current line, for quick orientation
 set title
 set pastetoggle=<F12>
-set clipboard=unnamedplus,autoselect
+" set clipboard=unnamedplus,autoselect
 
 
 " Set encoding
