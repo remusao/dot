@@ -14,6 +14,10 @@ POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 ZSH_THEME="powerlevel9k/powerlevel9k"
+
+# Investigate tmux plugin
+# tmuxinator
+plugins=(gitfast vagrant virtualenvwrapper npm pip python supervisor systemd command-not-found common-aliases docker)
 source ~/.oh-my-zsh/oh-my-zsh.sh
 
 # Preferred editor for local and remote sessions
