@@ -122,11 +122,11 @@
     let g:nerdtree_tabs_open_on_console_startup = 0
 
     " open nerdtree if vim starts up with no files, but not focus on it
-    augroup OpenNerdTree
-        autocmd!
-        autocmd VimEnter * if !argc() | NERDTree | endif
-        autocmd VimEnter * if !argc() | wincmd p | endif
-    augroup END
+    " augroup OpenNerdTree
+    "     autocmd!
+    "     autocmd VimEnter * if !argc() | NERDTree | endif
+    "     autocmd VimEnter * if !argc() | wincmd p | endif
+    " augroup END
 
     " close vim if the only window left is nerdtree
     autocmd BufEnter * if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary") | q | endif
