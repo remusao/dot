@@ -15,11 +15,6 @@ POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 ZSH_THEME="powerlevel9k/powerlevel9k"
 
-# Investigate tmux plugin
-# tmuxinator
-plugins=(gitfast vagrant virtualenvwrapper npm pip python supervisor systemd command-not-found common-aliases docker)
-source ~/.oh-my-zsh/oh-my-zsh.sh
-
 # Preferred editor for local and remote sessions
 export EDITOR='vim'
 export PIP_REQUIRE_VIRTUALENV=true
@@ -69,6 +64,11 @@ export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
 source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
+
+# Investigate tmux plugin
+# tmuxinator
+plugins=(gitfast vagrant virtualenvwrapper npm pip python supervisor systemd command-not-found common-aliases docker)
+source ~/.oh-my-zsh/oh-my-zsh.sh
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];
