@@ -2,7 +2,11 @@
 " This must be first, because it changes other options as a side effect.
 set nocompatible
 
-set antialias
+if !has('nvim')
+    set antialias
+    set clipboard=unnamedplus,autoselect
+endif
+
 
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
@@ -30,7 +34,6 @@ set copyindent " copy the previous indentation on autoindenting
 set hidden
 set hlsearch is " highlight search terms
 set ignorecase " ignore case when searching
-set clipboard=unnamedplus,autoselect
 if v:version >= 730
     set undofile " keep a persistent backup file
     set undodir=~/.vim/.undo,~/tmp,/tmp

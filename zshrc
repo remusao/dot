@@ -32,6 +32,7 @@ alias upgrade='sudo apt-get upgrade'
 alias lock='i3lock --color 475263'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias emacs='emacs -nw'
+alias vim='nvim'
 
 alias g='git status -sb'
 alias gh='git hist'
@@ -63,7 +64,6 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
 export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
-source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
 
 # Investigate tmux plugin
 # tmuxinator
@@ -84,5 +84,7 @@ SAVEHIST=100000                # lines of history to maintain in history file.
 setopt HIST_EXPIRE_DUPS_FIRST  # allow dups, but expire old ones when I hit HISTSIZE
 setopt EXTENDED_HISTORY        # save timestamp and runtime information
 
-export NVM_DIR="/home/remi/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -z "$NVM_DIR" ] && export NVM_DIR="$HOME/.nvm"
+source /usr/share/nvm/nvm.sh
+source /usr/share/nvm/bash_completion
+source /usr/share/nvm/install-nvm-exec

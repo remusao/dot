@@ -1,6 +1,15 @@
 "" --- CONFIGURE PLUGINS ---
 
 " neocomplete {{{
+" Enable omni completion.
+autocmd FileType css setlocal omnifunc=csscomplete#CompleteCSS
+autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
+autocmd FileType javascript setlocal omnifunc=javascriptcomplete#CompleteJS
+autocmd FileType python setlocal omnifunc=jedi#completions
+autocmd FileType xml setlocal omnifunc=xmlcomplete#CompleteTags
+autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
+
+if !has('nvim')
     " neocomplete (non-cache version, works faster, need lua)
     " https://github.com/Shougo/neocomplete.vim.git
     " Disable AutoComplPop
@@ -47,14 +56,6 @@
         "return pumvisible() ? "\<C-y>" : "\<CR>"
     endfunction
 
-    " Enable omni completion.
-    autocmd FileType css setlocal omnifunc=csscomplete#CompleteCSS
-    autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
-    autocmd FileType javascript setlocal omnifunc=javascriptcomplete#CompleteJS
-    autocmd FileType python setlocal omnifunc=jedi#completions
-    autocmd FileType xml setlocal omnifunc=xmlcomplete#CompleteTags
-    autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
-
     " Key bindings
     inoremap <expr><Space> pumvisible() ? "\<C-y><Space>" : "\<Space>"
     inoremap <expr><CR>    pumvisible() ? neocomplete#close_popup() : "\<CR>"
@@ -71,6 +72,14 @@
     if !exists('g:neocomplete#sources#omni#input_patterns')
           let g:neocomplete#sources#omni#input_patterns = {}
     endif
+else
+    let g:deoplete#enable_at_startup = 1
+    let g:deoplete#enable_ignore_case = 1
+    let g:SuperTabDefaultCompletionType = "<c-x><c-o>"
+    let g:UltiSnipsExpandTrigger="<C-j>"
+    let g:SuperTabClosePreviewOnPopupClose = 1
+    inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
+endif
 " }}}
 
 
@@ -146,16 +155,27 @@
     let g:airline#extensions#hunks#non_zero_only = 1
 " }}}
 
+" vim-rust {{{
+let g:rustfmt_autosave = 1
+
+" }}}
 
 " syntastic {{{
+if !has('nvim')
+    let g:syntastic_rust_checkers = ['rustc']
+    let g:syntastic_yaml_checkers = ['pyyaml']
+    let g:syntastic_gitcommit_checkers = ['language_check']
+    let g:syntastic_svn_checkers = ['language_check']
     let g:syntastic_python_checkers = ['pylint']
-    let g:syntastic_haskell_checkers = ["hdevtools", "hlint"]
     let g:syntastic_javascript_checkers = ['eslint']
+    let g:syntastic_make_checkers = ['gnumake']
+    let g:syntastic_haskell_checkers = ["hdevtools", "hlint"]
     let g:syntastic_haskell_hdevtools_args = '-g -Wall'
+
     let g:syntastic_always_populate_loc_list = 1
     let g:syntastic_auto_loc_list = 0
     let g:syntastic_check_on_open = 1
-    let g:syntastic_check_on_wq = 0
+    let g:syntastic_check_on_wq = 1
     let g:syntastic_aggregate_errors = 1
     let g:syntastic_error_symbol = '✘'
 
@@ -170,6 +190,15 @@
         au!
         au FileType tex let b:syntastic_mode = "passive"
     augroup END
+else
+    autocmd! BufEnter,BufWritePost * Neomake
+    " neomake
+    nmap <Leader><Space>o :lopen<CR>   " open location window
+    nmap <Leader><Space>c :lclose<CR>  " close location window
+    nmap <Leader><Space>, :ll<CR>      " go to current error/warning
+    nmap <Leader><Space>n :lnext<CR>   " next error/warning
+    nmap <Leader><Space>p :lprev<CR>   " previous error/warning
+endif
 " }}}
 
 
@@ -210,6 +239,13 @@
     let g:clang_library_path = "/usr/lib/llvm-3.8/lib"
     let g:clang_snippets = 0
     let g:clang_user_options = '-std=c++11'
+
+    let g:clang_complete_auto = 0
+    let g:clang_auto_select = 0
+    let g:clang_omnicppcomplete_compliance = 0
+    let g:clang_make_default_keymappings = 0
+
+if !has('nvim')
     " to work with noecomplete
     if !exists('g:neocomplete#force_omni_input_patterns')
           let g:neocomplete#force_omni_input_patterns = {}
@@ -222,10 +258,7 @@
           \ '\[\h\w*\s\h\?\|\h\w*\%(\.\|->\)'
     let g:neocomplete#force_omni_input_patterns.objcpp =
           \ '\[\h\w*\s\h\?\|\h\w*\%(\.\|->\)\|\h\w*::\w*'
-    let g:clang_complete_auto = 0
-    let g:clang_auto_select = 0
-    let g:clang_omnicppcomplete_compliance = 0
-    let g:clang_make_default_keymappings = 0
+endif
 " }}}
 
 
@@ -245,6 +278,10 @@
     map /  <Plug>(incsearch-forward)
     map ?  <Plug>(incsearch-backward)
     map g/ <Plug>(incsearch-stay)
+
+    map z/ <Plug>(incsearch-fuzzy-/)
+    map z? <Plug>(incsearch-fuzzy-?)
+    map zg/ <Plug>(incsearch-fuzzy-stay)
 " }}}
 
 
@@ -253,7 +290,9 @@
     let g:jedi#completions_enabled = 0
     let g:jedi#auto_vim_configuration = 0
     let g:jedi#smart_auto_mappings = 0
+if !has('nvim')
     let g:neocomplete#force_omni_input_patterns.python = '\%([^. \t]\.\|^\s*@\|^\s*from\s.\+import \|^\s*from \|^\s*import \)\w*'
+endif
 " }}}
 
 
@@ -265,6 +304,7 @@
 " }}}
 
 " vim-multiple-cursors {{{
+if !has('nvim')
 	" Called once right before you start selecting multiple cursors
 	function! Multiple_cursors_before()
 	  if exists(':NeoCompleteLock') == 2
@@ -278,4 +318,5 @@
 	    exe 'NeoCompleteUnlock'
 	  endif
 	endfunction
+endif
 " }}}
