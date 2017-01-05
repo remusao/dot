@@ -2,7 +2,11 @@
 syntax enable
 set background=dark
 set t_Co=256
-set anti enc=utf-8
+
+if !has('nvim')
+    set anti enc=utf-8
+endif
+
 colorscheme jellybeans
 let g:jellybeans_use_lowcolor_black = 0
 if has("gui_running")

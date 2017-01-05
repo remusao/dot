@@ -13,10 +13,10 @@ URxvt.secondaryScroll: 0
 URxvt.secondaryWheel: 1
 
 
-Xft.dpi: 150
+Xft.dpi: 103
 Xft.autohint: 0
 Xft.lcdfilter: lcddefault
-Xft.hinting: full
+Xft.hinting: true
 Xft.hintstyle: hintslight
 Xft.rgba: rgb
 Xft.antialias: true
@@ -36,8 +36,8 @@ URxvt*saveLines: 65535
 URxvt*cursorBlink: false
 
 URxvt.xftAntialias:     true
-URxvt.font:             xft:Inconsolata for Powerline:regular:size=11:antialias=true:hinting=true
-URxvt.boldFont:         xft:Inconsolata for Powerline:bold:size=11:antialias=true:hinting=true
+URxvt.font:             xft:Inconsolata for Powerline:regular:size=14:antialias=true:hinting=true
+URxvt.boldFont:         xft:Inconsolata for Powerline:bold:size=14:antialias=true:hinting=true
 URxvt.letterSpace: -1
 
 urxvt*allow_bold:    true
