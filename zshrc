@@ -1,25 +1,85 @@
+# Options
 export TERM='xterm-256color'
+export DEFAULT_USER="remi"
+export EDITOR='vim'
+export VISUAL='vim'
 
+export PIP_REQUIRE_VIRTUALENV=true
+
+# Cursor speed
+xset b off
+xset r rate 300 100
+
+# Locales
+export LC_COLLATE=en_US.UTF-8
+export LC_CTYPE=en_US.UTF-8
+export LC_MESSAGES=en_US.UTF-8
+export LC_MONETARY=en_US.UTF-8
+export LC_NUMERIC=en_US.UTF-8
+export LC_TIME=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8
+export LESSCHARSET=utf-8
 
-ZSH=$HOME/.oh-my-zsh
-DEFAULT_USER="remi"
+# ZSH Completions
+fpath=(~/.zsh/zsh-completions/src $fpath)
+export LSCOLORS=gxfxbEaEBxxEhEhBaDaCaD
+zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)(?)*==02=01}:${(s.:.)LS_COLORS}")'
 
-# Configure zsh theme
+unsetopt menu_complete   # do not autoselect the first completion entry
+unsetopt flowcontrol
+setopt auto_menu         # show completion menu on successive tab press
+setopt complete_in_word
+setopt always_to_end
+
+zstyle ':completion:*:*:*:*:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
+
+zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w -w"
+
+# disable named-directories autocompletion
+zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-directories
+
+# Use caching so that commands like apt and dpkg complete are useable
+zstyle ':completion::complete:*' use-cache 1
+zstyle ':completion::complete:*' cache-path $ZSH_CACHE_DIR
+
+# start typing + [Up-Arrow] - fuzzy find history forward
+autoload -U up-line-or-beginning-search
+zle -N up-line-or-beginning-search
+bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
+
+# start typing + [Down-Arrow] - fuzzy find history backward
+autoload -U down-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
+
+bindkey ' ' magic-space # [Space] - do history expansion
+
+
+# ZSH Prompt
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir vcs)
-POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(background_jobs status vi_mode virtualenv node_version time)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
 POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
-ZSH_THEME="powerlevel9k/powerlevel9k"
+source ~/.powerlevel9k/powerlevel9k.zsh-theme
 
-# Preferred editor for local and remote sessions
-export EDITOR='vim'
-export PIP_REQUIRE_VIRTUALENV=true
 
-# Example aliases
+# Aliases
+alias -g ...='../..'
+alias -g ....='../../..'
+alias -g .....='../../../..'
+alias -g ......='../../../../..'
+
+alias ls="ls -hF --color=auto"
+alias ll="ls -lahF --color=auto"
+alias lsl="ls -lhF --color=auto"
 alias c='clear'
 alias df='df -h'
 alias du='du -sh'
@@ -33,17 +93,19 @@ alias lock='i3lock --color 475263'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias emacs='emacs -nw'
 alias vim='nvim'
+alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 
-alias g='git status -sb'
-alias gh='git hist'
-alias gp='git pull'
-alias gc='git commit'
+# Security
+alias checkrootkits="sudo rkhunter --update; sudo rkhunter --propupd; sudo rkhunter --check"
+alias checkvirus="clamscan --recursive=yes --infected /home"
+alias updateantivirus="sudo freshclam"
+
+# Copy
+alias pbcopy='xclip -selection clipboard'
+alias pbpaste='xclip -selection clipboard -o'
 
 alias ltev='. ~/.local/bin/load_cluster_env.sh test && unset CLIQZ_DMZ_GATEWAY'
 alias lpev='. ~/.local/bin/load_cluster_env.sh primary && unset CLIQZ_DMZ_GATEWAY'
-
-xset b off
-xset r rate 300 100
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
 export LD_RUN_PATH=$LD_RUN_PATH:$HOME/usr/lib:$HOME/.local/lib
@@ -57,6 +119,8 @@ export PATH=$HOME/usr/local/bin:$PATH           # Use local first
 export PATH=$HOME/.local/bin:$PATH              # ~/.local/bin
 export PATH=$HOME/.local/spark-1.6.1/bin:$PATH  # ~/.local/spark-1.6.1/
 export PATH=$HOME/.local/nodejs/bin:$PATH       # nodejs packages (npm)
+export PATH=$HOME/.cargo/bin:$PATH              # Rust
+export PATH=$HOME/dev/public/Nim/bin:$PATH      # Nim
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
@@ -64,27 +128,50 @@ export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
 export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
+source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
 
-# Investigate tmux plugin
-# tmuxinator
-plugins=(gitfast vagrant virtualenvwrapper npm pip python supervisor systemd command-not-found common-aliases docker)
-source ~/.oh-my-zsh/oh-my-zsh.sh
+
+# History management
+HISTFILE=$HOME/.zsh_history    # enable history saving on shell exit
+HISTSIZE=10000                 # lines of history to maintain memory
+SAVEHIST=10000                 # lines of history to maintain in history file.
+setopt HIST_EXPIRE_DUPS_FIRST  # allow dups, but expire old ones when I hit HISTSIZE
+setopt EXTENDED_HISTORY        # save timestamp and runtime information
+setopt APPEND_HISTORY          # append rather than overwrite history file.
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
+
+# Syntax
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor root)
+ZSH_HIGHLIGHT_STYLES[default]='none'
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'
+ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[alias]='fg=blue'
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=none'
+ZSH_HIGHLIGHT_STYLES[function]='fg=blue'
+ZSH_HIGHLIGHT_STYLES[command]='fg=blue'
+ZSH_HIGHLIGHT_STYLES[precommand]='none'
+ZSH_HIGHLIGHT_STYLES[commandseparator]='none'
+ZSH_HIGHLIGHT_STYLES[hashed-command]='fg=blue'
+ZSH_HIGHLIGHT_STYLES[path]='none'
+ZSH_HIGHLIGHT_STYLES[path_prefix]='none'
+ZSH_HIGHLIGHT_STYLES[path_approx]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[globbing]='fg=green'
+ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=green'
+ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=magenta'
+ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=red'
+ZSH_HIGHLIGHT_STYLES[back-quoted-argument]='none'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=yellow'
+ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=cyan'
+ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]='fg=cyan'
+ZSH_HIGHLIGHT_STYLES[assign]='none'
+
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];
 then
     source $HOME/.zshlocal
 fi
-
-# History management
-HISTFILE=$HOME/.zsh_history    # enable history saving on shell exit
-setopt APPEND_HISTORY          # append rather than overwrite history file.
-HISTSIZE=100000                # lines of history to maintain memory
-SAVEHIST=100000                # lines of history to maintain in history file.
-setopt HIST_EXPIRE_DUPS_FIRST  # allow dups, but expire old ones when I hit HISTSIZE
-setopt EXTENDED_HISTORY        # save timestamp and runtime information
-
-[ -z "$NVM_DIR" ] && export NVM_DIR="$HOME/.nvm"
-source /usr/share/nvm/nvm.sh
-source /usr/share/nvm/bash_completion
-source /usr/share/nvm/install-nvm-exec

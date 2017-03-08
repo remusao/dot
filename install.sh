@@ -12,6 +12,10 @@ backupfile() {
     mv $tosave $backup
 }
 
+# Install package:
+# zsh-syntax-highlighting
+
+
 # Pull Submodules
 git submodule init
 git submodule update --init --recursive
@@ -23,14 +27,22 @@ if test ! -d /tmp/fonts ; then
 fi
 /tmp/fonts/install.sh
 
-# Install oh-my-zsh
-if test ! -d ~/.oh-my-zsh ; then
-    sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+ZSH_HOME='/home/remi/.zsh/'
+mkdir -v ${ZSH_HOME}
+
+# Install zsh completion
+if test ! -d ${ZSH_HOME}/zsh-completions ; then
+    git clone git://github.com/zsh-users/zsh-completions ${ZSH_HOME}/zsh-completions
+fi
+
+# Install zsh auto-suggest
+if test ! -d ${ZSH_HOME}/zsh-autosuggestions ; then
+    git clone git://github.com/zsh-users/zsh-autosuggestions ${ZSH_HOME}/zsh-autosuggestions
 fi
 
 # Install zsh prompt
-if test ! -d ~/.oh-my-zsh/custom/themes/powerlevel9k ; then
-    git clone https://github.com/bhilburn/powerlevel9k.git ~/.oh-my-zsh/custom/themes/powerlevel9k
+if test ! -d ${ZSH_HOME}/powerlevel9k ; then
+    git clone https://github.com/bhilburn/powerlevel9k.git ${ZSH_HOME}/powerlevel9k
 fi
 
 # Create symlinks to config files
@@ -66,4 +78,4 @@ for file in Xresources \
 done
 
 # Install vim plugins
-vim +NeoBundleInstall +qall
+# vim +NeoBundleInstall +qall

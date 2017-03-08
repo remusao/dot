@@ -112,7 +112,7 @@ endif
         " Use Ag over Grep
         set grepprg=ag\ --nogroup\ --nocolor
         " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
-        let g:ctrlp_user_command = 'ag %s -l --nocolor -g ""'
+        let g:ctrlp_user_command = 'rg --files  %s'
     endif
 " }}}
 
@@ -273,15 +273,15 @@ endif
 
 
 " incsearch {{{
-    let g:incsearch#consistent_n_direction = 1
-
-    map /  <Plug>(incsearch-forward)
-    map ?  <Plug>(incsearch-backward)
-    map g/ <Plug>(incsearch-stay)
-
-    map z/ <Plug>(incsearch-fuzzy-/)
-    map z? <Plug>(incsearch-fuzzy-?)
-    map zg/ <Plug>(incsearch-fuzzy-stay)
+"    let g:incsearch#consistent_n_direction = 1
+"
+"    map /  <Plug>(incsearch-forward)
+"    map ?  <Plug>(incsearch-backward)
+"    map g/ <Plug>(incsearch-stay)
+"
+"    map z/ <Plug>(incsearch-fuzzy-/)
+"    map z? <Plug>(incsearch-fuzzy-?)
+"    map zg/ <Plug>(incsearch-fuzzy-stay)
 " }}}
 
 

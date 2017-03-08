@@ -1,5 +1,6 @@
 " Enable neobundle
 filetype off
+
 set runtimepath+=~/.vim/bundle/dein.vim/
 
 if dein#load_state('~/.vim/bundle/')
@@ -48,8 +49,8 @@ if dein#load_state('~/.vim/bundle/')
   call dein#add('xolox/vim-notes')
   call dein#add('xolox/vim-shell')
   call dein#add('mhinz/vim-hugefile')
-  call dein#add('haya14busa/incsearch.vim')
-  call dein#add('haya14busa/incsearch-fuzzy.vim')
+" call dein#add('haya14busa/incsearch.vim')
+" call dein#add('haya14busa/incsearch-fuzzy.vim')
   call dein#add('Konfekt/FastFold')
   call dein#add('editorconfig/editorconfig-vim')
 
