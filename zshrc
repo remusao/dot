@@ -1,10 +1,10 @@
+#! /usr/bin/zsh
+
 # Options
 export TERM='xterm-256color'
 export DEFAULT_USER="remi"
 export EDITOR='vim'
 export VISUAL='vim'
-
-export PIP_REQUIRE_VIRTUALENV=true
 
 # Cursor speed
 xset b off
@@ -22,11 +22,12 @@ export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LESSCHARSET=utf-8
 
-# ZSH Completions
+# ZSH commands completions
 fpath=(~/.zsh/zsh-completions/src $fpath)
 export LSCOLORS=gxfxbEaEBxxEhEhBaDaCaD
 zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)(?)*==02=01}:${(s.:.)LS_COLORS}")'
 
+# ZSH tab-completion
 unsetopt menu_complete   # do not autoselect the first completion entry
 unsetopt flowcontrol
 setopt auto_menu         # show completion menu on successive tab press
@@ -107,6 +108,7 @@ alias pbpaste='xclip -selection clipboard -o'
 alias ltev='. ~/.local/bin/load_cluster_env.sh test && unset CLIQZ_DMZ_GATEWAY'
 alias lpev='. ~/.local/bin/load_cluster_env.sh primary && unset CLIQZ_DMZ_GATEWAY'
 
+# Globals
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
 export LD_RUN_PATH=$LD_RUN_PATH:$HOME/usr/lib:$HOME/.local/lib
 export LIBRARY_PATH=$LD_LIBRARY_PATH
@@ -122,27 +124,34 @@ export PATH=$HOME/.local/nodejs/bin:$PATH       # nodejs packages (npm)
 export PATH=$HOME/.cargo/bin:$PATH              # Rust
 export PATH=$HOME/dev/public/Nim/bin:$PATH      # Nim
 
+
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
 export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
-source /usr/share/virtualenvwrapper/virtualenvwrapper.sh
+source /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh
+
+export PIP_REQUIRE_VIRTUALENV=true
 
 
 # History management
-HISTFILE=$HOME/.zsh_history    # enable history saving on shell exit
-HISTSIZE=10000                 # lines of history to maintain memory
-SAVEHIST=10000                 # lines of history to maintain in history file.
-setopt HIST_EXPIRE_DUPS_FIRST  # allow dups, but expire old ones when I hit HISTSIZE
-setopt EXTENDED_HISTORY        # save timestamp and runtime information
-setopt APPEND_HISTORY          # append rather than overwrite history file.
+HISTFILE=$HOME/.zsh_history     # enable history saving on shell exit
+HISTSIZE=5000                   # lines of history to maintain memory
+SAVEHIST=5000                   # lines of history to maintain in history file.
+setopt HIST_EXPIRE_DUPS_FIRST   # allow dups, but expire old ones when I hit HISTSIZE
+setopt EXTENDED_HISTORY         # save timestamp and runtime information
+setopt APPEND_HISTORY           # append rather than overwrite history file.
+
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
+# NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
+# This will need to be updated manually in the future.
+export PATH=${HOME}/.nvm/versions/node/v7.7.1/bin/:${PATH}
+# [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
-# Syntax
+# Syntax coloring
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor root)
 ZSH_HIGHLIGHT_STYLES[default]='none'
