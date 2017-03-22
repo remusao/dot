@@ -63,12 +63,14 @@ bindkey ' ' magic-space # [Space] - do history expansion
 
 
 # ZSH Prompt
-POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir vcs)
-POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
+POWERLEVEL9K_VCS_SHOW_SUBMODULE_DIRTY=false
 POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
+
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir vcs)
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
 source ~/.powerlevel9k/powerlevel9k.zsh-theme
 
 
@@ -95,6 +97,7 @@ alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias emacs='emacs -nw'
 alias vim='nvim'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
+alias ag='rg --smart-case --pretty'
 
 # Security
 alias checkrootkits="sudo rkhunter --update; sudo rkhunter --propupd; sudo rkhunter --check"
@@ -150,6 +153,17 @@ export NVM_DIR="$HOME/.nvm"
 # This will need to be updated manually in the future.
 export PATH=${HOME}/.nvm/versions/node/v7.7.1/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
+
+# Set title
+set-window-title() {
+  # /Users/clessg/projects/dotfiles -> ~/p/dotfiles
+  window_title="\e]0;${${PWD/#"$HOME"/~}/projects/p}\a"
+  echo -ne "$window_title"
+}
+
+PR_TITLEBAR=''
+set-window-title
+add-zsh-hook precmd set-window-title
 
 # Syntax coloring
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
