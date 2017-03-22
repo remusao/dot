@@ -146,6 +146,7 @@ SAVEHIST=5000                   # lines of history to maintain in history file.
 setopt HIST_EXPIRE_DUPS_FIRST   # allow dups, but expire old ones when I hit HISTSIZE
 setopt EXTENDED_HISTORY         # save timestamp and runtime information
 setopt APPEND_HISTORY           # append rather than overwrite history file.
+setopt SHARE_HISTORY
 
 
 export NVM_DIR="$HOME/.nvm"
