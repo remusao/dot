@@ -7,6 +7,9 @@ if !has('nvim')
     set clipboard=unnamedplus,autoselect
 endif
 
+" Python path with neovim package installed
+let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python2'
+let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python3'
 
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
