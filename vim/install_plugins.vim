@@ -62,12 +62,22 @@ if dein#load_state('~/.vim/bundle/')
   " vim-polyglot
   call dein#add('pangloss/vim-javascript',
     \{'on_ft': ['javascript']})
+  call dein#add('carlitux/deoplete-ternjs',
+    \{'on_ft': ['javascript']})
+  call dein#add('ternjs/tern_for_vim',
+    \{'on_ft': ['javascript']})
+  call dein#add('othree/jspc.vim',
+    \{'on_ft': ['javascript']})
 
   " Rust
   " vim-polyglot
 
   " Markdown
   " vim-polyglot
+
+  " Latex
+  call dein#add('poppyschmo/deoplete-latex',
+    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
 
   " CSV
   call dein#add('chrisbra/csv.vim',
@@ -76,10 +86,14 @@ if dein#load_state('~/.vim/bundle/')
   " c/cpp
   call dein#add('Rip-Rip/clang_complete',
     \{'on_ft': ['c', 'cpp']})
+  call dein#add('zchee/deoplete-clang',
+    \{'on_ft': ['c', 'cpp']})
 
   " Python
   " vim-polyglot
   call dein#add('davidhalter/jedi-vim',
+    \{'on_ft': ['python', 'python3']})
+  call dein#add('zchee/deoplete-jedi',
     \{'on_ft': ['python', 'python3']})
 
   " Haskell
