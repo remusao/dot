@@ -65,7 +65,7 @@ if dein#load_state('~/.vim/bundle/')
   call dein#add('carlitux/deoplete-ternjs',
     \{'on_ft': ['javascript']})
   call dein#add('ternjs/tern_for_vim',
-    \{'on_ft': ['javascript']})
+    \{'on_ft': ['javascript'], 'build': 'npm install && npm install -g tern'})
   call dein#add('othree/jspc.vim',
     \{'on_ft': ['javascript']})
 
@@ -105,6 +105,7 @@ if dein#load_state('~/.vim/bundle/')
     \{'on_ft': ['haskell']})
 
   call dein#end()
+  call dein#save_state()
 endif
 
 filetype plugin indent on " enable detection, plugins and indenting in one step
