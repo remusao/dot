@@ -15,7 +15,6 @@ backupfile() {
 # Install package:
 # zsh-syntax-highlighting
 
-
 # Pull Submodules
 git submodule init
 git submodule update --init --recursive
