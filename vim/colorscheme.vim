@@ -2,11 +2,7 @@
 syntax enable
 set background=dark
 set t_Co=256
-
-if !has('nvim')
-    set anti enc=utf-8
-endif
-
+let g:enable_bold_font = 1
 
 colorscheme jellybeans
 let g:jellybeans_use_lowcolor_black = 0
