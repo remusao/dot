@@ -16,6 +16,8 @@ set cursorline      " underline the current line, for quick orientation
 set smartcase       " ignore case if search pattern is all lowercase, case-sensitive otherwise
 set ignorecase      " ignore case when searching
 
+set conceallevel=2
+
 "" In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
   set mouse=a
