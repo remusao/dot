@@ -56,6 +56,16 @@ if dein#load_state('~/.vim/bundle/')
 
   " Markdown
   " vim-polyglot
+  call dein#add('junegunn/goyo.vim',
+    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
+  call dein#add('junegunn/limelight.vim',
+    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
+  call dein#add('reedes/vim-wordy',
+    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
+  call dein#add('reedes/vim-pencil',
+    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
+  call dein#add('plasticboy/vim-markdown',
+    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
 
   " Latex
   call dein#add('poppyschmo/deoplete-latex',
@@ -87,7 +97,6 @@ if dein#load_state('~/.vim/bundle/')
     \{'on_ft': ['haskell']})
 
   call dein#end()
-  call dein#save_state()
 endif
 
 filetype plugin indent on " enable detection, plugins and indenting in one step

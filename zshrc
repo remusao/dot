@@ -126,7 +126,10 @@ export PATH=$HOME/.local/spark-1.6.1/bin:$PATH  # ~/.local/spark-1.6.1/
 export PATH=$HOME/.local/nodejs/bin:$PATH       # nodejs packages (npm)
 export PATH=$HOME/.cargo/bin:$PATH              # Rust
 export PATH=$HOME/dev/public/Nim/bin:$PATH      # Nim
+export PATH=$HOME/.go/bin:$PATH                 # Go
 
+# Go
+GOPATH=$HOME/.go
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
