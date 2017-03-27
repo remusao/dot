@@ -156,15 +156,13 @@ let g:limelight_eop = '\ze\n^\s'
 "   Set it to -1 not to overrule hlsearch
 let g:limelight_priority = -1
 
-autocmd! User GoyoEnter Limelight
-autocmd! User GoyoLeave Limelight!
+" autocmd! User GoyoEnter Limelight
+" autocmd! User GoyoLeave Limelight!
 
-let g:vim_markdown_fenced_languages = ['python=python', 'haskell=haskell']
 let g:vim_markdown_override_foldtext = 0
 let g:vim_markdown_math = 1
-
-let g:vim_markdown_new_list_item_indent = 2
 let g:vim_markdown_toml_frontmatter = 1
 let g:vim_markdown_json_frontmatter = 1
 
+let g:vim_markdown_new_list_item_indent = 2
 " }}}

@@ -16,8 +16,6 @@ set cursorline      " underline the current line, for quick orientation
 set smartcase       " ignore case if search pattern is all lowercase, case-sensitive otherwise
 set ignorecase      " ignore case when searching
 
-set conceallevel=2
-
 "" In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
   set mouse=a
@@ -46,10 +44,9 @@ set noswapfile
 set nowb
 
 " Reduce processing for syntax highlighting to make it less of a pain.
-set synmaxcol=128
+ set synmaxcol=128
 syntax sync minlines=256
 syntax sync maxlines=500
-set synmaxcol=400
 
 " Persistent undo
 silent !mkdir ~/.config/nvim/backups > /dev/null 2>&1
