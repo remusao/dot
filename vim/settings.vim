@@ -93,6 +93,9 @@ set wildignore=*.swp,*.bak,*.pyc,*.class,*.so,*.zip,.git,.cabal-sandbox
 " Complete options (disable preview scratch window)
 set completeopt=menu,menuone,longest
 
+" Always copy in clipboard
+set clipboard+=unnamedplus
+
 " Reveal already opened files from other tabs
 set switchbuf=useopen
 
