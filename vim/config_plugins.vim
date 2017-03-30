@@ -99,7 +99,6 @@
     let g:jedi#auto_vim_configuration = 0
     let g:jedi#smart_auto_mappings = 0
 " }}}
-"
 
 " vim-notes {{{
     let g:notes_directories = ['~/Private/Notes']
