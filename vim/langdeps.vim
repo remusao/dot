@@ -1,4 +1,4 @@
-""python highlighting extras
+" python highlighting extras
 let python_highlight_all = 1
 
 " Workaround vim-commentary for Haskell
