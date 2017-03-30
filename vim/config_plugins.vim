@@ -86,22 +86,15 @@
 " }}}
 
 " Ale {{{
+    let g:ale_linters = {
+    \   'javascript': ['eslint'],
+    \}
+
     nmap <silent> <C-k> <Plug>(ale_previous_wrap)
     nmap <silent> <C-j> <Plug>(ale_next_wrap)
-" }}}
-" Neomake {{{
-""    autocmd! BufEnter,BufWritePost * Neomake
-""    " neomake
-""    nmap <Leader><Space>o :lopen<CR>   " open location window
-""    nmap <Leader><Space>c :lclose<CR>  " close location window
-""    nmap <Leader><Space>, :ll<CR>      " go to current error/warning
-""    nmap <Leader><Space>n :lnext<CR>   " next error/warning
-""    nmap <Leader><Space>p :lprev<CR>   " previous error/warning
-" }}}
 
-
-" ghc-mod {{{
-" autocmd BufWritePost *.hs GhcModCheckAndLintAsync
+    " Write this in your vimrc file
+    let g:ale_lint_on_text_changed = 0
 " }}}
 
 

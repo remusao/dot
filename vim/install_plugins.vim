@@ -10,16 +10,7 @@ if dein#load_state('~/.vim/bundle/')
   " Required:
   call dein#add('Shougo/dein.vim')
 
-  call dein#add('Shougo/vimproc.vim', {'build': 'make'})
-
-  " General addons
-  call dein#add('Shougo/unite.vim')
-  call dein#add('MarcWeber/vim-addon-mw-utils')
-  call dein#add('xolox/vim-misc')
-  call dein#add('tomtom/tlib_vim')
-
   " linting
-  " call dein#add('neomake/neomake')
   call dein#add('w0rp/ale')
 
   " Autocomplete
@@ -30,13 +21,11 @@ if dein#load_state('~/.vim/bundle/')
   call dein#add('airblade/vim-gitgutter')	        " Show git diff in Vim
   call dein#add('ctrlpvim/ctrlp.vim')		        " File searching from Vim
   call dein#add('ntpeters/vim-better-whitespace')   " Highlight and strip trailing whitespaces
-  call dein#add('sheerun/vim-polyglot')             " Huge language pack
   call dein#add('terryma/vim-multiple-cursors')     " Multi cursors
-  call dein#add('tpope/vim-abolish')                " Powerful substitution
   call dein#add('vim-airline/vim-airline')          " Vim powerline
   call dein#add('vim-airline/vim-airline-themes')   " Themes for powerline
   call dein#add('xolox/vim-notes')                  " Managing notes in vim
-  call dein#add('xolox/vim-shell')                  " Integration with environment
+  call dein#add('xolox/vim-misc')                   " Dependency of vim-notes
   call dein#add('mhinz/vim-hugefile')               " Read huge files efficiently
 
   " Colors
@@ -48,8 +37,9 @@ if dein#load_state('~/.vim/bundle/')
     \{'on_ft': ['javascript']})
   call dein#add('ternjs/tern_for_vim',
     \{'on_ft': ['javascript'], 'build': 'npm install && npm install -g tern'})
-  call dein#add('othree/jspc.vim',
-    \{'on_ft': ['javascript']})
+
+  " Language support
+  call dein#add('sheerun/vim-polyglot')             " Huge language pack
 
   " Rust
   " vim-polyglot
@@ -57,19 +47,13 @@ if dein#load_state('~/.vim/bundle/')
   " Markdown
   " vim-polyglot
   call dein#add('junegunn/goyo.vim',
-    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
-  call dein#add('junegunn/limelight.vim',
-    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
-  call dein#add('reedes/vim-wordy',
-    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
-  call dein#add('reedes/vim-pencil',
-    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
+    \{'on_ft': ['latex', 'tex', 'markdown']})
   call dein#add('plasticboy/vim-markdown',
-    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
+    \{'on_ft': ['latex', 'tex', 'markdown']})
 
   " Latex
   call dein#add('poppyschmo/deoplete-latex',
-    \{'on_ft': ['latex', 'tex', 'md', 'markdown']})
+    \{'on_ft': ['latex', 'tex', 'markdown']})
 
   " CSV
   call dein#add('chrisbra/csv.vim',

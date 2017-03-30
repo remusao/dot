@@ -8,7 +8,7 @@ let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python3'
 
 set title           " Change terminal's title
 set number          " show line numbers
-set history=500     " keep 1000 lines of command line history
+set history=500     " keep N lines of command line history
 set showcmd         " display incomplete commands
 set noshowmode      " disable showmode because of Powerline
 set gdefault        " Set global flags for search and replace
@@ -22,7 +22,6 @@ if has('mouse')
 endif
 
 set showmatch                          " set show matching parenthesis
-set timeoutlen=1000 ttimeoutlen=200    "Reduce Command timeout for faster escape and O
 
 " Set encoding
 set encoding=utf-8
@@ -44,7 +43,7 @@ set noswapfile
 set nowb
 
 " Reduce processing for syntax highlighting to make it less of a pain.
- set synmaxcol=128
+set synmaxcol=500
 syntax sync minlines=256
 syntax sync maxlines=500
 
@@ -68,75 +67,46 @@ set expandtab       " Expand tabs into spaces
 set smartindent
 set nofoldenable
 set autoindent      " always set autoindenting on
-set copyindent      " copy the previous indentation on autoindenting
+set smarttab        " insert tabs on the start of a line according to shiftwidth, not tabstop
+set shiftround      " use multiple of shiftwidth when indenting with '<' and '>'
 
-" Completion
-set wildmode=list:longest,full
+set hlsearch is     " highlight search terms
 
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
 set ruler               " show the cursor position all the time
 set incsearch           " do incremental searching
 set splitright          " Vertical splits use right half of screen
+
+set timeout
 set timeoutlen=100      " Lower ^[ timeout
-set fillchars=fold:\ ,  " get rid of obnoxious '-' characters in folds
-set tildeop             " use ~ to toggle case as an operator, not a motion
+set ttimeout
+set ttimeoutlen=100
 
 if exists('breakindent')
     set breakindent " Indent wrapped lines up to the same level
 endif
 
-set hlsearch is     " highlight search terms
-set shiftround      " use multiple of shiftwidth when indenting with '<' and '>'
-set smarttab        " insert tabs on the start of a line according to shiftwidth, not tabstop
-set wildignore=*.swp,*.bak,*.pyc,*.class,*.so,*.zip,.git,.cabal-sandbox " Ignore this extension in file searching
+" Ignore this extension in file searching
+set wildignore=*.swp,*.bak,*.pyc,*.class,*.so,*.zip,.git,.cabal-sandbox
 
 " Complete options (disable preview scratch window)
 set completeopt=menu,menuone,longest
 
-" Limit popup menu height
-set pumheight=15
-set switchbuf=useopen " reveal already opened files from the
-" quickfix window instead of opening new buffers
-"
+" Reveal already opened files from other tabs
+set switchbuf=useopen
+
+" Completion in bottom menu
+set wildmode=list:longest,full
 set wildmenu " make tab completion for files/buffers act like bash
-
-" first full match
-set pastetoggle=<F12>
-
-" Limit the width of text for mutt to 80 columns
-au BufRead /tmp/mutt-* set tw=80
 
 "" Git commit preference
 autocmd Filetype gitcommit setlocal spell textwidth=80
 
-if has("autocmd")
-    " When editing a file, always jump to the last known cursor position.
-    " Don't do it when the position is invalid or when inside an event handler
-    " (happens when dropping a file on gvim).
-    autocmd BufReadPost *
-                \ if line("'\"") > 0 && line("'\"") <= line("$") |
-                \ execute "normal! g`\"" |
-                \ endif
-
-    " When editing a new file, load skeleton if any.
-    " If we find <+FILENAME+> in skeleton, replace it by the filename.
-    " If we find <+HEADERNAME+> in skeleton, replace it by the filename
-    " uppercase with . replaced by _ (foo.h become FOO_H).
-    autocmd BufNewFile *
-                \ let skel = $HOME . "/.vim/skeletons/skel." . expand("%:e") |
-                \ if filereadable(skel) |
-                \ execute "silent! 0read " . skel |
-                \ let fn = expand("%") |
-                \ let hn = substitute(expand("%"), "\\w", "\\u\\0", "g") |
-                \ let hn = substitute(hn, "\\.", "_", "g") |
-                \ let hn = substitute(hn, "/", "_", "g") |
-                \ let cn = expand("%:t:r") |
-                \ %s/<+FILENAME+>/\=fn/Ige |
-                \ %s/<+HEADERNAME+>/\=hn/Ige |
-                \ %s/<+CLASSNAME+>/\=cn/Ige |
-                \ unlet fn hn cn |
-                \ endif |
-                \ unlet skel |
-                \ goto 1
-endif " has autocmd
+" When editing a file, always jump to the last known cursor position.
+" Don't do it when the position is invalid or when inside an event handler
+" (happens when dropping a file on gvim).
+autocmd BufReadPost *
+            \ if line("'\"") > 0 && line("'\"") <= line("$") |
+            \ execute "normal! g`\"" |
+            \ endif
