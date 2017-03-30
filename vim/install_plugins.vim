@@ -75,8 +75,6 @@ if dein#load_state('~/.vim/bundle/')
   " vim-polyglot
   call dein#add('dag/vim2hs',
     \{'on_ft': ['haskell']})
-  call dein#add('eagletmt/ghcmod-vim',
-    \{'on_ft': ['haskell']})
   call dein#add('eagletmt/neco-ghc',
     \{'on_ft': ['haskell']})
 
