@@ -155,7 +155,7 @@ setopt SHARE_HISTORY
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v7.7.1/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v7.7.4/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
