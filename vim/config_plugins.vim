@@ -44,15 +44,42 @@
 
 
 " ctrlp {{{
-    let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
-    if executable('rg')
-        " Use rg over Grep
-        set grepprg=rg\ --color\ never\ --no-heading
-        " Use rg in CtrlP for listing files. Lightning fast and respects .gitignore
-        let g:ctrlp_user_command = 'rg --files  %s'
-    endif
+   let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
+   if executable('rg')
+       " Use rg over Grep
+       set grepprg=rg\ --color\ never\ --no-heading
+       " Use rg in CtrlP for listing files. Lightning fast and respects .gitignore
+       let g:ctrlp_user_command = 'rg %s --files --color=never --glob ""'
+       " let g:ctrlp_user_command = 'rg --files  %s'
+   endif
 " }}}
 
+" fzf {{{
+    " [Buffers] Jump to the existing window if possible
+    let g:fzf_buffers_jump = 1
+
+    " [[B]Commits] Customize the options used by 'git log':
+    let g:fzf_commits_log_options = '--graph --color=always --format="%C(auto)%h%d %s %C(black)%C(bold)%cr"'
+
+    " Augmenting Ag command using fzf#vim#with_preview function
+    "   * fzf#vim#with_preview([[options], preview window, [toggle keys...]])
+    "     * For syntax-highlighting, Ruby and any of the following tools are required:
+    "       - Highlight: http://www.andre-simon.de/doku/highlight/en/highlight.php
+    "       - CodeRay: http://coderay.rubychan.de/
+    "       - Rouge: https://github.com/jneen/rouge
+    "
+    "   :Ag  - Start fzf with hidden preview window that can be enabled with "?" key
+    "   :Ag! - Start fzf in fullscreen and display the preview window above
+    command! -bang -nargs=* Ag
+      \ call fzf#vim#ag(<q-args>,
+      \                 <bang>0 ? fzf#vim#with_preview('up:60%')
+      \                         : fzf#vim#with_preview('right:50%:hidden', '?'),
+      \                 <bang>0)
+
+    " Likewise, Files command with preview window
+    command! -bang -nargs=? -complete=dir Files
+      \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
+" }}}
 
 " vim-gitgutter {{{
     " Required after having changed the colorscheme
@@ -79,7 +106,7 @@
     nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
     " Write this in your vimrc file
-    let g:ale_lint_on_text_changed = 0
+    let g:ale_lint_on_text_changed = 'never'
 " }}}
 
 
@@ -115,4 +142,8 @@ let g:vim_markdown_toml_frontmatter = 1
 let g:vim_markdown_json_frontmatter = 1
 
 let g:vim_markdown_new_list_item_indent = 2
+" }}}
+
+" vim-polyglot {{{
+let g:javascript_plugin_jsdoc = 1
 " }}}

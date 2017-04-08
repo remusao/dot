@@ -17,9 +17,15 @@ if dein#load_state('~/.vim/bundle/')
   call dein#add('Shougo/deoplete.nvim')
   call dein#add('ervandew/supertab')
 
-  call dein#add('Raimondi/delimitMate')	            " Automatic closing of quotes, parenthesis, brackets, etc.
-  call dein#add('airblade/vim-gitgutter')	        " Show git diff in Vim
-  call dein#add('ctrlpvim/ctrlp.vim')		        " File searching from Vim
+  call dein#add('Raimondi/delimitMate')             " Automatic closing of quotes, parenthesis, brackets, etc.
+  call dein#add('airblade/vim-gitgutter')           " Show git diff in Vim
+
+  " Fuzzy search
+  call dein#add('ctrlpvim/ctrlp.vim')               " File searching from Vim
+  call dein#add('junegunn/fzf',
+    \{ 'build': './install --bin' })
+  call dein#add('junegunn/fzf.vim')
+
   call dein#add('ntpeters/vim-better-whitespace')   " Highlight and strip trailing whitespaces
   call dein#add('terryma/vim-multiple-cursors')     " Multi cursors
   call dein#add('vim-airline/vim-airline')          " Vim powerline

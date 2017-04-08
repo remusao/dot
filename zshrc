@@ -80,24 +80,25 @@ alias -g ....='../../..'
 alias -g .....='../../../..'
 alias -g ......='../../../../..'
 
-alias ls="ls -hF --color=auto"
-alias ll="ls -lahF --color=auto"
-alias lsl="ls -lhF --color=auto"
+alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
+alias ag='rg --smart-case --pretty'
 alias c='clear'
 alias df='df -h'
 alias du='du -sh'
+alias emacs='emacs -nw'
 alias g++='g++ -Wall -Wextra -pedantic -std=c++11'
+alias inst='sudo apt-get install'
+alias ll="ls -lahF --color=auto"
+alias lock='i3lock --color 475263'
+alias ls="ls -hF --color=auto"
+alias lsl="ls -lhF --color=auto"
 alias reload='. ${HOME}/.zshrc'
 alias se='sudo apt-cache search'
-alias inst='sudo apt-get install'
+alias t='todo-txt'
+alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 alias update='sudo apt-get update'
 alias upgrade='sudo apt-get upgrade'
-alias lock='i3lock --color 475263'
-alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
-alias emacs='emacs -nw'
 alias vim='nvim'
-alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
-alias ag='rg --smart-case --pretty'
 
 # Security
 alias checkrootkits="sudo rkhunter --update; sudo rkhunter --propupd; sudo rkhunter --check"
@@ -146,10 +147,13 @@ export PIP_REQUIRE_VIRTUALENV=true
 HISTFILE=$HOME/.zsh_history     # enable history saving on shell exit
 HISTSIZE=5000                   # lines of history to maintain memory
 SAVEHIST=5000                   # lines of history to maintain in history file.
-setopt HIST_EXPIRE_DUPS_FIRST   # allow dups, but expire old ones when I hit HISTSIZE
+
 setopt EXTENDED_HISTORY         # save timestamp and runtime information
 setopt APPEND_HISTORY           # append rather than overwrite history file.
 setopt SHARE_HISTORY
+setopt HIST_FIND_NO_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_REDUCE_BLANKS
 
 
 export NVM_DIR="$HOME/.nvm"
@@ -202,3 +206,16 @@ if [ -e "$HOME/.zshlocal" ];
 then
     source $HOME/.zshlocal
 fi
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Customize fzf
+export FZF_DEFAULT_COMMAND='rg --files --smartcase --glob "!.git/*"'
+
+# Run vim with ctrl-p when ctrl-p is pressed in zsh
+ctrlp() {
+  </dev/tty vim -c CtrlP
+}
+zle -N ctrlp
+
+bindkey "^p" ctrlp

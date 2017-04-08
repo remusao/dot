@@ -79,9 +79,9 @@ set incsearch           " do incremental searching
 set splitright          " Vertical splits use right half of screen
 
 set timeout
-set timeoutlen=100      " Lower ^[ timeout
+set timeoutlen=1000      " Lower ^[ timeout
 set ttimeout
-set ttimeoutlen=100
+set ttimeoutlen=10
 
 if exists('breakindent')
     set breakindent " Indent wrapped lines up to the same level
