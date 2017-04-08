@@ -20,6 +20,7 @@ augroup filetypedetect
   au BufRead,BufNewFile *.txt                               set filetype=txt
   au BufRead,BufNewFile *httpd*.conf                        set filetype=apache "Apache config files
   au BufRead,BufNewFile .htaccess                           set filetype=apache "htaccess files
+  au BufRead,BufNewFile *.note                              set filetype=notes
 augroup END
 
 augroup Binary
