@@ -71,7 +71,7 @@ POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
-source ~/.powerlevel9k/powerlevel9k.zsh-theme
+source ~/.zsh/powerlevel9k/powerlevel9k.zsh-theme
 
 
 # Aliases
@@ -96,8 +96,7 @@ alias reload='. ${HOME}/.zshrc'
 alias se='sudo apt-cache search'
 alias t='todo-txt'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
-alias update='sudo apt-get update'
-alias upgrade='sudo apt-get upgrade'
+alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade'
 alias vim='nvim'
 
 # Security
@@ -121,13 +120,20 @@ export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 
 # Extend PATH
 export PATH=$PATH:/usr/local/sbin:/usr/bin
-export PATH=$HOME/usr/local/bin:$PATH           # Use local first
-export PATH=$HOME/.local/bin:$PATH              # ~/.local/bin
-export PATH=$HOME/.local/spark-1.6.1/bin:$PATH  # ~/.local/spark-1.6.1/
-export PATH=$HOME/.local/nodejs/bin:$PATH       # nodejs packages (npm)
-export PATH=$HOME/.cargo/bin:$PATH              # Rust
-export PATH=$HOME/dev/public/Nim/bin:$PATH      # Nim
-export PATH=$HOME/.go/bin:$PATH                 # Go
+export PATH=$HOME/usr/local/bin:$PATH                   # Use local first
+export PATH=$HOME/.local/bin:$PATH                      # ~/.local/bin
+export PATH=$HOME/.local/spark-1.6.1/bin:$PATH          # ~/.local/spark-1.6.1/
+export PATH=$HOME/.local/nodejs/bin:$PATH               # nodejs packages (npm)
+export PATH=$HOME/.cargo/bin:$PATH                      # Rust
+export PATH=$HOME/dev/repositories/public/Nim/bin:$PATH # Nim
+export PATH=$HOME/.go/bin:$PATH                         # Go
+export PATH=$HOME/.gem/ruby/2.3.0/bin:$PATH             # Ruby gems
+export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
+export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
+
+# Init pyenv
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
 
 # Go
 GOPATH=$HOME/.go
@@ -159,7 +165,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v7.7.4/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v8.1.0/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
@@ -174,7 +180,7 @@ set-window-title
 add-zsh-hook precmd set-window-title
 
 # Syntax coloring
-source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source ${HOME}/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern root)
 ZSH_HIGHLIGHT_STYLES[default]='none'
 ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'
@@ -219,3 +225,6 @@ ctrlp() {
 zle -N ctrlp
 
 bindkey "^p" ctrlp
+
+# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+zmodload zsh/zpty

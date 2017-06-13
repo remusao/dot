@@ -14,6 +14,8 @@ autocmd BufNewFile,BufRead */.git/COMMIT_EDITMSG setlocal filetype=notes
 
 augroup filetypedetect
   au BufNewFile,BufRead *.c,*.h                             setf c
+  au BufNewFile,BufRead Dockerfile*                         set filetype=dockerfile
+  au BufNewFile,BufRead Jenkinsfile*                        set filetype=groovy
   au BufRead,BufNewFile *.aasm                              set filetype=asm
   au BufRead,BufNewFile *.mak,*.mako                        set filetype=mako
   au BufRead,BufNewFile *.s                                 set filetype=mips

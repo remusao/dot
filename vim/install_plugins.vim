@@ -19,6 +19,8 @@ if dein#load_state('~/.vim/bundle/')
 
   call dein#add('Raimondi/delimitMate')             " Automatic closing of quotes, parenthesis, brackets, etc.
   call dein#add('airblade/vim-gitgutter')           " Show git diff in Vim
+  call dein#add('tpope/vim-surround')               " Surround stuff
+  call dein#add('tpope/vim-repeat')                 " Repeat stuff
 
   " Fuzzy search
   call dein#add('ctrlpvim/ctrlp.vim')               " File searching from Vim
@@ -39,13 +41,14 @@ if dein#load_state('~/.vim/bundle/')
 
   " Javascript
   " vim-polyglot
-  call dein#add('carlitux/deoplete-ternjs',
-    \{'on_ft': ['javascript']})
   call dein#add('ternjs/tern_for_vim',
     \{'on_ft': ['javascript'], 'build': 'npm install && npm install -g tern'})
+  call dein#add('carlitux/deoplete-ternjs',
+    \{'on_ft': ['javascript']})
 
   " Language support
   call dein#add('sheerun/vim-polyglot')             " Huge language pack
+  call dein#add('sbdchd/neoformat')                 " Formatting code
 
   " Rust
   " vim-polyglot
@@ -77,12 +80,22 @@ if dein#load_state('~/.vim/bundle/')
   call dein#add('zchee/deoplete-jedi',
     \{'on_ft': ['python', 'python3']})
 
+  " Elm
+  call dein#add('ElmCast/elm-vim',
+    \{'on_ft': ['elm']})
+  call dein#add('pbogut/deoplete-elm',
+    \{'on_ft': ['elm']})
+
   " Haskell
   " vim-polyglot
   call dein#add('dag/vim2hs',
     \{'on_ft': ['haskell']})
   call dein#add('eagletmt/neco-ghc',
     \{'on_ft': ['haskell']})
+
+  " Zsh
+  call dein#add('zchee/deoplete-zsh',
+    \{'on_ft': ['zsh', 'sh', 'bash']})
 
   call dein#end()
 endif
