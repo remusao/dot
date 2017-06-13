@@ -1,15 +1,15 @@
 #! /usr/bin/env sh
 
 backupfile() {
-    backup=`pwd`/backup
-    if [ ! -e $backup ];
+    backup=$(pwd)/backup
+    if [ ! -e "$backup" ];
     then
-        echo Creating backup dir: $backup
-        mkdir $backup
+        echo Creating backup dir: "$backup"
+        mkdir "$backup"
     fi
     tosave=$1
-    echo Backing up $tosave into $backup
-    mv $tosave $backup
+    echo Backing up "$tosave" into "$backup"
+    mv "$tosave" "$backup"
 }
 
 # Install package:
@@ -59,21 +59,21 @@ for file in Xresources \
             zshrc ; do
     # Add $HOME prefix and '.' in front of file name
     path=${HOME}/.${file}
-    file=`pwd`/${file}
+    file=$(pwd)/${file}
     # Check if file already exists
-    if [ -e $path ];
+    if [ -e "$path" ];
     then
-        if [ -L $path ];
+        if [ -L "$path" ];
         then
             echo "$path symlink exists (action: delete)"
-            rm $path
+            rm "$path"
         else
             echo "$path already exists (action: save)"
-            backupfile $path
+            backupfile "$path"
         fi
     fi
     echo "Creating symlink $file -> $path"
-    ln -sf $file $path
+    ln -sf "$file" "$path"
 done
 
 # Install vim plugins

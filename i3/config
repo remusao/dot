@@ -84,7 +84,7 @@ bindsym XF86AudioNext exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer
 
 # start dmenu (a program launcher)
 # bindsym $mod+d exec dmenu_run
-bindsym $mod+d exec rofi -show run -font "snap 22" -fg "#505050" -bg "#000000" -hlfg "#ffb964" -hlbg "#000000" -o 85
+bindsym $mod+d exec "rofi -combi-modi window,run -show combi -modi combi -font 'snap 22'"
 
 # There also is the (new) i3-dmenu-desktop which only displays applications
 # shipping a .desktop file. It is a wrapper around dmenu, so you need that
@@ -208,8 +208,8 @@ exec --no-startup-id nm-applet
 exec --no-startup-id slack
 exec --no-startup-id thunderbird
 exec --no-startup-id dropbox
-exec --no-startup-id spotify
 exec --no-startup-id urxvtc
+exec --no-startup-id pasystray
 
 
 # Start i3bar to display a workspace bar (plus the system information i3status
