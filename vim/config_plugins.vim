@@ -103,6 +103,13 @@
 
 
 " Ale {{{
+    " Automatically fix style of files
+    let g:ale_fixers = {}
+    let g:ale_fixers['javascript'] = ['prettier']
+    " Run :ALEFix manually
+    " let g:ale_fix_on_save = 1
+    let g:ale_javascript_prettier_options = '--single-quote --trailing-comma es5'
+
     let g:ale_linters = {
     \   'javascript': ['eslint'],
     \}
@@ -110,8 +117,9 @@
     nmap <silent> <C-k> <Plug>(ale_previous_wrap)
     nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
-    " Write this in your vimrc file
     let g:ale_lint_on_text_changed = 'never'
+    let g:ale_lint_on_enter = 0
+    let g:ale_lint_on_save = 1
 " }}}
 
 
@@ -139,6 +147,11 @@
     let g:notes_smart_quotes = 1
 " }}}
 
+" clang-complete {{{
+    " or path directly to the library file
+    let g:clang_library_path='/usr/lib/x86_64-linux-gnu/'
+    let g:deoplete#sources#clang#libclang_path = '/usr/lib/x86_64-linux-gnu/libclang.so'
+" }}}
 
 " writing {{{
 let g:vim_markdown_override_foldtext = 0

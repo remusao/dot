@@ -15,8 +15,10 @@
     co = checkout
     br = branch
 [core]
-    editor = vim
+    editor = nvim
 [merge]
     tool = vimdiff
 [push]
 	default = simple
+[commit]
+	gpgsign = false
