@@ -70,7 +70,7 @@ if dein#load_state('~/.vim/bundle/')
 
   " c/cpp
   " vim-polyglot
-  call dein#add('zchee/deoplete-clang',
+  call dein#add('tweekmonster/deoplete-clang2',
     \{'on_ft': ['c', 'cpp']})
 
   " Python

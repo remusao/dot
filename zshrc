@@ -49,6 +49,10 @@ zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-dir
 zstyle ':completion::complete:*' use-cache 1
 zstyle ':completion::complete:*' cache-path $ZSH_CACHE_DIR
 
+zstyle ':completion:*' accept-exact '*(N)'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.zsh/cache
+
 # start typing + [Up-Arrow] - fuzzy find history forward
 autoload -U up-line-or-beginning-search
 zle -N up-line-or-beginning-search
@@ -69,7 +73,7 @@ POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 
-POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir vcs)
+POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
 source ~/.zsh/powerlevel9k/powerlevel9k.zsh-theme
 
@@ -98,6 +102,9 @@ alias t='todo-txt'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade'
 alias vim='nvim'
+
+alias runpyenv='eval "$(pyenv init -)"'
+alias runnvm='source ~/.nvm/nvm.sh '
 
 # Security
 alias checkrootkits="sudo rkhunter --update; sudo rkhunter --propupd; sudo rkhunter --check"
@@ -132,8 +139,8 @@ export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 
 # Init pyenv
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
+# eval "$(pyenv init -)"
+# eval "$(pyenv virtualenv-init -)"
 
 # Go
 GOPATH=$HOME/.go
@@ -165,7 +172,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v8.1.2/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v8.4.0/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
@@ -205,6 +212,12 @@ ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=yellow'
 ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[assign]='none'
+
+# TODO - import gpg key
+# GPG Agent
+# eval `gpg-agent --daemon --no-grab $HOME/.gpg-agent-info`
+# export GPG_TTY=`tty`
+# export GPG_AGENT_INFO
 
 
 # Extra configuration

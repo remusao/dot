@@ -65,8 +65,8 @@ bindsym $mod+Shift+q kill
 # Multimedia keys
 
 # Pulse Audio controls
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl -- set-sink-volume @DEFAULT_SINK@ +5% # increase sound volume
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl -- set-sink-volume @DEFAULT_SINK@ -5% # decrease sound volume
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume -- @DEFAULT_SINK@ +5% # increase sound volume
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume -- @DEFAULT_SINK@ -5% # decrease sound volume
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle # mute sound
 
 # Sreen brightness controls
@@ -202,12 +202,11 @@ bindsym $mod+r mode "resize"
 exec --no-startup-id xset b off
 exec --no-startup-id xset r rate 300 100 # Set initial delay 300ms, repeat 100ms
 exec --no-startup-id setxkbmap us
-exec --no-startup-id nitrogen --restore
+# exec --no-startup-id nitrogen --restore
 exec --no-startup-id urxvtd
 exec --no-startup-id nm-applet
-exec --no-startup-id slack
 exec --no-startup-id thunderbird
-exec --no-startup-id dropbox
+# exec --no-startup-id dropbox
 exec --no-startup-id urxvtc
 exec --no-startup-id pasystray
 

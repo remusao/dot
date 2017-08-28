@@ -27,7 +27,7 @@ fi
 /tmp/fonts/install.sh
 
 ZSH_HOME='/home/remi/.zsh/'
-mkdir -v ${ZSH_HOME}
+mkdir -pv ${ZSH_HOME}
 
 # Install zsh completion
 if test ! -d ${ZSH_HOME}/zsh-completions ; then

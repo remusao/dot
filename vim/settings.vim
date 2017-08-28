@@ -8,7 +8,7 @@ let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python3'
 
 set title           " Change terminal's title
 set number          " show line numbers
-set history=500     " keep N lines of command line history
+set history=100     " keep N lines of command line history
 set showcmd         " display incomplete commands
 set noshowmode      " disable showmode because of Powerline
 set gdefault        " Set global flags for search and replace
@@ -43,8 +43,8 @@ set noswapfile
 set nowritebackup
 
 " Reduce processing for syntax highlighting to make it less of a pain.
-set synmaxcol=500
-syntax sync minlines=256
+set synmaxcol=200
+syntax sync minlines=200
 syntax sync maxlines=500
 
 " Persistent undo
