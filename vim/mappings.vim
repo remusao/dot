@@ -5,6 +5,8 @@ let mapleader = ","
 nnoremap ; :
 nmap <silent> ./ :nohlsearch<CR>
 
+tnoremap <Esc> <C-\><C-n>
+
 " Make these commonly mistyped commands still work
 command! WQ wq
 command! Wq wq

@@ -2,37 +2,37 @@
 
 " deoplete {{{
     " Enable omni completion.
-    autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
-    autocmd FileType javascript setlocal omnifunc=javascriptcomplete#CompleteJS
-    autocmd FileType python setlocal omnifunc=jedi#completions
-    autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
+    " autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
+    " autocmd FileType javascript setlocal omnifunc=javascriptcomplete#CompleteJS
+    " autocmd FileType python setlocal omnifunc=jedi#completions
+    " autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
 
-    let g:deoplete#omni#functions = {}
-    let g:deoplete#omni#functions.javascript = [
-      \ 'tern#Complete',
-      \ 'jspc#omni'
-    \]
+    " let g:deoplete#omni#functions = {}
+    " let g:deoplete#omni#functions.javascript = [
+    "   \ 'tern#Complete',
+    "   \ 'jspc#omni'
+    " \]
 
-    let g:deoplete#enable_at_startup = 1
-    let g:deoplete#enable_ignore_case = 1
-    let g:SuperTabDefaultCompletionType = "<c-x><c-o>"
-    let g:UltiSnipsExpandTrigger="<C-j>"
-    let g:SuperTabClosePreviewOnPopupClose = 1
-    inoremap <expr><TAB> pumvisible() ? "\<C-n>" : "\<TAB>"
+    " let g:deoplete#enable_at_startup = 1
+    " let g:deoplete#enable_ignore_case = 1
+    " let g:SuperTabDefaultCompletionType = "<c-x><c-o>"
+    " let g:UltiSnipsExpandTrigger="<C-j>"
+    " let g:SuperTabClosePreviewOnPopupClose = 1
+    " inoremap <expr><TAB> pumvisible() ? "\<C-n>" : "\<TAB>"
 
-    let g:deoplete#sources = {}
-    let g:deoplete#sources['javascript.jsx'] = ['ternjs', 'file', 'ultisnips']
+    " let g:deoplete#sources = {}
+    " let g:deoplete#sources['javascript.jsx'] = ['ternjs', 'file', 'ultisnips']
 
-    let g:tern#command = ['tern']
-    let g:tern#arguments = ['--persistent']
+    " let g:tern#command = ['tern']
+    " let g:tern#arguments = ['--persistent']
 
-    let g:tern_request_timeout = 1
-    let g:tern_show_signature_in_pum = '0'  " This do disable full signature type on autocomplete
-    let g:tern#filetypes = [
-                    \ 'jsx',
-                    \ 'javascript.jsx',
-                    \ 'vue'
-                    \ ]
+    " let g:tern_request_timeout = 1
+    " let g:tern_show_signature_in_pum = '0'  " This do disable full signature type on autocomplete
+    " let g:tern#filetypes = [
+    "                 \ 'jsx',
+    "                 \ 'javascript.jsx',
+    "                 \ 'vue'
+    "                 \ ]
 " }}}
 
 
@@ -107,11 +107,12 @@
     let g:ale_fixers = {}
     let g:ale_fixers['javascript'] = ['prettier']
     " Run :ALEFix manually
-    " let g:ale_fix_on_save = 1
+    let g:ale_fix_on_save = 0
     let g:ale_javascript_prettier_options = '--single-quote --trailing-comma es5'
 
     let g:ale_linters = {
     \   'javascript': ['eslint'],
+    \   'typescript': ['tslint', 'tsserver'],
     \}
 
     nmap <silent> <C-k> <Plug>(ale_previous_wrap)
@@ -128,6 +129,17 @@
     let g:haskellmode_completion_ghc = 0
 " }}}
 
+" haskell-vim {{{
+let g:haskell_enable_quantification = 1   " to enable highlighting of `forall`
+let g:haskell_enable_recursivedo = 1      " to enable highlighting of `mdo` and `rec`
+let g:haskell_enable_arrowsyntax = 1      " to enable highlighting of `proc`
+let g:haskell_enable_pattern_synonyms = 1 " to enable highlighting of `pattern`
+let g:haskell_enable_typeroles = 1        " to enable highlighting of type roles
+let g:haskell_enable_static_pointers = 1  " to enable highlighting of `static`
+let g:haskell_backpack = 1                " to enable highlighting of backpack keywords
+let g:haskell_classic_highlighting = 1
+" }}}
+
 
 " vim LargeFile {{{
     let g:LargeFile = 50
@@ -141,7 +153,7 @@
 " }}}
 
 " vim-notes {{{
-    let g:notes_directories = ['~/Private/Notes']
+    let g:notes_directories = ['~/Private/Notes', '~/dev/repositories/perso/remusao.github.io/notes']
     let g:notes_suffix = '.note'
     let g:notes_word_boundaries = 1
     let g:notes_smart_quotes = 1
@@ -165,3 +177,29 @@ let g:vim_markdown_new_list_item_indent = 2
 " vim-polyglot {{{
 let g:javascript_plugin_jsdoc = 1
 " }}}
+
+" YouCompleteMe {{{
+let g:ycm_python_binary_path = 'python'
+let g:ycm_semantic_triggers = {'haskell' : ['.']}
+let g:ycm_collect_identifiers_from_tags_files = 1
+let g:ycm_seed_identifiers_with_syntax = 1
+let g:ycm_auto_start_csharp_server = 0
+
+let g:ycm_add_preview_to_completeopt = 1
+let g:ycm_autoclose_preview_window_after_completion = 1
+let g:ycm_autoclose_preview_window_after_insertion = 1
+
+let g:ycm_filetype_blacklist = {
+      \ 'tagbar' : 1,
+      \ 'qf' : 1,
+      \ 'unite' : 1,
+      \ 'text' : 1,
+      \ 'vimwiki' : 1,
+      \ 'infolog' : 1,
+      \ 'mail' : 1
+      \}
+
+autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
+autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
+" }}}
+

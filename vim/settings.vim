@@ -28,9 +28,7 @@ set encoding=utf-8
 set fileencoding=utf-8
 set fileformat=unix
 
-set wrap                            " Wrap lines
-set linebreak                       " Wrap lines at convenient points
-set list
+:set wrap linebreak nolist
 set lazyredraw                      " don't update the display while executing macros
 set hidden                          " Hide buffers in background
 
