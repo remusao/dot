@@ -1,103 +1,89 @@
-" Enable neobundle
+" Enable vim-plug
 filetype off
 
-set runtimepath+=~/.vim/bundle/dein.vim/
+call plug#begin('~/.local/share/nvim/plugged')
 
-if dein#load_state('~/.vim/bundle/')
-  call dein#begin('~/.vim/bundle/')
+" linting
+Plug 'w0rp/ale'
 
-  " Let dein manage dein
-  " Required:
-  call dein#add('Shougo/dein.vim')
+" Autocomplete
+Plug 'Valloric/YouCompleteMe', { 'do': './install.py --js-completer --rust-completer --clang-completer --go-completer' }
 
-  " linting
-  call dein#add('w0rp/ale')
+" Plug 'ervandew/supertab'
+Plug 'Raimondi/delimitMate'                                 " Automatic closing of quotes, parenthesis, brackets, etc.
+Plug 'airblade/vim-gitgutter'                               " Show git diff in Vim
+Plug 'tpope/vim-surround'                                   " Surround stuff
+Plug 'tpope/vim-repeat'                                     " Repeat stuff
+Plug 'tpope/vim-fugitive'                                   " Git integration in Vim
+Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }     " Nerdtree
 
-  " Autocomplete
-  call dein#add('Shougo/deoplete.nvim')
-  call dein#add('ervandew/supertab')
+" Fuzzy search
+Plug 'ctrlpvim/ctrlp.vim'               " File searching from Vim
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 
-  call dein#add('Raimondi/delimitMate')             " Automatic closing of quotes, parenthesis, brackets, etc.
-  call dein#add('airblade/vim-gitgutter')           " Show git diff in Vim
-  call dein#add('tpope/vim-surround')               " Surround stuff
-  call dein#add('tpope/vim-repeat')                 " Repeat stuff
+Plug 'junegunn/fzf.vim'
 
-  " Fuzzy search
-  call dein#add('ctrlpvim/ctrlp.vim')               " File searching from Vim
-  call dein#add('junegunn/fzf',
-    \{ 'build': './install --bin' })
-  call dein#add('junegunn/fzf.vim')
+Plug 'ntpeters/vim-better-whitespace'   " Highlight and strip trailing whitespaces
+Plug 'terryma/vim-multiple-cursors'     " Multi cursors
+Plug 'vim-airline/vim-airline'          " Vim powerline
+Plug 'vim-airline/vim-airline-themes'   " Themes for powerline
+Plug 'xolox/vim-notes', { 'on': 'Note' } " Managing notes in vim
+Plug 'xolox/vim-misc'                   " Dependency of vim-notes
+Plug 'mhinz/vim-hugefile'               " Read huge files efficiently
 
-  call dein#add('ntpeters/vim-better-whitespace')   " Highlight and strip trailing whitespaces
-  call dein#add('terryma/vim-multiple-cursors')     " Multi cursors
-  call dein#add('vim-airline/vim-airline')          " Vim powerline
-  call dein#add('vim-airline/vim-airline-themes')   " Themes for powerline
-  call dein#add('xolox/vim-notes')                  " Managing notes in vim
-  call dein#add('xolox/vim-misc')                   " Dependency of vim-notes
-  call dein#add('mhinz/vim-hugefile')               " Read huge files efficiently
+" Colors
+Plug 'nanotech/jellybeans.vim'          " The only theme I ever liked...
 
-  " Colors
-  call dein#add('nanotech/jellybeans.vim')          " The only theme I ever liked...
+" Javascript
+" vim-polyglot
+Plug 'ternjs/tern_for_vim', { 'for': 'javascript', 'do': 'npm install && npm install -g tern' }
+Plug 'carlitux/deoplete-ternjs', { 'for': 'javascript' }
 
-  " Javascript
-  " vim-polyglot
-  call dein#add('ternjs/tern_for_vim',
-    \{'on_ft': ['javascript'], 'build': 'npm install && npm install -g tern'})
-  call dein#add('carlitux/deoplete-ternjs',
-    \{'on_ft': ['javascript']})
+" Language support
+Plug 'sheerun/vim-polyglot'             " Huge language pack
+Plug 'sbdchd/neoformat'                 " Formatting code
 
-  " Language support
-  call dein#add('sheerun/vim-polyglot')             " Huge language pack
-  call dein#add('sbdchd/neoformat')                 " Formatting code
+" Typescript
+" vim-polyglot
+Plug 'mhartington/nvim-typescript', {'for': 'typescript'}
 
-  " Rust
-  " vim-polyglot
+Plug 'chrisbra/Colorizer', {'for': 'css'}
 
-  " Markdown
-  " vim-polyglot
-  call dein#add('junegunn/goyo.vim',
-    \{'on_ft': ['latex', 'tex', 'markdown']})
-  call dein#add('plasticboy/vim-markdown',
-    \{'on_ft': ['latex', 'tex', 'markdown']})
+" Rust
+" vim-polyglot
 
-  " Latex
-  call dein#add('poppyschmo/deoplete-latex',
-    \{'on_ft': ['latex', 'tex', 'markdown']})
+" Markdown
+" vim-polyglot
+Plug 'junegunn/goyo.vim', {'for': ['latex', 'tex', 'markdown']}
+Plug 'plasticboy/vim-markdown', {'for': ['latex', 'tex', 'markdown']}
 
-  " CSV
-  call dein#add('chrisbra/csv.vim',
-    \{'on_ft': ['csv']})
+" Latex
+" vim-polyglot
+Plug 'lervag/vimtex', { 'for': ['latex', 'tex', 'markdown'] }
 
-  " c/cpp
-  " vim-polyglot
-  call dein#add('tweekmonster/deoplete-clang2',
-    \{'on_ft': ['c', 'cpp']})
+" CSV
+" vim-polyglot
+Plug 'chrisbra/csv.vim', { 'for': 'csv' }
 
-  " Python
-  " vim-polyglot
-  call dein#add('davidhalter/jedi-vim',
-    \{'on_ft': ['python', 'python3']})
-  call dein#add('zchee/deoplete-jedi',
-    \{'on_ft': ['python', 'python3']})
+" c/cpp
+" vim-polyglot
 
-  " Elm
-  call dein#add('ElmCast/elm-vim',
-    \{'on_ft': ['elm']})
-  call dein#add('pbogut/deoplete-elm',
-    \{'on_ft': ['elm']})
+" Python
+" vim-polyglot
+Plug 'jmcantrell/vim-virtualenv', { 'for': 'python' }
 
-  " Haskell
-  " vim-polyglot
-  call dein#add('dag/vim2hs',
-    \{'on_ft': ['haskell']})
-  call dein#add('eagletmt/neco-ghc',
-    \{'on_ft': ['haskell']})
+" Elm
+" vim-polyglot
+Plug 'ElmCast/elm-vim', { 'for': 'elm' }
 
-  " Zsh
-  call dein#add('zchee/deoplete-zsh',
-    \{'on_ft': ['zsh', 'sh', 'bash']})
+" Haskell
+" vim-polyglot
+Plug 'eagletmt/neco-ghc', { 'for': 'haskell' }
 
-  call dein#end()
-endif
+" Vim script
+" vim-polyglot
+Plug 'IngoHeimbach/neco-vim', { 'for': 'vim' }
 
-filetype plugin indent on " enable detection, plugins and indenting in one step
+call plug#end()
+
+" filetype plugin indent on " enable detection, plugins and indenting in one step
