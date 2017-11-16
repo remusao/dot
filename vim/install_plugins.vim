@@ -12,41 +12,40 @@ Plug 'Valloric/YouCompleteMe', { 'do': './install.py --js-completer --rust-compl
 " Plug 'ervandew/supertab'
 Plug 'Raimondi/delimitMate'                                 " Automatic closing of quotes, parenthesis, brackets, etc.
 Plug 'airblade/vim-gitgutter'                               " Show git diff in Vim
-Plug 'tpope/vim-surround'                                   " Surround stuff
-Plug 'tpope/vim-repeat'                                     " Repeat stuff
 Plug 'tpope/vim-fugitive'                                   " Git integration in Vim
-Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }     " Nerdtree
+" Plug 'tpope/vim-surround'                                   " Surround stuff
+" Plug 'tpope/vim-repeat'                                     " Repeat stuff
+" Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }     " Nerdtree
 
 " Fuzzy search
-Plug 'ctrlpvim/ctrlp.vim'               " File searching from Vim
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'ctrlpvim/ctrlp.vim'               " Fuzzy file searching from Vim
+" Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+" Plug 'junegunn/fzf.vim'
 
-Plug 'junegunn/fzf.vim'
-
-Plug 'ntpeters/vim-better-whitespace'   " Highlight and strip trailing whitespaces
-Plug 'terryma/vim-multiple-cursors'     " Multi cursors
-Plug 'vim-airline/vim-airline'          " Vim powerline
-Plug 'vim-airline/vim-airline-themes'   " Themes for powerline
-Plug 'xolox/vim-notes', { 'on': 'Note' } " Managing notes in vim
-Plug 'xolox/vim-misc'                   " Dependency of vim-notes
-Plug 'mhinz/vim-hugefile'               " Read huge files efficiently
+Plug 'ntpeters/vim-better-whitespace'                       " Highlight and strip trailing whitespaces
+Plug 'terryma/vim-multiple-cursors'                         " Multi cursors
+Plug 'xolox/vim-notes', { 'for': 'notes', 'on': 'Note' }    " Managing notes in vim
+Plug 'xolox/vim-misc', { 'for': 'notes', 'on': 'Note' }     " Dependency of vim-notes
+Plug 'mhinz/vim-hugefile'                                   " Read huge files efficiently
 
 " Colors
-Plug 'nanotech/jellybeans.vim'          " The only theme I ever liked...
+Plug 'nanotech/jellybeans.vim'              " The only theme I ever liked...
+Plug 'vim-airline/vim-airline'              " Vim powerline
+Plug 'vim-airline/vim-airline-themes'       " Themes for powerline
 
 " Javascript
 " vim-polyglot
-Plug 'ternjs/tern_for_vim', { 'for': 'javascript', 'do': 'npm install && npm install -g tern' }
-Plug 'carlitux/deoplete-ternjs', { 'for': 'javascript' }
 
 " Language support
-Plug 'sheerun/vim-polyglot'             " Huge language pack
-Plug 'sbdchd/neoformat'                 " Formatting code
+Plug 'sheerun/vim-polyglot'                 " Huge language pack
+Plug 'sbdchd/neoformat'                     " Formatting code
 
 " Typescript
 " vim-polyglot
 Plug 'mhartington/nvim-typescript', {'for': 'typescript'}
 
+" CSS
+" vim-polyglot
 Plug 'chrisbra/Colorizer', {'for': 'css'}
 
 " Rust
