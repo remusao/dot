@@ -118,9 +118,11 @@
     nmap <silent> <C-k> <Plug>(ale_previous_wrap)
     nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
-    let g:ale_lint_on_text_changed = 'never'
-    let g:ale_lint_on_enter = 0
+    let g:airline#extensions#ale#enabled = 1
+    let g:ale_lint_on_text_changed = 'always'
+    let g:ale_lint_delay = 500
     let g:ale_lint_on_save = 1
+    let g:ale_max_signs = 40
 " }}}
 
 
@@ -185,9 +187,9 @@ let g:ycm_collect_identifiers_from_tags_files = 1
 let g:ycm_seed_identifiers_with_syntax = 1
 let g:ycm_auto_start_csharp_server = 0
 
-let g:ycm_add_preview_to_completeopt = 1
-let g:ycm_autoclose_preview_window_after_completion = 1
-let g:ycm_autoclose_preview_window_after_insertion = 1
+" let g:ycm_add_preview_to_completeopt = 1
+" let g:ycm_autoclose_preview_window_after_completion = 1
+" let g:ycm_autoclose_preview_window_after_insertion = 1
 
 let g:ycm_filetype_blacklist = {
       \ 'tagbar' : 1,
