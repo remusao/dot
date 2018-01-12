@@ -3,7 +3,7 @@
 set nocompatible
 
 " Python path with neovim package installed
-let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python2'
+" let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python2'
 let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python3'
 
 set title           " Change terminal's title
@@ -12,7 +12,7 @@ set history=100     " keep N lines of command line history
 set showcmd         " display incomplete commands
 set noshowmode      " disable showmode because of Powerline
 set gdefault        " Set global flags for search and replace
-set cursorline      " underline the current line, for quick orientation
+set cursorline!     " disable: underline the current line, for quick orientation
 set smartcase       " ignore case if search pattern is all lowercase, case-sensitive otherwise
 set ignorecase      " ignore case when searching
 
@@ -21,14 +21,14 @@ if has('mouse')
   set mouse=a
 endif
 
-set showmatch                          " set show matching parenthesis
+set showmatch       " set show matching parenthesis
 
 " Set encoding
 set encoding=utf-8
 set fileencoding=utf-8
 set fileformat=unix
 
-:set wrap linebreak nolist
+set wrap linebreak nolist
 set lazyredraw                      " don't update the display while executing macros
 set hidden                          " Hide buffers in background
 

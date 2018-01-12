@@ -27,5 +27,3 @@ noremap <silent> _ g_
 
 " use 'Y' to yank to the end of a line, instead of the whole line
 noremap <silent> Y y$
-
-
