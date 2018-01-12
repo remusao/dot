@@ -133,7 +133,7 @@ export PATH=$HOME/.local/spark-1.6.1/bin:$PATH          # ~/.local/spark-1.6.1/
 export PATH=$HOME/.local/nodejs/bin:$PATH               # nodejs packages (npm)
 export PATH=$HOME/.cargo/bin:$PATH                      # Rust
 export PATH=$HOME/dev/repositories/public/Nim/bin:$PATH # Nim
-export PATH=$HOME/.go/bin:$PATH                         # Go
+export PATH=/usr/lib/go-1.9/bin:$PATH                   # Go
 export PATH=$HOME/.gem/ruby/2.3.0/bin:$PATH             # Ruby gems
 export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
@@ -144,7 +144,7 @@ eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
 # Go
-GOPATH=$HOME/.go
+export GOPATH=$HOME/.go
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
@@ -158,9 +158,9 @@ export PIP_REQUIRE_VIRTUALENV=true
 
 
 # History management
-HISTFILE=$HOME/.zsh_history     # enable history saving on shell exit
-HISTSIZE=5000                   # lines of history to maintain memory
-SAVEHIST=5000                   # lines of history to maintain in history file.
+HISTFILE=$HOME/.zsh_history      # enable history saving on shell exit
+HISTSIZE=50000                   # lines of history to maintain memory
+SAVEHIST=50000                   # lines of history to maintain in history file.
 
 setopt EXTENDED_HISTORY         # save timestamp and runtime information
 setopt APPEND_HISTORY           # append rather than overwrite history file.
@@ -173,7 +173,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v9.0.0/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v9.3.0/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
@@ -242,3 +242,6 @@ bindkey "^p" ctrlp
 
 # [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 zmodload zsh/zpty
+
+# added by travis gem
+[ -f /home/remi/.travis/travis.sh ] && source /home/remi/.travis/travis.sh
