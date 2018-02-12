@@ -137,6 +137,7 @@ export PATH=/usr/lib/go-1.9/bin:$PATH                   # Go
 export PATH=$HOME/.gem/ruby/2.3.0/bin:$PATH             # Ruby gems
 export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
+export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
 
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
@@ -173,7 +174,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v9.3.0/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v9.5.0/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
