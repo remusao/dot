@@ -23,6 +23,11 @@ export LANGUAGE=en_US.UTF-8
 export LESSCHARSET=utf-8
 
 # ZSH commands completions
+# source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+# export ZSH_AUTOSUGGEST_USE_ASYNC='true'
+# export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=30'
+# export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+
 fpath=(~/.zsh/zsh-completions/src $fpath)
 export LSCOLORS=gxfxbEaEBxxEhEhBaDaCaD
 zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)(?)*==02=01}:${(s.:.)LS_COLORS}")'
@@ -53,19 +58,6 @@ zstyle ':completion:*' accept-exact '*(N)'
 zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path ~/.zsh/cache
 
-# start typing + [Up-Arrow] - fuzzy find history forward
-autoload -U up-line-or-beginning-search
-zle -N up-line-or-beginning-search
-bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
-
-# start typing + [Down-Arrow] - fuzzy find history backward
-autoload -U down-line-or-beginning-search
-zle -N down-line-or-beginning-search
-bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
-
-bindkey ' ' magic-space # [Space] - do history expansion
-
-
 # ZSH Prompt
 POWERLEVEL9K_VCS_SHOW_SUBMODULE_DIRTY=false
 POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
@@ -92,10 +84,8 @@ alias du='du -sh'
 alias emacs='emacs -nw'
 alias g++='g++ -Wall -Wextra -pedantic -std=c++11'
 alias inst='sudo apt-get install'
-alias ll="ls -lahF --color=auto"
 alias lock='i3lock --color 475263'
-alias ls="ls -hF --color=auto"
-alias lsl="ls -lhF --color=auto"
+alias ls="ls --color=auto"
 alias reload='. ${HOME}/.zshrc'
 alias se='sudo apt-cache search'
 alias t='todo-txt'
@@ -174,7 +164,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v9.5.0/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v9.11.1/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
@@ -221,6 +211,18 @@ ZSH_HIGHLIGHT_STYLES[assign]='none'
 # export GPG_TTY=`tty`
 # export GPG_AGENT_INFO
 
+
+# start typing + [Up-Arrow] - fuzzy find history forward
+autoload -U up-line-or-beginning-search
+zle -N up-line-or-beginning-search
+bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
+
+# start typing + [Down-Arrow] - fuzzy find history backward
+autoload -U down-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
+
+bindkey ' ' magic-space # [Space] - do history expansion
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];

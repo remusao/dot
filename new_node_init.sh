@@ -12,7 +12,9 @@ npm install -g \
     tslib \
     tslint \
     typescript \
-    yarn
+    yarn \
+    eslint-plugin-class-property \
+    babel-eslint
 
 ( export PKG=eslint-config-airbnb; npm info "$PKG@latest" peerDependencies --json | command sed 's/[\{\},]//g ; s/: /@/g' | xargs npm install -g "$PKG@latest" )
 
@@ -23,3 +25,15 @@ npm install -g \
 # stack install ShellCheck
 
 sudo apt-get install tidy
+
+# For pyenv
+# libssl-dev
+# zlib1g-dev
+# libbz2-dev
+# libreadline-dev
+# libsqlite3-dev
+# wget
+# curl
+# llvm
+# libncurses5-dev
+# libncursesw5-dev
