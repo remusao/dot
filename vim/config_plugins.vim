@@ -11,10 +11,11 @@
 
 " ctrlp {{{
    let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
-   if executable('rg')
-       set grepprg=rg\ --color\ never\ --no-heading
-       let g:ctrlp_user_command = 'rg %s --files --color=never --glob ""'
-   endif
+   set grepprg=rg\ --color\ never\ --no-heading
+   let g:ctrlp_user_command = 'rg %s --files --color=never --glob ""'
+   " let g:ctrlp_user_command = 'fd --type f --color=never "" %s'
+   let g:ctrlp_match_func = {'match': 'cpsm#CtrlPMatch'}
+   let g:ctrlp_use_caching = 0
 " }}}
 
 " vim-airline {{{
@@ -29,6 +30,10 @@
 
 " Ale {{{
     let g:ale_fixers = {}
+    "\   'terraform': [
+    "\       'TerraformFmt',
+    "\   ],
+    "\}
     let g:ale_fix_on_save = 0
 
     let g:ale_completion_enabled = 0
@@ -54,6 +59,7 @@
 " Neco-ghc {{{
     let g:necoghc_enable_detailed_browse = 1
     let g:haskellmode_completion_ghc = 0
+    let g:necoghc_use_stack = 1
 " }}}
 
 " haskell-vim {{{
@@ -92,17 +98,24 @@ let g:vim_markdown_new_list_item_indent = 2
 
 " vim-polyglot {{{
 let g:javascript_plugin_jsdoc = 1
+let g:polyglot_disabled = ['latex']
 " }}}
 
 " YouCompleteMe {{{
-let g:ycm_python_binary_path = 'python'
+let g:ycm_python_binary_path = 'python3'
 let g:ycm_semantic_triggers = {
     \'haskell' : ['.'],
     \'go' : ['.'],
+    \'typescript' : ['.'],
     \ }
 let g:ycm_collect_identifiers_from_tags_files = 1
-let g:ycm_seed_identifiers_with_syntax = 1
+let g:ycm_seed_identifiers_with_syntax = 0
 let g:ycm_auto_start_csharp_server = 0
+
+" Preview completion
+let g:ycm_add_preview_to_completeopt = 1
+let g:ycm_autoclose_preview_window_after_completion = 1
+let g:ycm_autoclose_preview_window_after_insertion = 1
 
 let g:ycm_filetype_blacklist = {
       \ 'tagbar' : 1,
@@ -117,3 +130,41 @@ let g:ycm_filetype_blacklist = {
 autocmd FileType html,markdown setlocal omnifunc=htmlcomplete#CompleteTags
 autocmd FileType haskell setlocal omnifunc=necoghc#omnifunc
 " }}}
+
+" fzf {{{
+let g:fzf_buffers_jump = 1
+
+command! -bang -nargs=* Ag
+  \ call fzf#vim#ag(<q-args>,
+  \                 <bang>0 ? fzf#vim#with_preview('up:60%')
+  \                         : fzf#vim#with_preview('right:50%:hidden', '?'),
+  \                 <bang>0)
+command! -bang -nargs=* Rg
+  \ call fzf#vim#grep(
+  \   'rg --column --line-number --no-heading --color=always '.shellescape(<q-args>), 1,
+  \   <bang>0 ? fzf#vim#with_preview('up:60%')
+  \           : fzf#vim#with_preview('right:50%:hidden', '?'),
+  \   <bang>0)
+
+" Likewise, Files command with preview window
+command! -bang -nargs=? -complete=dir Files
+  \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
+" }}}
+
+" UtilSnip {{{
+let g:UltiSnipsExpandTrigger = '<C-j>'
+let g:UltiSnipsJumpForwardTrigger = '<C-j>'
+let g:UltiSnipsJumpBackwardTrigger = '<C-k>'
+let g:ultisnips_python_style = 'google'
+" }}}
+
+" intero-neovim {{{
+" let g:intero_type_on_hover = 1
+" }}}
+
+" let g:LanguageClient_serverCommands = {
+"     \ 'rust': ['rustup', 'run', 'nightly', 'rls'],
+"     \ 'javascript': ['javascript-typescript-stdio'],
+"     \ 'haskell': ['hie', '--lsp'],
+"     \ 'javascript.jsx': ['javascript-typescript-stdio'],
+"     \ }
