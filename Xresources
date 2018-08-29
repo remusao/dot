@@ -36,9 +36,12 @@ URxvt*saveLines: 65535
 URxvt*cursorBlink: false
 
 URxvt.xftAntialias:     true
+! URxvt.font:             xft:Inconsolata Nerd Font:regular:size=12:antialias=true:hinting=true
+! URxvt.boldFont:         xft:Inconsolata Nerd Font:bold:size=12:antialias=true:hinting=true
 URxvt.font:             xft:Inconsolata for Powerline:regular:size=12:antialias=true:hinting=true
 URxvt.boldFont:         xft:Inconsolata for Powerline:bold:size=12:antialias=true:hinting=true
-URxvt.letterSpace: -1
+! URxvt.letterSpace: -1
+URxvt.letterSpace: 0
 
 urxvt*allow_bold:    true
 

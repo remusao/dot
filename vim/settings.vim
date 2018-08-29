@@ -3,8 +3,8 @@
 set nocompatible
 
 " Python path with neovim package installed
-" let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python2'
-let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python3'
+" let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python'
+let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python'
 
 set title           " Change terminal's title
 set number          " show line numbers
@@ -15,6 +15,7 @@ set gdefault        " Set global flags for search and replace
 set cursorline!     " disable: underline the current line, for quick orientation
 set smartcase       " ignore case if search pattern is all lowercase, case-sensitive otherwise
 set ignorecase      " ignore case when searching
+set inccommand=nosplit
 
 "" In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
