@@ -1,7 +1,8 @@
 #! /usr/bin/zsh
 
 # Options
-export TERM='xterm-256color'
+# export TERM='xterm-256color'
+export TERM='rxvt-unicode-256color'
 export DEFAULT_USER="remi"
 export EDITOR='vim'
 export VISUAL='vim'
@@ -64,6 +65,8 @@ POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
+# POWERLEVEL9K_MODE="nerdfont-complete"
+# POWERLEVEL9K_MODE='awesome-patched'
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
@@ -87,7 +90,7 @@ alias inst='sudo apt-get install'
 alias lock='i3lock --color 475263'
 alias ls="ls --color=auto"
 alias reload='. ${HOME}/.zshrc'
-alias se='sudo apt-cache search'
+alias se='apt-cache search'
 alias t='todo-txt'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade'
@@ -124,7 +127,7 @@ export PATH=$HOME/.local/nodejs/bin:$PATH               # nodejs packages (npm)
 export PATH=$HOME/.cargo/bin:$PATH                      # Rust
 export PATH=$HOME/dev/repositories/public/Nim/bin:$PATH # Nim
 export PATH=/usr/lib/go-1.9/bin:$PATH                   # Go
-export PATH=$HOME/.gem/ruby/2.3.0/bin:$PATH             # Ruby gems
+export PATH=$HOME/.gem/ruby/2.5.0/bin:$PATH             # Ruby gems
 export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
@@ -132,7 +135,6 @@ export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
 
 # Go
 export GOPATH=$HOME/.go
@@ -164,7 +166,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v9.11.1/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v10.9.0/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
@@ -179,7 +181,8 @@ set-window-title
 add-zsh-hook precmd set-window-title
 
 # Syntax coloring
-source ${HOME}/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# source ${HOME}/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern root)
 ZSH_HIGHLIGHT_STYLES[default]='none'
 ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'
@@ -248,3 +251,7 @@ zmodload zsh/zpty
 
 # added by travis gem
 [ -f /home/remi/.travis/travis.sh ] && source /home/remi/.travis/travis.sh
+
+# Load ssh key
+eval `keychain --agents 'ssh,gpg' --eval id_rsa`
+export GPG_TTY=$(tty)

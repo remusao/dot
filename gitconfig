@@ -1,12 +1,19 @@
 [user]
     name = Rémi Berson
     email = remi@cliqz.com
+    username = remusao
+	signingkey = 67752424D2E7DF3A40F8C2184243D1015E79C381
+
+[core]
+    editor = nvim
+
 [color]
     branch = auto
     diff = auto
     interactive = auto
     status = auto
 	ui = true
+
 [alias]
     hist = log --color --pretty=format:\"%C(yellow)%h%C(reset) %s%C(bold red)%d%C(reset) %C(green)%ad%C(reset) %C(blue)[%an]%C(reset)\" --relative-date --decorate
     graph = log --color --graph --pretty=format:\"%h | %ad | %an | %s%d\" --date=short
@@ -14,11 +21,15 @@
     ci = commit
     co = checkout
     br = branch
-[core]
-    editor = nvim
+
 [merge]
     tool = vimdiff
+
 [push]
 	default = simple
+
 [commit]
-	gpgsign = false
+	gpgsign = true
+
+[tag]
+	gpgsign = true
