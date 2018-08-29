@@ -7,12 +7,10 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'w0rp/ale'
 
 " Autocomplete
-Plug 'Valloric/YouCompleteMe', { 'do': './install.py --go-completer --js-completer --rust-completer --clang-completer' }
+Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
 Plug 'SirVer/ultisnips'     " Snippets engine
 Plug 'honza/vim-snippets'   " Actual snippets
 
-" Plug 'ervandew/supertab'
-Plug 'Raimondi/delimitMate'             " Automatic closing of quotes, parenthesis, brackets, etc.
 Plug 'airblade/vim-gitgutter'           " Show git diff in Vim
 Plug 'tpope/vim-fugitive'               " Git integration in Vim
 
@@ -38,21 +36,34 @@ Plug 'xolox/vim-misc', { 'for': 'notes', 'on': 'Note' }     " Dependency of vim-
 " Terraform
 Plug 'hashivim/vim-terraform', { 'for': ['terraform'] }
 
-" Javascript
-" vim-polyglot
+Plug 'jiangmiao/auto-pairs'
 
-" Language support
+Plug 'editorconfig/editorconfig-vim' " Check .editorconfig settings
+
+" Languages support
 Plug 'sheerun/vim-polyglot' " Huge language pack
 
-" Currently using neco-ghc + intero instead
-" Plug 'autozimu/LanguageClient-neovim', {
-"     \ 'branch': 'next',
-"     \ 'do': 'bash install.sh',
-"     \ }
+" Language Client Protocol
+Plug 'autozimu/LanguageClient-neovim', {
+    \ 'branch': 'next',
+    \ 'do': './install.sh'
+    \ }
+
+
+Plug 'Shougo/neco-syntax'
+
+" C/C++
+" vim-polyglot
+Plug 'zchee/deoplete-clang', { 'for': ['c', 'cpp'] }
+
+" Javascript
+" vim-polyglot
+Plug 'carlitux/deoplete-ternjs', { 'for': ['javascript', 'javascript.jsx'] }
 
 " Typescript
 " vim-polyglot
-" Plug 'mhartington/nvim-typescript', {'for': 'typescript'}
+Plug 'HerringtonDarkholme/yats.vim', { 'for': 'typescript' }
+" Plug 'mhartington/nvim-typescript', {'for': 'typescript', 'build': './install.sh' }
 
 " CSS
 " vim-polyglot
@@ -74,21 +85,20 @@ Plug 'lervag/vimtex',               { 'for': ['latex', 'tex', 'markdown'] }
 " vim-polyglot
 Plug 'chrisbra/csv.vim',            { 'for': 'csv' }
 
-" c/cpp
-" vim-polyglot
-
 " Python
 " vim-polyglot
 Plug 'jmcantrell/vim-virtualenv',   { 'for': 'python' }
+Plug 'zchee/deoplete-jedi', { 'for': 'python' }
 
 " Elm
 " vim-polyglot
-Plug 'ElmCast/elm-vim',             { 'for': 'elm' }
+Plug 'pbogut/deoplete-elm',          { 'for': 'elm'}
 
 " Haskell
 " vim-polyglot: haskell-vim
-Plug 'eagletmt/neco-ghc',           { 'for': 'haskell' }
+" Plug 'eagletmt/neco-ghc',           { 'for': 'haskell' }
 Plug 'parsonsmatt/intero-neovim',   { 'for': 'haskell' }
+
 " Plug 'alx741/vim-hindent',          { 'for': 'haskell' }
 " Plug 'alx741/vim-stylishask',       { 'for': 'haskell' }
 
@@ -99,6 +109,12 @@ Plug 'fatih/vim-go',                { 'for': 'go' }
 " Vim script
 " vim-polyglot
 Plug 'IngoHeimbach/neco-vim',       { 'for': 'vim' }
+
+" Zsh
+Plug 'zchee/deoplete-zsh', { 'for': ['zsh', 'sh', 'bash'] }
+
+" Julia
+Plug 'JuliaEditorSupport/julia-vim', { 'for': 'julia' }
 
 call plug#end()
 
