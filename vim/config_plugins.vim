@@ -31,8 +31,11 @@ let g:airline#extensions#hunks#non_zero_only = 1
 " Ale {{{
 let g:ale_python_black_executable = '/home/remi/.virtualenvs/neovim3/bin/black'
 let g:ale_fixers = {
+\   '*': ['remove_trailing_lines', 'trim_whitespace'],
+\   'typescript': ['prettier', 'tslint'],
 \   'javascript': ['eslint'],
 \   'python': ['black'],
+\   'terraform': ['terraform'],
 \   'c': ['clang-format'],
 \}
 let g:ale_fix_on_save = 1
@@ -144,11 +147,11 @@ let g:LanguageClient_serverCommands = {
 " }}}
 
 " deoplete {{{
-let g:deoplete#enable_at_startup = 1
-inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
-
-let g:deoplete#sources#clang#libclang_path = "/usr/lib/llvm-6.0/lib/libclang.so"
-let g:deoplete#sources#clang#clang_header = "/usr/lib/clang/6.0/include"
+" let g:deoplete#enable_at_startup = 1
+" inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
+"
+" let g:deoplete#sources#clang#libclang_path = "/usr/lib/llvm-6.0/lib/libclang.so"
+" let g:deoplete#sources#clang#clang_header = "/usr/lib/clang/6.0/include"
 " }}}
 
 " jiangmiao/auto-pairs {{{
@@ -157,4 +160,17 @@ let g:AutoPairsMultilineClose = 0
 
 " Julia {{{
 let g:default_julia_version = "devel"
+" }}}
+
+" Terraform {{{
+let g:terraform_fmt_on_save = 1
+let g:terraform_align = 1
+" }}}
+
+" YouCompleteMe {{{
+let g:ycm_show_diagnostics_ui = 0
+let g:ycm_collect_identifiers_from_tags_files = 1
+let g:ycm_add_preview_to_completeopt = 1
+let g:ycm_autoclose_preview_window_after_completion = 1
+let g:ycm_autoclose_preview_window_after_insertion = 1
 " }}}

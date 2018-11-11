@@ -7,7 +7,7 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'w0rp/ale'
 
 " Autocomplete
-Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
+Plug 'Valloric/YouCompleteMe', { 'do': './install.py' }
 Plug 'SirVer/ultisnips'     " Snippets engine
 Plug 'honza/vim-snippets'   " Actual snippets
 
@@ -43,22 +43,21 @@ Plug 'editorconfig/editorconfig-vim' " Check .editorconfig settings
 " Languages support
 Plug 'sheerun/vim-polyglot' " Huge language pack
 
-" Language Client Protocol
-Plug 'autozimu/LanguageClient-neovim', {
-    \ 'branch': 'next',
-    \ 'do': './install.sh'
-    \ }
+" Language Client Protocol (not needed with Ale)
+" Plug 'autozimu/LanguageClient-neovim', {
+"     \ 'branch': 'next',
+"     \ 'do': './install.sh'
+"     \ }
 
-
-Plug 'Shougo/neco-syntax'
+" Plug 'Shougo/neco-syntax'
 
 " C/C++
 " vim-polyglot
-Plug 'zchee/deoplete-clang', { 'for': ['c', 'cpp'] }
+" Plug 'zchee/deoplete-clang', { 'for': ['c', 'cpp'] }
 
 " Javascript
 " vim-polyglot
-Plug 'carlitux/deoplete-ternjs', { 'for': ['javascript', 'javascript.jsx'] }
+" Plug 'carlitux/deoplete-ternjs', { 'for': ['javascript', 'javascript.jsx'] }
 
 " Typescript
 " vim-polyglot
@@ -88,11 +87,11 @@ Plug 'chrisbra/csv.vim',            { 'for': 'csv' }
 " Python
 " vim-polyglot
 Plug 'jmcantrell/vim-virtualenv',   { 'for': 'python' }
-Plug 'zchee/deoplete-jedi', { 'for': 'python' }
+" Plug 'zchee/deoplete-jedi', { 'for': 'python' }
 
 " Elm
 " vim-polyglot
-Plug 'pbogut/deoplete-elm',          { 'for': 'elm'}
+" Plug 'pbogut/deoplete-elm',          { 'for': 'elm'}
 
 " Haskell
 " vim-polyglot: haskell-vim
@@ -111,7 +110,7 @@ Plug 'fatih/vim-go',                { 'for': 'go' }
 Plug 'IngoHeimbach/neco-vim',       { 'for': 'vim' }
 
 " Zsh
-Plug 'zchee/deoplete-zsh', { 'for': ['zsh', 'sh', 'bash'] }
+" Plug 'zchee/deoplete-zsh', { 'for': ['zsh', 'sh', 'bash'] }
 
 " Julia
 Plug 'JuliaEditorSupport/julia-vim', { 'for': 'julia' }
