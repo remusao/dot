@@ -42,9 +42,9 @@ set noswapfile
 set nowritebackup
 
 " Reduce processing for syntax highlighting to make it less of a pain.
-set synmaxcol=200
+set synmaxcol=1000
 syntax sync minlines=200
-syntax sync maxlines=500
+syntax sync maxlines=2000
 
 " Persistent undo
 silent !mkdir ~/.config/nvim/backups > /dev/null 2>&1

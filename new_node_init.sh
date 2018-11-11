@@ -18,7 +18,9 @@ npm install -g \
     babel-eslint@latest \
     javascript-typescript-langserver@latest \
     dockerfile-language-server-nodejs@latest \
-    neovim@latest
+    neovim@latest \
+    typescript-tslint-plugin@latest \
+    jsvu@latest
 
 ( export PKG=eslint-config-airbnb; npm info "$PKG@latest" peerDependencies --json | command sed 's/[\{\},]//g ; s/: /@/g' | xargs npm install -g "$PKG@latest" )
 
