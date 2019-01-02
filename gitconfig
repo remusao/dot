@@ -2,7 +2,7 @@
     name = Rémi Berson
     email = remi@cliqz.com
     username = remusao
-	signingkey = 67752424D2E7DF3A40F8C2184243D1015E79C381
+	signingkey = 6C5EA0AD81C6FC8A3E5438C7D4849BD33F5E5166
 
 [core]
     editor = nvim
@@ -33,3 +33,5 @@
 
 [tag]
 	gpgsign = true
+[gpg]
+	program = gpg
