@@ -7,7 +7,7 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'w0rp/ale'
 
 " Autocomplete
-Plug 'Valloric/YouCompleteMe', { 'commit': 'b0f18804f3c85eab6bb2912ee3f2f3d2b238404a', 'do': './install.py --ts-completer --rust-completer' }
+Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }
 Plug 'SirVer/ultisnips'     " Snippets engine
 Plug 'honza/vim-snippets'   " Actual snippets
 
