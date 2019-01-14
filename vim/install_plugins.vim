@@ -49,7 +49,7 @@ Plug 'sheerun/vim-polyglot' " Huge language pack
 
 " Typescript
 " vim-polyglot
-Plug 'HerringtonDarkholme/yats.vim', { 'for': 'typescript' }
+" Plug 'HerringtonDarkholme/yats.vim', { 'for': 'typescript' }
 " Plug 'mhartington/nvim-typescript', {'for': 'typescript', 'build': './install.sh' }
 
 " CSS
@@ -102,6 +102,8 @@ Plug 'IngoHeimbach/neco-vim',       { 'for': 'vim' }
 
 " Julia
 Plug 'JuliaEditorSupport/julia-vim', { 'for': 'julia' }
+
+Plug 'junegunn/rainbow_parentheses.vim'
 
 call plug#end()
 
