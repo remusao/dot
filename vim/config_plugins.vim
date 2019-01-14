@@ -34,9 +34,10 @@ let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
 \   'typescript': ['prettier', 'tslint'],
 \   'javascript': ['eslint'],
-\   'python': ['black'],
+\   'python': ['isort', 'black'],
 \   'terraform': ['terraform'],
 \   'c': ['clang-format'],
+\   'rust': ['rustfmt'],
 \}
 let g:ale_fix_on_save = 1
 
@@ -97,7 +98,7 @@ let g:vim_markdown_new_list_item_indent = 2
 
 " vim-polyglot {{{
 let g:javascript_plugin_jsdoc = 1
-let g:polyglot_disabled = ['latex', 'typescript']
+let g:polyglot_disabled = ['latex']
 " }}}
 
 " fzf {{{
@@ -181,4 +182,13 @@ let g:EditorConfig_exclude_patterns = ['fugitive://.*']
 
 " gitgutter {{{
 " issue: afa4f2ddf0fecb37914ec37357636abb18013422
+" }}}
+
+" Rainbow {{{
+let g:rainbow#max_level = 16
+let g:rainbow#pairs = [['{', '}'], ['(', ')'], ['[', ']']]
+augroup rainbow_lisp
+  autocmd!
+  autocmd FileType typescript,javascript,lisp,clojure,scheme RainbowParentheses
+augroup END
 " }}}
