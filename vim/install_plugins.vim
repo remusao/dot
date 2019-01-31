@@ -103,7 +103,7 @@ Plug 'IngoHeimbach/neco-vim',       { 'for': 'vim' }
 " Julia
 Plug 'JuliaEditorSupport/julia-vim', { 'for': 'julia' }
 
-Plug 'junegunn/rainbow_parentheses.vim'
+" Plug 'junegunn/rainbow_parentheses.vim'
 
 call plug#end()
 

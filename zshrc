@@ -99,17 +99,14 @@ alias vim='nvim'
 alias runpyenv='eval "$(pyenv init -)"'
 alias runnvm='source ~/.nvm/nvm.sh '
 
-# Security
-alias checkrootkits="sudo rkhunter --update; sudo rkhunter --propupd; sudo rkhunter --check"
-alias checkvirus="clamscan --recursive=yes --infected /home"
-alias updateantivirus="sudo freshclam"
-
 # Copy
 alias pbcopy='xclip -selection clipboard'
 alias pbpaste='xclip -selection clipboard -o'
 
-alias ltev='. ~/.local/bin/load_cluster_env.sh test && unset CLIQZ_DMZ_GATEWAY'
-alias lpev='. ~/.local/bin/load_cluster_env.sh primary && unset CLIQZ_DMZ_GATEWAY'
+# Projects
+alias memo='cd /home/remi/dev/perso/memoria'
+alias mem='cd /home/remi/dev/perso/memoria'
+alias m='cd /home/remi/dev/perso/memoria'
 
 # Globals
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
@@ -133,12 +130,18 @@ export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 
-
 export GEM_HOME=$HOME/.gem/
+
+# Init Android Studio
+export ANDROID_HOME=$HOME/.sandboxes/android-studio/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/tools
+export PATH=$PATH:$ANDROID_HOME/tools/bin
+export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
-eval "$(pyenv init -)"
+# eval "$(pyenv init -)"
 
 # Go
 export GOPATH=$HOME/.go
@@ -257,5 +260,13 @@ zmodload zsh/zpty
 [ -f /home/remi/.travis/travis.sh ] && source /home/remi/.travis/travis.sh
 
 # Load ssh key
-eval `keychain --agents 'ssh,gpg' --eval id_rsa`
+eval `keychain --agents 'ssh,gpg' --eval id_rsa_perso`
 export GPG_TTY=$(tty)
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/remi/dev/public/google-cloud-sdk/path.zsh.inc' ]; then . '/home/remi/dev/public/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/remi/dev/public/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/remi/dev/public/google-cloud-sdk/completion.zsh.inc'; fi
+
+export GOOGLE_APPLICATION_CREDENTIALS=/home/remi/.config/gcloud/remi-dev.json
