@@ -11,8 +11,9 @@ Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer --rust-compl
 Plug 'SirVer/ultisnips'     " Snippets engine
 Plug 'honza/vim-snippets'   " Actual snippets
 
-Plug 'airblade/vim-gitgutter'           " Show git diff in Vim
+Plug 'airblade/vim-gitgutter', { 'commit': 'faa1e953deae2da2b0df45f71a8ce8d931766c28' } " Show git diff in Vim
 Plug 'tpope/vim-fugitive'               " Git integration in Vim
+Plug 'junegunn/gv.vim'                  " Git commit viewer
 
 " Fuzzy search
 Plug 'ctrlpvim/ctrlp.vim'               " Fuzzy file searching from Vim
@@ -37,27 +38,14 @@ Plug 'xolox/vim-misc', { 'for': 'notes', 'on': 'Note' }     " Dependency of vim-
 Plug 'hashivim/vim-terraform', { 'for': ['terraform'] }
 
 Plug 'jiangmiao/auto-pairs'
+" Plug 'tpope/vim-endwise'
+" Plug 'rstacruz/vim-closer'
+" Plug 'Raimondi/delimitMate'
 
 Plug 'editorconfig/editorconfig-vim' " Check .editorconfig settings
 
 " Languages support
 Plug 'sheerun/vim-polyglot' " Huge language pack
-
-" Language Client Protocol (not needed with Ale)
-" Plug 'autozimu/LanguageClient-neovim', {
-"     \ 'branch': 'next',
-"     \ 'do': './install.sh'
-"     \ }
-
-" Plug 'Shougo/neco-syntax'
-
-" C/C++
-" vim-polyglot
-" Plug 'zchee/deoplete-clang', { 'for': ['c', 'cpp'] }
-
-" Javascript
-" vim-polyglot
-" Plug 'carlitux/deoplete-ternjs', { 'for': ['javascript', 'javascript.jsx'] }
 
 " Typescript
 " vim-polyglot
