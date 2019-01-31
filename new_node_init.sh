@@ -33,6 +33,7 @@ cargo install rls ripgrep --force
 # stack install ShellCheck
 
 # sudo apt-get install tidy
+# editorconfig libeditorconfig-dev
 
 # For pyenv
 # libssl-dev

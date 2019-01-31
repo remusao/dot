@@ -174,3 +174,11 @@ let g:ycm_add_preview_to_completeopt = 1
 let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_autoclose_preview_window_after_insertion = 1
 " }}}
+
+" editorconfig {{{
+let g:EditorConfig_exclude_patterns = ['fugitive://.*']
+" }}}
+
+" gitgutter {{{
+" issue: afa4f2ddf0fecb37914ec37357636abb18013422
+" }}}
