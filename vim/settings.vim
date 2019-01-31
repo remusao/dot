@@ -3,7 +3,6 @@
 set nocompatible
 
 " Python path with neovim package installed
-" let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python'
 let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python'
 let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python'
 

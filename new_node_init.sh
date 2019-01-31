@@ -4,6 +4,9 @@ npm install -g \
     broccoli-cli@latest \
     csslint@latest \
     elm-oracle@latest \
+    elm@latest \
+    elm-test@latest \
+    elm-format@latest \
     htmlhint@latest \
     npm@latest \
     prettier@latest \

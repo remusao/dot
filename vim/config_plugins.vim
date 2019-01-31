@@ -128,25 +128,6 @@ let g:UltiSnipsJumpBackwardTrigger = '<C-k>'
 let g:ultisnips_python_style = 'google'
 " }}}
 
-" LanguageClient-neovim {{{
-set hidden
-let g:LanguageClient_serverCommands = {
-    \ 'rust': ['~/.cargo/bin/rustup', 'run', 'stable', 'rls'],
-    \ 'javascript': ['/home/remi/.nvm/versions/node/v9.11.2/bin/javascript-typescript-stdio'],
-    \ 'javascript.jsx': ['/home/remi/.nvm/versions/node/v9.11.2/bin/javascript-typescript-stdio'],
-    \ 'typescript': ['/home/remi/.nvm/versions/node/v9.11.2/bin/javascript-typescript-stdio'],
-    \ 'python': ['/home/remi/.virtualenvs/neovim3/bin/pyls'],
-    \ 'dockerfile': ['/home/remi/.nvm/versions/node/v9.11.2/bin/docker-langserver', '--stdio'],
-    \ 'haskell': ['hie-wrapper'],
-    \ 'julia': ['julia', '--startup-file=no', '--history-file=no', '-e', '
-    \   using LanguageServer;
-    \   server = LanguageServer.LanguageServerInstance(STDIN, STDOUT, false);
-    \   server.runlinter = true;
-    \   run(server);
-    \ '],
-    \ }
-" }}}
-
 " deoplete {{{
 " let g:deoplete#enable_at_startup = 1
 " inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
@@ -174,6 +155,9 @@ let g:ycm_collect_identifiers_from_tags_files = 1
 let g:ycm_add_preview_to_completeopt = 1
 let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_autoclose_preview_window_after_insertion = 1
+let g:ycm_semantic_triggers = {
+     \ 'elm' : ['.'],
+     \}
 " }}}
 
 " editorconfig {{{
@@ -185,10 +169,10 @@ let g:EditorConfig_exclude_patterns = ['fugitive://.*']
 " }}}
 
 " Rainbow {{{
-let g:rainbow#max_level = 16
-let g:rainbow#pairs = [['{', '}'], ['(', ')'], ['[', ']']]
-augroup rainbow_lisp
-  autocmd!
-  autocmd FileType typescript,javascript,lisp,clojure,scheme RainbowParentheses
-augroup END
+" let g:rainbow#max_level = 16
+" let g:rainbow#pairs = [['{', '}'], ['(', ')'], ['[', ']']]
+" augroup rainbow_lisp
+"   autocmd!
+"   autocmd FileType typescript,javascript,lisp,clojure,scheme RainbowParentheses
+" augroup END
 " }}}
