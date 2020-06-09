@@ -32,7 +32,7 @@ let g:airline#extensions#hunks#non_zero_only = 1
 let g:ale_python_black_executable = '/home/remi/.virtualenvs/neovim3/bin/black'
 let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
-\   'typescript': ['prettier', 'tslint'],
+\   'typescript': ['tslint'],
 \   'javascript': ['eslint'],
 \   'python': ['isort', 'black'],
 \   'terraform': ['terraform'],

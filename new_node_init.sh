@@ -1,52 +1,50 @@
 #! /usr/bin/env bash
 
-npm install -g \
-    broccoli-cli@latest \
-    csslint@latest \
-    elm-oracle@latest \
-    elm@latest \
-    elm-test@latest \
-    elm-format@latest \
-    htmlhint@latest \
-    npm@latest \
-    prettier@latest \
-    stylelint@latest \
-    sass-lint@latest \
-    tern@latest \
-    tslib@latest \
-    tslint@latest \
-    typescript@latest \
-    yarn@latest \
-    eslint-plugin-class-property@latest \
-    babel-eslint@latest \
-    javascript-typescript-langserver@latest \
-    dockerfile-language-server-nodejs@latest \
-    neovim@latest \
-    typescript-tslint-plugin@latest \
-    jsvu@latest
+# TODO - update apt packages
+# TODO - install Node.js to latest
 
+npm install -g npm@latest yarn@latest
 ( export PKG=eslint-config-airbnb; npm info "$PKG@latest" peerDependencies --json | command sed 's/[\{\},]//g ; s/: /@/g' | xargs npm install -g "$PKG@latest" )
+npm install -g          \
+  alex                  \
+  babel-eslint@latest   \
+  csslint@latest        \
+  htmlhint@latest       \
+  jshint@latest         \
+  jsvu@latest           \
+  neovim@latest         \
+  npm@latest            \
+  prettier@latest       \
+  sass-lint@latest      \
+  stylelint@latest      \
+  svgo@latest           \
+  tslib@latest          \
+  tslint@latest         \
+  typescript@latest
 
-rustup component add rls-preview rust-analysis rust-src rustfmt
-cargo install rls ripgrep --force
+rustup update
 
-# Hadolint
-# YouCompleteMe
-# stack install hdevtools
-# stack install hlint
-# stack install ShellCheck
+# rustup component add rls-preview rust-analysis rust-src rustfmt
 
-# sudo apt-get install tidy
-# editorconfig libeditorconfig-dev
+cargo install           \
+  alacritty             \
+  chars                 \
+  du-dust               \
+  eva                   \
+  exa                   \
+  fd-find               \
+  hyperfine             \
+  mdcat                 \
+  ripgrep               \
+  skim                  \
+  titlecase             \
+  watchexec
 
-# For pyenv
-# libssl-dev
-# zlib1g-dev
-# libbz2-dev
-# libreadline-dev
-# libsqlite3-dev
-# wget
-# curl
-# llvm
-# libncurses5-dev
-# libncursesw5-dev
+# TODO install from release?
+# No binaries?
+# dot
+
+# TODO install Go binaries
+# podman + restic?
+
+# TODO - install editor config
