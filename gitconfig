@@ -2,10 +2,7 @@
     name = Rémi Berson
     email = remi@cliqz.com
     username = remusao
-	signingkey = 6C5EA0AD81C6FC8A3E5438C7D4849BD33F5E5166
-
-[core]
-    editor = nvim
+	signingkey = 612B1C17300C7410
 
 [color]
     branch = auto
@@ -35,3 +32,8 @@
 	gpgsign = true
 [gpg]
 	program = gpg
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

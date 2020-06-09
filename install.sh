@@ -16,8 +16,8 @@ backupfile() {
 # zsh-syntax-highlighting
 
 # Pull Submodules
-git submodule init
-git submodule update --init --recursive
+# git submodule init
+# git submodule update --init --recursive
 
 # Install custom fonts
 echo "Install fonts"
