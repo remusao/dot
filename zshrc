@@ -68,10 +68,8 @@ POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 # POWERLEVEL9K_MODE='awesome-patched'
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
-POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
-# source /usr/share/powerlevel9k/powerlevel9k.zsh-theme
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(aws status virtualenv node_version time)
 source /home/remi/.zsh/powerlevel10k/powerlevel10k.zsh-theme
-
 
 # Aliases
 alias -g ...='../..'
@@ -129,6 +127,9 @@ export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
+
+# Rust cargo
+RUSTC_WRAPPER=sccache
 
 export GEM_HOME=$HOME/.gem/
 
