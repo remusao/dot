@@ -28,8 +28,7 @@ export LESSCHARSET=utf-8
 # export ZSH_AUTOSUGGEST_USE_ASYNC='true'
 # export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=30'
 # export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
-
-fpath=(~/.zsh/zsh-completions/src $fpath)
+# fpath=(~/.zsh/zsh-completions/src $fpath)
 export LSCOLORS=gxfxbEaEBxxEhEhBaDaCaD
 zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)(?)*==02=01}:${(s.:.)LS_COLORS}")'
 
@@ -70,7 +69,8 @@ POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
-source ~/.zsh/powerlevel9k/powerlevel9k.zsh-theme
+# source /usr/share/powerlevel9k/powerlevel9k.zsh-theme
+source /home/remi/.zsh/powerlevel10k/powerlevel10k.zsh-theme
 
 
 # Aliases
@@ -173,7 +173,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v11.9.0/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v14.3.0/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title

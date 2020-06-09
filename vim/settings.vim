@@ -3,8 +3,8 @@
 set nocompatible
 
 " Python path with neovim package installed
-let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python'
-let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python'
+" let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python'
+" let g:python_host_prog = '/home/remi/.virtualenvs/neovim2/bin/python'
 
 set title           " Change terminal's title
 set number          " show line numbers
@@ -59,9 +59,9 @@ set colorcolumn=80
 set autoread
 
 " Indentation
-set tabstop=4       " default to 4 spaces for a hard tab
-set softtabstop=4   " default to 4 spaces for the soft tab
-set shiftwidth=4    " for when <TAB> is pressed at the beginning of a line
+set tabstop=2       " default to 2 spaces for a hard tab
+set softtabstop=2   " default to 2 spaces for the soft tab
+set shiftwidth=2    " for when <TAB> is pressed at the beginning of a line
 set expandtab       " Expand tabs into spaces
 set smartindent
 set nofoldenable

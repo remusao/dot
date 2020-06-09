@@ -7,22 +7,23 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'w0rp/ale'
 
 " Autocomplete
-Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }
+Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer --clangd-completer' }
 Plug 'SirVer/ultisnips'     " Snippets engine
 Plug 'honza/vim-snippets'   " Actual snippets
 
-Plug 'airblade/vim-gitgutter', { 'commit': 'faa1e953deae2da2b0df45f71a8ce8d931766c28' } " Show git diff in Vim
+Plug 'airblade/vim-gitgutter'
 Plug 'tpope/vim-fugitive'               " Git integration in Vim
 Plug 'junegunn/gv.vim'                  " Git commit viewer
 
 " Fuzzy search
 Plug 'ctrlpvim/ctrlp.vim'               " Fuzzy file searching from Vim
 Plug 'nixprime/cpsm', { 'do': 'env PY3=ON ./install.sh' }
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'junegunn/fzf.vim'
+" Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+" Plug 'junegunn/fzf.vim'
 
 Plug 'ntpeters/vim-better-whitespace'   " Highlight and strip trailing whitespaces
-Plug 'terryma/vim-multiple-cursors'     " Multi cursors
+" Plug 'terryma/vim-multiple-cursors'     " Multi cursors
+Plug 'mg979/vim-visual-multi'
 Plug 'mhinz/vim-hugefile'               " Read huge files efficiently
 
 " Colors
@@ -38,6 +39,7 @@ Plug 'xolox/vim-misc', { 'for': 'notes', 'on': 'Note' }     " Dependency of vim-
 Plug 'hashivim/vim-terraform', { 'for': ['terraform'] }
 
 Plug 'jiangmiao/auto-pairs'
+" Plug 'neoclide/coc-pairs'
 " Plug 'tpope/vim-endwise'
 " Plug 'rstacruz/vim-closer'
 " Plug 'Raimondi/delimitMate'
@@ -45,11 +47,14 @@ Plug 'jiangmiao/auto-pairs'
 Plug 'editorconfig/editorconfig-vim' " Check .editorconfig settings
 
 " Languages support
-Plug 'sheerun/vim-polyglot' " Huge language pack
+" Plug 'sheerun/vim-polyglot' " Huge language pack
 
-" Typescript
+" JavaScript
+Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
+
+" TypeScript
 " vim-polyglot
-" Plug 'HerringtonDarkholme/yats.vim', { 'for': 'typescript' }
+Plug 'HerringtonDarkholme/yats.vim', { 'for': 'typescript' }
 " Plug 'mhartington/nvim-typescript', {'for': 'typescript', 'build': './install.sh' }
 
 " CSS
@@ -74,7 +79,9 @@ Plug 'chrisbra/csv.vim',            { 'for': 'csv' }
 
 " Python
 " vim-polyglot
-Plug 'jmcantrell/vim-virtualenv',   { 'for': 'python' }
+Plug 'jmcantrell/vim-virtualenv',     { 'for': 'python' }
+Plug 'Vimjas/vim-python-pep8-indent', { 'for': 'python' }
+Plug 'vim-python/python-syntax',      { 'for': 'python' }
 " Plug 'zchee/deoplete-jedi', { 'for': 'python' }
 
 " Elm
@@ -102,6 +109,9 @@ Plug 'IngoHeimbach/neco-vim',       { 'for': 'vim' }
 
 " Julia
 Plug 'JuliaEditorSupport/julia-vim', { 'for': 'julia' }
+
+" SaltStack
+Plug 'saltstack/salt-vim'
 
 " Plug 'junegunn/rainbow_parentheses.vim'
 
