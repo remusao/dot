@@ -8,7 +8,6 @@ augroup mydelimitMate
 augroup END
 " }}}
 
-
 " ctrlp {{{
 let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
 set grepprg=rg\ --color\ never\ --no-heading
@@ -27,25 +26,34 @@ let g:airline_powerline_fonts = 1
 let g:airline#extensions#hunks#non_zero_only = 1
 " }}}
 
-
 " Ale {{{
 let g:ale_python_black_executable = '/home/remi/.virtualenvs/neovim3/bin/black'
+
+let g:ale_rust_cargo_check_all_targets = 1
+let g:ale_rust_cargo_check_tests = 1
+let g:ale_rust_cargo_use_clippy = 1
+" let g:ale_rust_cargo_clippy_options = '-- -D warnings'
+
 let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
-\   'typescript': ['prettier', 'tslint'],
-\   'javascript': ['eslint'],
-\   'python': ['black'],
+\   'typescript': ['tslint'],
 \   'terraform': ['terraform'],
 \   'c': ['clang-format'],
+\   'swift': ['trim_whitespace'],
+\   'rust': ['rustfmt'],
 \}
+" \   'javascript': ['eslint'],
+" \   'python': ['black'],
+
 let g:ale_fix_on_save = 1
 
 let g:ale_completion_enabled = 0
 
 let g:ale_linters = {
-\   'javascript': ['eslint'],
-\   'typescript': ['tslint', 'tsserver'],
+\   'javascript': ['eslint', 'tslint'],
+\   'typescript': ['eslint', 'tsserver', 'tslint'],
 \   'terraform': ['tflint'],
+\   'rust': ['cargo', 'rustc', 'rls'],
 \}
 
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
@@ -95,25 +103,13 @@ let g:vim_markdown_json_frontmatter = 1
 let g:vim_markdown_new_list_item_indent = 2
 " }}}
 
-" vim-polyglot {{{
+" vim-javascript {{{
 let g:javascript_plugin_jsdoc = 1
-let g:polyglot_disabled = ['latex', 'typescript']
 " }}}
 
-" fzf {{{
-let g:fzf_buffers_jump = 1
-
-command! -bang -nargs=* Ag
-  \ call fzf#vim#ag(<q-args>,
-  \                 <bang>0 ? fzf#vim#with_preview('up:60%')
-  \                         : fzf#vim#with_preview('right:50%:hidden', '?'),
-  \                 <bang>0)
-command! -bang -nargs=* Rg
-  \ call fzf#vim#grep(
-  \   'rg --column --line-number --no-heading --color=always '.shellescape(<q-args>), 1,
-  \   <bang>0 ? fzf#vim#with_preview('up:60%')
-  \           : fzf#vim#with_preview('right:50%:hidden', '?'),
-  \   <bang>0)
+" vim-polyglot {{{
+" let g:polyglot_disabled = ['latex', 'typescript']
+" }}}
 
 " Likewise, Files command with preview window
 command! -bang -nargs=? -complete=dir Files
@@ -127,43 +123,12 @@ let g:UltiSnipsJumpBackwardTrigger = '<C-k>'
 let g:ultisnips_python_style = 'google'
 " }}}
 
-" LanguageClient-neovim {{{
-set hidden
-let g:LanguageClient_serverCommands = {
-    \ 'rust': ['~/.cargo/bin/rustup', 'run', 'stable', 'rls'],
-    \ 'javascript': ['/home/remi/.nvm/versions/node/v9.11.2/bin/javascript-typescript-stdio'],
-    \ 'javascript.jsx': ['/home/remi/.nvm/versions/node/v9.11.2/bin/javascript-typescript-stdio'],
-    \ 'typescript': ['/home/remi/.nvm/versions/node/v9.11.2/bin/javascript-typescript-stdio'],
-    \ 'python': ['/home/remi/.virtualenvs/neovim3/bin/pyls'],
-    \ 'dockerfile': ['/home/remi/.nvm/versions/node/v9.11.2/bin/docker-langserver', '--stdio'],
-    \ 'haskell': ['hie-wrapper'],
-    \ 'julia': ['julia', '--startup-file=no', '--history-file=no', '-e', '
-    \   using LanguageServer;
-    \   server = LanguageServer.LanguageServerInstance(STDIN, STDOUT, false);
-    \   server.runlinter = true;
-    \   run(server);
-    \ '],
-    \ }
-" }}}
-
-" deoplete {{{
-" let g:deoplete#enable_at_startup = 1
-" inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
-"
-" let g:deoplete#sources#clang#libclang_path = "/usr/lib/llvm-6.0/lib/libclang.so"
-" let g:deoplete#sources#clang#clang_header = "/usr/lib/clang/6.0/include"
-" }}}
-
 " jiangmiao/auto-pairs {{{
 let g:AutoPairsMultilineClose = 0
 " }}}
 
-" Julia {{{
-let g:default_julia_version = "devel"
-" }}}
-
 " Terraform {{{
-let g:terraform_fmt_on_save = 1
+" let g:terraform_fmt_on_save = 1
 let g:terraform_align = 1
 " }}}
 
@@ -177,8 +142,17 @@ let g:ycm_autoclose_preview_window_after_insertion = 1
 
 " editorconfig {{{
 let g:EditorConfig_exclude_patterns = ['fugitive://.*']
+let g:EditorConfig_exec_path = '/home/remi/.local/bin/editorconfig'
 " }}}
 
-" gitgutter {{{
-" issue: afa4f2ddf0fecb37914ec37357636abb18013422
+" rust {{{
+let g:rust_conceal = 0
+let g:rust_conceal_mod_path = 0
+let g:rust_conceal_pub = 0
+let g:rust_recommended_style = 1
+let g:rust_fold = 0
+let g:rustfmt_autosave = 0
+let g:rustfmt_autosave_if_config_present = 0
+let g:rust_use_custom_ctags_defs = 1
+let g:rust_keep_autopairs_default = 0
 " }}}

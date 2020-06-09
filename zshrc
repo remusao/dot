@@ -69,9 +69,8 @@ POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 # POWERLEVEL9K_MODE='awesome-patched'
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
-POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version time)
-source ~/.zsh/powerlevel9k/powerlevel9k.zsh-theme
-
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(aws status virtualenv node_version time)
+source ~/.zsh/powerlevel10k/powerlevel10k.zsh-theme
 
 # Aliases
 alias -g ...='../..'
@@ -133,12 +132,14 @@ export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 
+# Rust cargo
+RUSTC_WRAPPER=sccache
 
 export GEM_HOME=$HOME/.gem/
 
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
-eval "$(pyenv init -)"
+# eval "$(pyenv init -)"
 
 # Go
 export GOPATH=$HOME/.go
@@ -170,7 +171,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v11.9.0/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v14.3.0/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title

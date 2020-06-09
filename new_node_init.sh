@@ -1,30 +1,42 @@
 #! /usr/bin/env bash
 
 npm install -g \
+    babel-eslint@latest \
     broccoli-cli@latest \
     csslint@latest \
+    dockerfile-language-server-nodejs@latest \
     elm-oracle@latest \
+    eslint-plugin-class-property@latest \
+    eslint_d@latest \
     htmlhint@latest \
+    javascript-typescript-langserver@latest \
+    jsvu@latest \
+    neovim@latest \
     npm@latest \
     prettier@latest \
-    stylelint@latest \
     sass-lint@latest \
+    stylelint@latest \
     tern@latest \
     tslib@latest \
     tslint@latest \
-    typescript@latest \
-    yarn@latest \
-    eslint-plugin-class-property@latest \
-    babel-eslint@latest \
-    javascript-typescript-langserver@latest \
-    dockerfile-language-server-nodejs@latest \
-    neovim@latest \
     typescript-tslint-plugin@latest \
-    jsvu@latest
+    typescript@latest \
+    web-ext@latest \
+    yarn@latest
 
 ( export PKG=eslint-config-airbnb; npm info "$PKG@latest" peerDependencies --json | command sed 's/[\{\},]//g ; s/: /@/g' | xargs npm install -g "$PKG@latest" )
 
-cargo install rls ripgrep --force
+rustup component add \
+    cargo \
+    clippy \
+    rls \
+    rust-analysis \
+    rust-docs \
+    rust-src \
+    rust-std \
+    rustfmt
+
+# cargo install ripgrep --force
 
 # Hadolint
 # YouCompleteMe
