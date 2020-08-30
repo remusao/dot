@@ -1,5 +1,7 @@
 #! /usr/bin/zsh
 
+source ~/.dot/lock.sh
+
 # Options
 # export TERM='xterm-256color'
 export TERM='rxvt-unicode-256color'
@@ -95,7 +97,7 @@ alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-u
 alias vim='nvim'
 
 alias runpyenv='eval "$(pyenv init -)"'
-alias runnvm='source ~/.nvm/nvm.sh '
+alias runnvm='source ~/.nvm/nvm.sh'
 
 # Copy
 alias pbcopy='xclip -selection clipboard'
@@ -127,9 +129,10 @@ export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
+export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 
 # Rust cargo
-RUSTC_WRAPPER=sccache
+export RUSTC_WRAPPER=/home/remi/.cargo/bin/sccache cargo build
 
 export GEM_HOME=$HOME/.gem/
 
@@ -174,7 +177,7 @@ setopt HIST_REDUCE_BLANKS
 export NVM_DIR="$HOME/.nvm"
 # NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
 # This will need to be updated manually in the future.
-export PATH=${HOME}/.nvm/versions/node/v14.4.0/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v${NODEJS}/bin/:${PATH}
 # [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
@@ -261,7 +264,7 @@ zmodload zsh/zpty
 [ -f /home/remi/.travis/travis.sh ] && source /home/remi/.travis/travis.sh
 
 # Load ssh key
-eval `keychain --agents 'ssh,gpg' --eval id_rsa_perso`
+eval `keychain --agents 'ssh,gpg' --eval id_rsa_perso id_rsa_cliqz`
 export GPG_TTY=$(tty)
 
 # The next line updates PATH for the Google Cloud SDK.
