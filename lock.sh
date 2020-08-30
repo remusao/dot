@@ -1,0 +1,7 @@
+export NODEJS="14.9.0"
+export KEEPASSXC="2.6.1"
+export NEOVIM="v0.4.4"
+export HADOLINT="v1.18.0"
+export RIPGREP="12.1.1"
+export RUST_ANALYZER="e65d48d"
+export SCCACHE="030c80a15e0b1aba0e61df264b320a21bb21fb15"

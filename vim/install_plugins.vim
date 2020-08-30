@@ -7,7 +7,7 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'w0rp/ale'
 
 " Autocomplete
-Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }
+Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer' }
 Plug 'SirVer/ultisnips'     " Snippets engine
 Plug 'honza/vim-snippets'   " Actual snippets
 
@@ -46,6 +46,8 @@ Plug 'kkoomen/vim-doge'
 " JavaScript
 Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
 Plug 'MaxMEllon/vim-jsx-pretty', { 'for': ['javascriptreact'] }
+Plug 'posva/vim-vue', { 'for': ['vue'] }
+Plug 'evanleck/vim-svelte', { 'for': 'svelte', 'branch': 'main' }
 
 " Toml
 Plug 'cespare/vim-toml', { 'for': ['toml'] }
@@ -77,6 +79,7 @@ Plug 'chrisbra/csv.vim',            { 'for': ['csv'] }
 
 " Python
 " vim-polyglot
+" Plug 'aliev/vim-compiler-python',     { 'for': 'python' }
 Plug 'jmcantrell/vim-virtualenv',     { 'for': 'python' }
 Plug 'Vimjas/vim-python-pep8-indent', { 'for': 'python' }
 Plug 'vim-python/python-syntax',      { 'for': 'python' }
@@ -86,7 +89,8 @@ Plug 'vim-python/python-syntax',      { 'for': 'python' }
 
 " Haskell
 " vim-polyglot: haskell-vim
-Plug 'parsonsmatt/intero-neovim',   { 'for': ['haskell'] }
+" Plug 'parsonsmatt/intero-neovim',   { 'for': ['haskell'] }
+Plug 'neovimhaskell/haskell-vim', { 'for': ['haskell'] }
 
 " Go
 " vim-polyglot
