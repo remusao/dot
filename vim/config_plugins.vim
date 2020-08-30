@@ -29,10 +29,20 @@ let g:airline#extensions#hunks#non_zero_only = 1
 " Ale {{{
 let g:ale_python_black_executable = '/home/remi/.virtualenvs/neovim3/bin/black'
 
+"" Cargo
+let g:ale_rust_cargo_use_check = 1
 let g:ale_rust_cargo_check_all_targets = 1
 let g:ale_rust_cargo_check_tests = 1
+let g:ale_rust_cargo_check_examples = 1
+let g:ale_rust_cargo_default_feature_behavior = 'all'
+let g:ale_rust_cargo_avoid_whole_workspace = 0
+
+"" Clippy
 let g:ale_rust_cargo_use_clippy = 1
-" let g:ale_rust_cargo_clippy_options = '-- -D warnings'
+" let g:ale_rust_cargo_clippy_options = '-D warnings -W clippy::cargo -W clippy::all -W clippy::pedantic'
+
+"" Mypy
+let g:ale_python_mypy_ignore_invalid_syntax = 1
 
 let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
@@ -40,10 +50,11 @@ let g:ale_fixers = {
 \   'javascript': ['eslint'],
 \   'terraform': ['terraform'],
 \   'c': ['clang-format'],
-\   'python': ['isort', 'black'],
 \   'swift': ['trim_whitespace'],
 \   'rust': ['rustfmt'],
+\   'sh': ['shfmt'],
 \}
+" \   'python': ['isort', 'black'],
 
 let g:ale_fix_on_save = 1
 
@@ -53,7 +64,7 @@ let g:ale_linters = {
 \   'javascript': ['eslint', 'tslint'],
 \   'typescript': ['eslint', 'tsserver', 'tslint'],
 \   'terraform': ['tflint'],
-\   'rust': ['cargo', 'rustc', 'rls'],
+\   'rust': ['cargo', 'rustc', 'analyzer'],
 \}
 
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
@@ -141,7 +152,106 @@ let g:ycm_autoclose_preview_window_after_insertion = 1
 let g:ycm_semantic_triggers = {
      \ 'elm' : ['.'],
      \}
+
+let s:lsp = '/home/remi/.dot/vim/lsp'
+let g:ycm_language_server = [
+  \   {
+  \     'name': 'angular',
+  \     'cmdline': [ 'node' ,
+  \        expand( s:lsp . '/angular/node_modules/@angular/language-server' ),
+  \        '--ngProbeLocations',
+  \        expand( s:lsp . '/angular/node_modules/' ),
+  \        '--tsProbeLocations',
+  \        expand( s:lsp . '/angular/node_modules/' ),
+  \        '--stdio' ],
+  \     'filetypes': [ 'ts','html' ],
+  \   },
+  \   {
+  \     'name': 'bash',
+  \     'cmdline': [ 'node', expand( s:lsp . '/bash/node_modules/.bin/bash-language-server' ), 'start' ],
+  \     'filetypes': [ 'sh', 'bash' ],
+  \   },
+  \   {
+  \     'name': 'dart',
+  \     'cmdline': [ 'dart', expand( s:lsp . '/dart/analysis_server.dart.snapshot' ), '--lsp' ],
+  \     'filetypes': [ 'dart' ],
+  \   },
+  \   {
+  \     'name': 'groovy',
+  \     'cmdline': [ 'java', '-jar', expand( s:lsp . '/groovy/groovy-language-server/build/libs/groovy-language-server-all.jar' ) ],
+  \     'filetypes': [ 'groovy' ]
+  \   },
+  \   {
+  \     'name': 'yaml',
+  \     'cmdline': [ 'node', expand( s:lsp . '/yaml/node_modules/.bin/yaml-language-server' ), '--stdio' ],
+  \     'filetypes': [ 'yaml' ],
+  \   },
+  \   {
+  \     'name': 'php',
+  \     'cmdline': [ 'php', expand( s:lsp . '/php/vendor/bin/php-language-server.php' ) ],
+  \     'filetypes': [ 'php' ],
+  \   },
+  \   {
+  \     'name': 'json',
+  \     'cmdline': [ 'node', expand( s:lsp . '/json/node_modules/.bin/vscode-json-languageserver' ), '--stdio' ],
+  \     'filetypes': [ 'json' ],
+  \   },
+  \   {
+  \     'name': 'ruby',
+  \     'cmdline': [ expand( s:lsp . '/ruby/bin/solargraph' ), 'stdio' ],
+  \     'filetypes': [ 'ruby' ],
+  \   },
+  \   { 'name': 'kotlin',
+  \     'filetypes': [ 'kotlin' ],
+  \     'cmdline': [ expand( s:lsp . '/kotlin/server/build/install/server/bin/server' ) ],
+  \   },
+  \   { 'name': 'd',
+  \     'filetypes': [ 'd' ],
+  \     'cmdline': [ expand( s:lsp . '/d/serve-d' ) ],
+  \   },
+  \   { 'name': 'vue',
+  \     'filetypes': [ 'vue' ],
+  \     'cmdline': [ expand( s:lsp . '/vue/node_modules/.bin/vls' ) ]
+  \   },
+  \   { 'name': 'docker',
+  \     'filetypes': [ 'dockerfile' ],
+  \     'cmdline': [ expand( s:lsp . '/docker/node_modules/.bin/docker-langserver' ), '--stdio' ]
+  \   },
+  \   { 'name': 'vim',
+  \     'filetypes': [ 'vim' ],
+  \     'cmdline': [ expand( s:lsp . '/viml/node_modules/.bin/vim-language-server' ), '--stdio' ]
+  \   },
+  \   { 'name': 'scala',
+  \     'filetypes': [ 'scala' ],
+  \     'cmdline': [ 'metals-vim' ],
+  \     'project_root_files': [ 'build.sbt' ]
+  \   },
+  \   { 'name': 'purescript',
+  \     'filetypes': [ 'purescript' ],
+  \     'cmdline': [ expand( s:lsp . '/viml/node_modules/.bin/purescript-language-server' ), '--stdio' ]
+  \   },
+  \   { 'name': 'fortran',
+  \     'filetypes': [ 'fortran' ],
+  \     'cmdline': [ 'fortls' ],
+  \   },
+  \   { 'name': 'haskell',
+  \     'filetypes': [ 'haskell', 'hs', 'lhs' ],
+  \     'cmdline': [ 'hie-wrapper', '--lsp' ],
+  \     'project_root_files': [ '.stack.yaml', 'cabal.config', 'package.yaml' ]
+  \   },
+  \   { 'name': 'lua',
+  \     'filetypes': [ 'lua' ],
+  \     'cmdline': [ expand( s:lsp . '/lua/lua-language-server/root/extension/server/bin/macOS/lua-language-server'),
+  \                  expand( s:lsp . '/lua/lua-language-server/root/extension/server/main.lua' ) ]
+  \   },
+  \   { 'name': 'rust',
+  \     'filetypes': [ 'rust' ],
+  \     'cmdline': [ 'rust-analyzer' ],
+  \     'project_root_files': [ 'Cargo.toml' ],
+  \   },
+  \ ]
 " }}}
+
 
 " editorconfig {{{
 let g:EditorConfig_exclude_patterns = ['fugitive://.*']
@@ -154,7 +264,7 @@ let g:rust_conceal_mod_path = 0
 let g:rust_conceal_pub = 0
 let g:rust_recommended_style = 1
 let g:rust_fold = 0
-let g:rustfmt_autosave = 0
+let g:rustfmt_autosave = 1
 let g:rustfmt_autosave_if_config_present = 0
 let g:rust_use_custom_ctags_defs = 1
 let g:rust_keep_autopairs_default = 0
@@ -167,4 +277,12 @@ let g:rust_keep_autopairs_default = 0
 "   autocmd!
 "   autocmd FileType typescript,javascript,lisp,clojure,scheme RainbowParentheses
 " augroup END
+" }}}
+
+" vim-python {{{
+let g:python_highlight_all = 1
+let g:python_version_2 = 0
+let g:python_highlight_indent_errors = 0
+let g:python_highlight_space_errors = 0
+let g:python_highlight_func_calls = 0
 " }}}

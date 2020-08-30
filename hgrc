@@ -8,13 +8,13 @@ interface = curses
 rebase =
 graphlog =
 histedit =
-evolve = /home/remi/.mozbuild/evolve/hgext3rd/evolve
+# evolve = /home/remi/.mozbuild/evolve/hgext3rd/evolve
 fsmonitor =
 blackbox =
-firefoxtree = /home/remi/.mozbuild/version-control-tools/hgext/firefoxtree
-reviewboard = /home/remi/.mozbuild/version-control-tools/hgext/reviewboard/client.py
-bzexport = /home/remi/.mozbuild/version-control-tools/hgext/bzexport
-push-to-try = /home/remi/.mozbuild/version-control-tools/hgext/push-to-try
+# firefoxtree = /home/remi/.mozbuild/version-control-tools/hgext/firefoxtree
+# reviewboard = /home/remi/.mozbuild/version-control-tools/hgext/reviewboard/client.py
+# bzexport = /home/remi/.mozbuild/version-control-tools/hgext/bzexport
+# push-to-try = /home/remi/.mozbuild/version-control-tools/hgext/push-to-try
 
 [color]
 status.modified = blue bold
