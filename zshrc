@@ -103,11 +103,6 @@ alias runnvm='source ~/.nvm/nvm.sh'
 alias pbcopy='xclip -selection clipboard'
 alias pbpaste='xclip -selection clipboard -o'
 
-# Projects
-alias memo='cd /home/remi/dev/perso/memoria'
-alias mem='cd /home/remi/dev/perso/memoria'
-alias m='cd /home/remi/dev/perso/memoria'
-
 # Globals
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
 export LD_RUN_PATH=$LD_RUN_PATH:$HOME/usr/lib:$HOME/.local/lib
