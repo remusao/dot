@@ -4,9 +4,6 @@ set -e
 
 . ./lock.sh
 
-. ./nuggets/rust/rust-analyzer.sh
-exit 0
-
 # Utilities
 . ./nuggets/utilities/neovim.sh
 . ./nuggets/utilities/keepassxc.sh
