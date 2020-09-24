@@ -127,7 +127,7 @@ export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 
 # Rust cargo
-export RUSTC_WRAPPER=/home/remi/.cargo/bin/sccache cargo build
+export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
 
 export GEM_HOME=$HOME/.gem/
 

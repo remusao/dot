@@ -107,8 +107,10 @@ Plug 'IngoHeimbach/neco-vim',       { 'for': ['vim'] }
 " Plug 'JuliaEditorSupport/julia-vim', { 'for': 'julia' }
 
 " SaltStack
-Plug 'saltstack/salt-vim'
+" Plug 'saltstack/salt-vim'
 
+" Vagrant
+Plug 'hashivim/vim-vagrant'
 " Plug 'junegunn/rainbow_parentheses.vim'
 
 call plug#end()

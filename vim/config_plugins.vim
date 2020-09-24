@@ -53,6 +53,7 @@ let g:ale_fixers = {
 \   'swift': ['trim_whitespace'],
 \   'rust': ['rustfmt'],
 \   'sh': ['shfmt'],
+\   'ruby': ['rubocop', 'rufo'],
 \}
 " \   'python': ['isort', 'black'],
 
