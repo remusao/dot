@@ -3,7 +3,7 @@
 set -e
 
 NEEDS_BUILD="0"
-if ! [ -f "/home/remi/.cargo/bin/rust-analyzer" ]; then
+if ! [ -f "/home/remi/.local/bin/rust-analyzer" ]; then
   NEEDS_BUILD="1"
 else
   CURRENT_VERSION=$(rust-analyzer --version)
