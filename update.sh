@@ -4,6 +4,10 @@ set -e
 
 . ./lock.sh
 
+# Python
+. ./nuggets/python/pyenv.sh
+. ./nuggets/python/python.sh
+
 # Docker
 . ./nuggets/docker/docker-machine.sh
 . ./nuggets/docker/docker-compose.sh
