@@ -122,12 +122,12 @@ export PATH=/usr/lib/go-1.9/bin:$PATH                   # Go
 export PATH=$HOME/.gem/ruby/2.5.0/bin:$PATH             # Ruby gems
 export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
-export PATH=$HOME/.pyenv/versions/3.6.3/bin:$PATH       # Add python 3.6 to PATH
+export PATH=$HOME/.pyenv/versions/${PYTHON}/bin:$PATH       # Add python to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 
 # Rust cargo
-export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
+# export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
 
 export GEM_HOME=$HOME/.gem/
 
