@@ -1,5 +1,5 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="14.12.0"
+export NODEJS="14.13.1"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.6.1"
@@ -31,3 +31,5 @@ export VAGRANT="2.2.10"
 # https://github.com/hashicorp/terraform/releases/latest
 # https://www.terraform.io/downloads.html
 export TERRAFORM="0.12.26"
+
+export PYTHON="3.8.6"
