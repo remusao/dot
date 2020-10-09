@@ -14,7 +14,7 @@ export HADOLINT="v1.18.0"
 export RIPGREP="12.1.1"
 
 # https://github.com/rust-analyzer/rust-analyzer/releases/latest
-export RUST_ANALYZER="3b52d31"
+export RUST_ANALYZER="e5f252a"
 
 # https://github.com/mozilla/sccache/releases/latest
 export SCCACHE="0.2.13"
