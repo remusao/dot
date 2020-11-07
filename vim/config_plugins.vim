@@ -46,8 +46,8 @@ let g:ale_python_mypy_ignore_invalid_syntax = 1
 
 let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
-\   'typescript': ['tslint'],
-\   'javascript': ['eslint'],
+\   'typescript': ['tslint', 'prettier'],
+\   'javascript': ['eslint', 'prettier'],
 \   'terraform': ['terraform'],
 \   'c': ['clang-format'],
 \   'swift': ['trim_whitespace'],
@@ -62,7 +62,7 @@ let g:ale_fix_on_save = 1
 let g:ale_completion_enabled = 0
 
 let g:ale_linters = {
-\   'javascript': ['eslint', 'tslint'],
+\   'javascript': ['eslint', 'tslint', 'tsserver'],
 \   'typescript': ['eslint', 'tsserver', 'tslint'],
 \   'terraform': ['tflint'],
 \   'rust': ['cargo', 'rustc', 'analyzer'],
@@ -244,11 +244,6 @@ let g:ycm_language_server = [
   \     'filetypes': [ 'lua' ],
   \     'cmdline': [ expand( s:lsp . '/lua/lua-language-server/root/extension/server/bin/macOS/lua-language-server'),
   \                  expand( s:lsp . '/lua/lua-language-server/root/extension/server/main.lua' ) ]
-  \   },
-  \   { 'name': 'rust',
-  \     'filetypes': [ 'rust' ],
-  \     'cmdline': [ 'rust-analyzer' ],
-  \     'project_root_files': [ 'Cargo.toml' ],
   \   },
   \ ]
 " }}}
