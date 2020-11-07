@@ -7,7 +7,7 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'w0rp/ale'
 
 " Autocomplete
-Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer' }
+Plug 'Valloric/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }
 Plug 'SirVer/ultisnips'     " Snippets engine
 Plug 'honza/vim-snippets'   " Actual snippets
 
@@ -42,6 +42,8 @@ Plug 'kkoomen/vim-doge'
 
 " Languages support
 " Plug 'sheerun/vim-polyglot' " Huge language pack
+
+Plug 'chr4/nginx.vim'
 
 " JavaScript
 Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
