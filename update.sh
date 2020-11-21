@@ -4,6 +4,9 @@ set -e
 
 . ./lock.sh
 
+# Go
+. ./nuggets/go/go.sh
+
 # Python
 . ./nuggets/python/pyenv.sh
 . ./nuggets/python/python.sh
@@ -23,7 +26,7 @@ set -e
 . ./nuggets/rust/rustup.sh
 . ./nuggets/rust/sccache.sh
 . ./nuggets/rust/ripgrep.sh
-. ./nuggets/rust/rust-analyzer.sh
+# . ./nuggets/rust/rust-analyzer.sh
 
 # JavaScript
 . ./nuggets/javascript/nodejs.sh
