@@ -118,13 +118,16 @@ export PATH=$HOME/.local/spark-1.6.1/bin:$PATH          # ~/.local/spark-1.6.1/
 export PATH=$HOME/.local/nodejs/bin:$PATH               # nodejs packages (npm)
 export PATH=$HOME/.cargo/bin:$PATH                      # Rust
 export PATH=$HOME/dev/repositories/public/Nim/bin:$PATH # Nim
-export PATH=/usr/lib/go-1.9/bin:$PATH                   # Go
 export PATH=$HOME/.gem/ruby/2.5.0/bin:$PATH             # Ruby gems
 export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 export PATH=$HOME/.pyenv/versions/${PYTHON}/bin:$PATH       # Add python to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
+export PATH=$PATH:/home/remi/.go/bin
+export PATH=$PATH:/home/remi/go/bin
+
+export GOPATH=/home/remi/go
 
 # Rust cargo
 # export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
@@ -141,9 +144,6 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 # eval "$(pyenv init -)"
-
-# Go
-export GOPATH=$HOME/.go
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
