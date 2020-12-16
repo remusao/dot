@@ -4,6 +4,11 @@ set -e
 
 . ./lock.sh
 
+# Haskell
+# . ./nuggets/haskell/stack.sh
+. ./nuggets/haskell/hls.sh
+. ./nuggets/haskell/hls-wrapper.sh
+
 # Go
 . ./nuggets/go/go.sh
 
