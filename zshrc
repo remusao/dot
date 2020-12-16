@@ -126,6 +126,7 @@ export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 export PATH=$PATH:/home/remi/.go/bin
 export PATH=$PATH:/home/remi/go/bin
+export PATH=$PATH:/opt/ghc/bin/ # Haskell
 
 export GOPATH=/home/remi/go
 
