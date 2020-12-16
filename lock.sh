@@ -1,5 +1,5 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="15.2.1"
+export NODEJS="15.4.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.6.2"
@@ -37,3 +37,7 @@ export PYTHON="3.8.6"
 
 # https://golang.org/dl/
 export GO="1.15.4"
+
+# Glasgow Haskell Compiler
+export HASKELL_GHC="8.10.2"
+export HASKELL_LANGUAGE_SERVER="0.7.0"

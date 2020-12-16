@@ -45,6 +45,9 @@ Plug 'kkoomen/vim-doge'
 
 Plug 'chr4/nginx.vim'
 
+" Go
+Plug 'fatih/vim-go', { 'for': 'go' }
+
 " JavaScript
 Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
 Plug 'MaxMEllon/vim-jsx-pretty', { 'for': ['javascriptreact'] }
@@ -93,10 +96,6 @@ Plug 'vim-python/python-syntax',      { 'for': 'python' }
 " vim-polyglot: haskell-vim
 " Plug 'parsonsmatt/intero-neovim',   { 'for': ['haskell'] }
 Plug 'neovimhaskell/haskell-vim', { 'for': ['haskell'] }
-
-" Go
-" vim-polyglot
-" Plug 'fatih/vim-go',                { 'for': 'go' }
 
 " Vim script
 " vim-polyglot

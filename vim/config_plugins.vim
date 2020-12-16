@@ -152,6 +152,7 @@ let g:ycm_autoclose_preview_window_after_completion = 1
 let g:ycm_autoclose_preview_window_after_insertion = 1
 let g:ycm_semantic_triggers = {
      \ 'elm' : ['.'],
+     \ 'haskell' : ['re![^ ]+'],
      \}
 
 let s:lsp = '/home/remi/.dot/vim/lsp'
@@ -235,10 +236,10 @@ let g:ycm_language_server = [
   \     'filetypes': [ 'fortran' ],
   \     'cmdline': [ 'fortls' ],
   \   },
-  \   { 'name': 'haskell',
-  \     'filetypes': [ 'haskell', 'hs', 'lhs' ],
-  \     'cmdline': [ 'hie-wrapper', '--lsp' ],
-  \     'project_root_files': [ '.stack.yaml', 'cabal.config', 'package.yaml' ]
+  \   { 'name': 'haskell-language-server',
+  \     'filetypes': [ 'haskell', 'lhaskell' ],
+  \     'cmdline': [ 'haskell-language-server-wrapper', '--lsp' ],
+  \     'project_root_files': [ 'stack.yaml', 'cabal.project', 'package.yaml', 'hie.yaml' ]
   \   },
   \   { 'name': 'lua',
   \     'filetypes': [ 'lua' ],
