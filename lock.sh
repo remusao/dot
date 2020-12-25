@@ -1,5 +1,5 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="15.4.0"
+export NODEJS="15.5.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.6.2"
@@ -17,7 +17,7 @@ export RIPGREP="12.1.1"
 export RUST_ANALYZER="e8c8039"
 
 # https://github.com/mozilla/sccache/releases/latest
-export SCCACHE="0.2.13"
+export SCCACHE="0.2.14"
 
 # https://github.com/docker/compose/releases/latest
 export DOCKER_COMPOSE="1.27.4"
