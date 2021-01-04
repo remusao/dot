@@ -54,8 +54,9 @@ let g:ale_fixers = {
 \   'rust': ['rustfmt'],
 \   'sh': ['shfmt'],
 \   'ruby': ['rubocop', 'rufo'],
+\   'python': ['isort', 'black'],
+\   'haskell': ['ormolu'],
 \}
-" \   'python': ['isort', 'black'],
 
 let g:ale_fix_on_save = 1
 
@@ -89,7 +90,8 @@ let g:haskell_enable_pattern_synonyms = 1 " to enable highlighting of `pattern`
 let g:haskell_enable_typeroles = 1        " to enable highlighting of type roles
 let g:haskell_enable_static_pointers = 1  " to enable highlighting of `static`
 let g:haskell_backpack = 1                " to enable highlighting of backpack keywords
-let g:haskell_classic_highlighting = 1
+" let g:haskell_classic_highlighting = 1
+let g:haskell_indent_disable = 1
 " }}}
 
 
