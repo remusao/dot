@@ -38,6 +38,9 @@ URxvt*cursorBlink: false
 URxvt.xftAntialias:     true
 URxvt.font:             xft:Inconsolata for Powerline:regular:size=12:antialias=true:hinting=true
 URxvt.boldFont:         xft:Inconsolata for Powerline:bold:size=12:antialias=true:hinting=true
+! URxvt.font:             xft:MesloGS NF:regular:size=12:antialias=true:hinting=true
+! URxvt.boldFont:         xft:MesloGS NF:bold:size=12:antialias=true:hinting=true
+! MesloLGS NF
 ! URxvt.letterSpace: -1
 URxvt.letterSpace: 0
 

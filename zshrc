@@ -1,5 +1,16 @@
 #! /usr/bin/zsh
 
+# Load ssh key
+eval `keychain --agents 'ssh,gpg' --eval id_rsa_perso id_rsa_cliqz`
+export GPG_TTY=$(tty)
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 source ~/.dot/lock.sh
 
 # Options
@@ -91,7 +102,6 @@ alias lock='i3lock --color 475263'
 alias ls="ls --color=auto"
 alias reload='. ${HOME}/.zshrc'
 alias se='apt-cache search'
-alias t='todo-txt'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade'
 alias vim='nvim'
@@ -131,7 +141,7 @@ export PATH=$PATH:/opt/ghc/bin/ # Haskell
 export GOPATH=/home/remi/go
 
 # Rust cargo
-# export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
+export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
 
 export GEM_HOME=$HOME/.gem/
 
@@ -144,7 +154,6 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
-# eval "$(pyenv init -)"
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
@@ -155,7 +164,6 @@ export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
 source /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh
 
 export PIP_REQUIRE_VIRTUALENV=true
-
 
 # History management
 HISTFILE=$HOME/.zsh_history      # enable history saving on shell exit
@@ -169,12 +177,8 @@ setopt HIST_FIND_NO_DUPS
 setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_REDUCE_BLANKS
 
-
 export NVM_DIR="$HOME/.nvm"
-# NOTE: We fix the nodejs version to not have to run nvm.sh (which is slow)
-# This will need to be updated manually in the future.
 export PATH=${HOME}/.nvm/versions/node/v${NODEJS}/bin/:${PATH}
-# [ -s "$NVM_DIR/nvm.sh" ] && source ${NVM_DIR}/nvm.sh # This loads nvm
 
 # Set title
 set-window-title() {
@@ -188,7 +192,6 @@ set-window-title
 add-zsh-hook precmd set-window-title
 
 # Syntax coloring
-# source ${HOME}/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern root)
 ZSH_HIGHLIGHT_STYLES[default]='none'
@@ -214,13 +217,6 @@ ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=yellow'
 ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[assign]='none'
-
-# TODO - import gpg key
-# GPG Agent
-# eval `gpg-agent --daemon --no-grab $HOME/.gpg-agent-info`
-# export GPG_TTY=`tty`
-# export GPG_AGENT_INFO
-
 
 # start typing + [Up-Arrow] - fuzzy find history forward
 autoload -U up-line-or-beginning-search
@@ -253,20 +249,4 @@ zle -N ctrlp
 
 bindkey "^p" ctrlp
 
-# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 zmodload zsh/zpty
-
-# added by travis gem
-[ -f /home/remi/.travis/travis.sh ] && source /home/remi/.travis/travis.sh
-
-# Load ssh key
-eval `keychain --agents 'ssh,gpg' --eval id_rsa_perso id_rsa_cliqz`
-export GPG_TTY=$(tty)
-
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f '/home/remi/dev/public/google-cloud-sdk/path.zsh.inc' ]; then . '/home/remi/dev/public/google-cloud-sdk/path.zsh.inc'; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f '/home/remi/dev/public/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/remi/dev/public/google-cloud-sdk/completion.zsh.inc'; fi
-
-export GOOGLE_APPLICATION_CREDENTIALS=/home/remi/.config/gcloud/remi-dev.json
