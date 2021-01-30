@@ -141,7 +141,7 @@ export PATH=$PATH:/opt/ghc/bin/ # Haskell
 export GOPATH=/home/remi/go
 
 # Rust cargo
-export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
+# export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
 
 export GEM_HOME=$HOME/.gem/
 
@@ -250,3 +250,5 @@ zle -N ctrlp
 bindkey "^p" ctrlp
 
 zmodload zsh/zpty
+
+export PATH="$HOME/.poetry/bin:$PATH"
