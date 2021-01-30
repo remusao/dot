@@ -54,7 +54,7 @@ let g:ale_fixers = {
 \   'rust': ['rustfmt'],
 \   'sh': ['shfmt'],
 \   'ruby': ['rubocop', 'rufo'],
-\   'python': ['isort', 'black'],
+\   'python': [],
 \   'haskell': ['ormolu'],
 \}
 
