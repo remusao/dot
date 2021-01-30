@@ -5,6 +5,7 @@ set -e
 npm install -g npm@latest yarn@latest
 npm install -g \
   bash-language-server \
+  broccoli-cli@latest \
   csslint@latest \
   dockerfile-language-server-nodejs@latest \
   htmlhint@latest \

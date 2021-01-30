@@ -39,6 +39,7 @@ Plug 'xolox/vim-misc', { 'for': ['notes'], 'on': 'Note' }     " Dependency of vi
 " Languages
 Plug 'sheerun/vim-polyglot' " Huge language pack
 Plug 'hashivim/vim-vagrant'
+Plug 'lervag/vimtex'
 
 call plug#end()
 
