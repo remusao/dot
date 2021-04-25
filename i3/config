@@ -209,6 +209,7 @@ exec --no-startup-id nm-applet
 exec --no-startup-id pasystray
 exec --no-startup-id protonmail-bridge
 exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+exec --no-startup-id /home/remi/.fehbg
 # exec --no-startup-id thunderbird
 # exec --no-startup-id dropbox
 # exec --no-startup-id slack
