@@ -1,7 +1,7 @@
 #! /usr/bin/zsh
 
 # Load ssh key
-eval `keychain --agents 'ssh,gpg' --eval id_rsa_perso id_rsa_cliqz`
+eval `keychain --agents 'ssh,gpg' --eval id_ed25519 id_rsa_perso id_rsa_cliqz`
 export GPG_TTY=$(tty)
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
@@ -131,7 +131,7 @@ export PATH=$HOME/dev/repositories/public/Nim/bin:$PATH # Nim
 export PATH=$HOME/.gem/ruby/2.5.0/bin:$PATH             # Ruby gems
 export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
-export PATH=$HOME/.pyenv/versions/${PYTHON}/bin:$PATH       # Add python to PATH
+export PATH=$HOME/.pyenv/versions/${PYTHON}/bin:$PATH   # Add python to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 export PATH=$PATH:/home/remi/.go/bin
