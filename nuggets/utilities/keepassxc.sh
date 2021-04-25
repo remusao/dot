@@ -45,7 +45,7 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
     cmake \
       -DCMAKE_BUILD_TYPE=Release \
       -DWITH_XC_AUTOTYPE=OFF \
-      -DWITH_XC_YUBIKEY=OFF \
+      -DWITH_XC_YUBIKEY=ON \
       -DWITH_XC_BROWSER=OFF \
       -DWITH_XC_NETWORKING=OFF \
       -DWITH_XC_SSHAGENT=OFF \
