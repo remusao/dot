@@ -13,7 +13,7 @@ URxvt.secondaryScroll: 0
 URxvt.secondaryWheel: 1
 
 
-Xft.dpi: 135
+Xft.dpi: 130
 ! Xft.dpi: 120
 Xft.autohint: 0
 Xft.lcdfilter: lcddefault

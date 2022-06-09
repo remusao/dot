@@ -5,9 +5,13 @@ set -e
 . ./lock.sh
 
 # Haskell
-. ./nuggets/haskell/stack.sh
-. ./nuggets/haskell/hls.sh
-. ./nuggets/haskell/hls-wrapper.sh
+# . ./nuggets/haskell/stack.sh
+# . ./nuggets/haskell/hls.sh
+# . ./nuggets/haskell/hls-wrapper.sh
+
+# Docker
+. ./nuggets/docker/docker-compose.sh
+. ./nuggets/docker/hadolint.sh
 
 # Go
 . ./nuggets/go/go.sh
@@ -16,22 +20,18 @@ set -e
 . ./nuggets/python/pyenv.sh
 . ./nuggets/python/python.sh
 
-# Docker
-. ./nuggets/docker/docker-machine.sh
-. ./nuggets/docker/docker-compose.sh
-. ./nuggets/docker/hadolint.sh
-
 # Utilities
 . ./nuggets/utilities/vagrant.sh
 . ./nuggets/utilities/neovim.sh
 . ./nuggets/utilities/keepassxc.sh
-. ./nuggets/utilities/terraform.sh
+# . ./nuggets/utilities/terraform.sh
+. ./nuggets/utilities/shellcheck.sh
 
 # Rust
 . ./nuggets/rust/rustup.sh
 . ./nuggets/rust/sccache.sh
 . ./nuggets/rust/ripgrep.sh
-# . ./nuggets/rust/rust-analyzer.sh
+. ./nuggets/rust/rust-analyzer.sh
 
 # JavaScript
 . ./nuggets/javascript/nodejs.sh

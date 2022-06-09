@@ -17,8 +17,9 @@ source ~/.dot/lock.sh
 # export TERM='xterm-256color'
 export TERM='rxvt-unicode-256color'
 export DEFAULT_USER="remi"
-export EDITOR='vim'
-export VISUAL='vim'
+export EDITOR=/home/remi/.local/bin/nvim
+export VISUAL=/home/remi/.local/bin/nvim
+export TF_PLUGIN_CACHE_DIR=/home/remi/.cache/terraform/
 
 # Cursor speed
 xset b off
@@ -108,6 +109,7 @@ alias vim='nvim'
 
 alias runpyenv='eval "$(pyenv init -)"'
 alias runnvm='source ~/.nvm/nvm.sh'
+alias runasdf='source ~/.asdf/asdf.sh'
 
 # Copy
 alias pbcopy='xclip -selection clipboard'
@@ -252,3 +254,12 @@ bindkey "^p" ctrlp
 zmodload zsh/zpty
 
 export PATH="$HOME/.poetry/bin:$PATH"
+
+# ASDF (versions manager)
+# . $HOME/.asdf/asdf.sh
+
+# Completions
+# append completions to fpath
+# fpath=(${ASDF_DIR}/completions $fpath)
+# initialise completions with ZSH's compinit
+# autoload -Uz compinit && compinit

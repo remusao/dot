@@ -36,6 +36,11 @@ let g:ale_rust_cargo_check_tests = 1
 let g:ale_rust_cargo_check_examples = 1
 let g:ale_rust_cargo_default_feature_behavior = 'all'
 let g:ale_rust_cargo_avoid_whole_workspace = 0
+let g:ale_rust_analyzer_config = {
+    \ 'cargo': { 'allFeatures': v:true },
+    \ 'procMacro': { 'enable': v:true },
+    \ 'checkOnSave': { 'command': 'clippy', 'enable': v:true, 'extraArgs': '--all-targets' }
+    \ }
 
 "" Clippy
 let g:ale_rust_cargo_use_clippy = 1
@@ -62,11 +67,13 @@ let g:ale_fix_on_save = 0
 
 let g:ale_completion_enabled = 0
 
+" NOTE: for rust I removed 'rustc' as it does not know about the dependencies
+" somehow so whole files are highlighted with warnings.
 let g:ale_linters = {
 \   'javascript': ['eslint', 'tslint', 'tsserver'],
 \   'typescript': ['eslint', 'tsserver', 'tslint'],
 \   'terraform': ['tflint'],
-\   'rust': ['cargo', 'rustc', 'analyzer'],
+\   'rust': ['analyzer'],
 \}
 
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
