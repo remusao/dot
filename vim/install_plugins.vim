@@ -7,6 +7,7 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'dense-analysis/ale'
 
 " Autocomplete
+" Plug 'ycm-core/YouCompleteMe', { 'commit': '4117a99861b537830d717c3113e3d584523bc573', 'do': './install.py --ts-completer --rust-completer' }
 Plug 'ycm-core/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }
 Plug 'SirVer/ultisnips' " Snippets engine
 Plug 'honza/vim-snippets' " Actual snippets
