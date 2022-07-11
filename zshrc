@@ -139,6 +139,7 @@ export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 export PATH=$PATH:/home/remi/.go/bin
 export PATH=$PATH:/home/remi/go/bin
 export PATH=$PATH:/opt/ghc/bin/ # Haskell
+export PATH=$HOME/.ghcup/bin/:$PATH # Haskell
 
 export GOPATH=/home/remi/go
 
@@ -263,3 +264,5 @@ export PATH="$HOME/.poetry/bin:$PATH"
 # fpath=(${ASDF_DIR}/completions $fpath)
 # initialise completions with ZSH's compinit
 # autoload -Uz compinit && compinit
+
+# [ -f "/home/remi/.ghcup/env" ] && source "/home/remi/.ghcup/env" # ghcup-env
