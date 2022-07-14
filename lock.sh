@@ -1,5 +1,5 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="16.16.0"
+export NODEJS="18.6.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.7.1"
@@ -8,7 +8,7 @@ export KEEPASSXC="2.7.1"
 export NEOVIM="v0.7.2"
 
 # https://github.com/hadolint/hadolint/releases/latest
-export HADOLINT="v2.10.0"
+export HADOLINT="2.10.0"
 
 # https://github.com/BurntSushi/ripgrep/releases/latest
 export RIPGREP="13.0.0"
