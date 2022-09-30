@@ -133,7 +133,7 @@ export PATH=$HOME/dev/repositories/public/Nim/bin:$PATH # Nim
 export PATH=$HOME/.gem/ruby/2.5.0/bin:$PATH             # Ruby gems
 export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
-export PATH=$HOME/.pyenv/versions/${PYTHON}/bin:$PATH   # Add python to PATH
+export PATH=$HOME/.pyenv/versions/${PYTHON_VERSION}/bin:$PATH   # Add python to PATH
 export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 export PATH=$PATH:/home/remi/.go/bin
@@ -266,3 +266,21 @@ export PATH="$HOME/.poetry/bin:$PATH"
 # autoload -Uz compinit && compinit
 
 # [ -f "/home/remi/.ghcup/env" ] && source "/home/remi/.ghcup/env" # ghcup-env
+
+######################
+# Semgrep single PRs #
+######################
+spr() {
+	last="${@:$#}" # last parameter
+	other="${*%${!#}}" # all parameters except the last
+	BASE_COMMIT=${BASE_COMMIT:-origin/master}
+	NEW_HEAD="$last"
+	TEMPDIR="$(mktemp -d)"
+	pushd "$PWD"
+	git worktree add $TEMPDIR $last
+	cd $TEMPDIR
+	FILES="$(git --no-pager diff --name-only $last $(git merge-base $last $BASE_COMMIT) | xargs ls -d 2>/dev/null)"
+	semgrep $other $FILES
+	popd
+	rm -rf $TEMPDIR
+}
