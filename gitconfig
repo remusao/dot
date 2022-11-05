@@ -2,7 +2,7 @@
   name = Rémi Berson
   email = remi@brave.com
   username = remusao
-  signingkey = 45AA799D385D13E92CA41C41751FC81ABDC93804
+	signingkey = /home/remi/.ssh/id_ed25519.pub
 
 [core]
   editor = nvim
@@ -42,6 +42,7 @@
 
 [gpg]
   program = gpg2
+	format = ssh
 [pull]
 	rebase = false
 [init]
@@ -50,3 +51,7 @@
 	ignoreRevsFile = .git-blame-ignore-revs
 	markIgnoredLines = true
 	markUnblamableLines = true
+[commit]
+	gpgsign = true
+[tag]
+	gpgsign = true

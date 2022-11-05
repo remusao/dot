@@ -38,9 +38,12 @@ Plug 'xolox/vim-notes', { 'for': ['notes'], 'on': 'Note' }    " Managing notes i
 Plug 'xolox/vim-misc', { 'for': ['notes'], 'on': 'Note' }     " Dependency of vim-notes
 
 " Languages
+let g:polyglot_disabled = ['python.plugin', 'javascript.plugin', 'typescript.plugin', 'rust.plugin', 'css.plugin', 'html.plugin', 'json.plugin', 'yaml.plugin', 'autoindent']
 Plug 'sheerun/vim-polyglot' " Huge language pack
+
 Plug 'hashivim/vim-vagrant'
 Plug 'lervag/vimtex'
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
 call plug#end()
 
