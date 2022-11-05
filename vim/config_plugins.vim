@@ -128,10 +128,6 @@ let g:vim_markdown_new_list_item_indent = 2
 let g:javascript_plugin_jsdoc = 1
 " }}}
 
-" vim-polyglot {{{
-" let g:polyglot_disabled = ['latex', 'typescript']
-" }}}
-
 " Likewise, Files command with preview window
 command! -bang -nargs=? -complete=dir Files
   \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
@@ -255,6 +251,11 @@ let g:ycm_language_server = [
   \     'cmdline': [ expand( s:lsp . '/lua/lua-language-server/root/extension/server/bin/macOS/lua-language-server'),
   \                  expand( s:lsp . '/lua/lua-language-server/root/extension/server/main.lua' ) ]
   \   },
+  \   {
+  \     'name': 'svelte',
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v18.11.0/bin/svelteserver', '--stdio' ],
+  \     'filetypes': [ 'svelte' ],
+  \   },
   \ ]
 " }}}
 
@@ -292,3 +293,30 @@ let g:python_highlight_indent_errors = 0
 let g:python_highlight_space_errors = 0
 let g:python_highlight_func_calls = 0
 " }}}
+
+let g:vim_svelte_plugin_use_typescript = 1
+
+
+lua << EOF
+require'nvim-treesitter.configs'.setup {
+  -- A list of parser names, or "all"
+  ensure_installed = { "svelte", "typescript", "html", "css", "javascript", "python", "rust", "yaml", "json", "bash", "make", "lua" },
+
+  -- Install parsers synchronously (only applied to `ensure_installed`)
+  sync_install = true,
+
+  -- Automatically install missing parsers when entering buffer
+  -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
+  auto_install = true,
+
+  highlight = {
+    enable = true,
+    disable = {"svelte"}
+  },
+
+  indent = {
+    enable = false,
+    disable = {"svelte", "html", "javascript"}
+  },
+}
+EOF
