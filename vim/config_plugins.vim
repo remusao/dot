@@ -86,6 +86,7 @@ let g:ale_lint_on_save = 1
 " let g:ale_max_signs = 10
 let g:ale_set_signs = 1
 let g:ale_set_highlights = 1
+let g:ale_virtualtext_cursor = 'disabled'
 " }}}
 
 
@@ -300,7 +301,7 @@ let g:vim_svelte_plugin_use_typescript = 1
 lua << EOF
 require'nvim-treesitter.configs'.setup {
   -- A list of parser names, or "all"
-  ensure_installed = { "svelte", "typescript", "html", "css", "javascript", "python", "rust", "yaml", "json", "bash", "make", "lua" },
+  ensure_installed = { "svelte", "typescript", "html", "css", "javascript", "python", "rust", "yaml", "json", "bash", "make", "lua", "toml" },
 
   -- Install parsers synchronously (only applied to `ensure_installed`)
   sync_install = true,
@@ -311,12 +312,12 @@ require'nvim-treesitter.configs'.setup {
 
   highlight = {
     enable = true,
-    disable = {"svelte"}
+    disable = {"svelte", "toml"}
   },
 
   indent = {
-    enable = false,
-    disable = {"svelte", "html", "javascript"}
+    enable = true,
+    disable = {"svelte", "html", "javascript", "typescript", "rust", "toml"}
   },
 }
 EOF
