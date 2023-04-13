@@ -69,9 +69,16 @@ let g:ale_completion_enabled = 0
 
 " NOTE: for rust I removed 'rustc' as it does not know about the dependencies
 " somehow so whole files are highlighted with warnings.
+let g:ale_fixers = {
+\   'svelte': ['eslint', 'prettier']
+\}
+let g:ale_linter_aliases = {
+\   'svelte': ['javascript', 'svelte']
+\}
 let g:ale_linters = {
 \   'javascript': ['eslint', 'tslint', 'tsserver'],
 \   'typescript': ['eslint', 'tsserver', 'tslint'],
+\   'svelte': ['svelteserver', 'eslint'],
 \   'terraform': ['tflint'],
 \   'rust': ['analyzer'],
 \}
