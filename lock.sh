@@ -1,5 +1,5 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="20.1.0"
+export NODEJS="20.2.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.7.5"
@@ -14,13 +14,13 @@ export HADOLINT="2.10.0"
 export RIPGREP="13.0.0"
 
 # https://github.com/rust-analyzer/rust-analyzer/releases/latest
-export RUST_ANALYZER="e5c7228"
+export RUST_ANALYZER="505fd09"
 
 # https://github.com/mozilla/sccache/releases/latest
 export SCCACHE="0.4.2"
 
 # https://github.com/docker/compose/releases/latest
-export DOCKER_COMPOSE="v2.17.3"
+export DOCKER_COMPOSE="v2.18.1"
 
 # https://www.vagrantup.com/downloads
 export VAGRANT="2.3.4"
@@ -39,5 +39,5 @@ export GO="1.20.4"
 export SHELLCHECK="0.9.0"
 
 # Glasgow Haskell Compiler
-export HASKELL_GHC="9.6.1"
+export HASKELL_GHC="9.6.2"
 export HASKELL_LANGUAGE_SERVER="1.10.0.0"
