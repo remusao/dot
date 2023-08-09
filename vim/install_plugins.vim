@@ -28,6 +28,7 @@ Plug 'jiangmiao/auto-pairs'
 Plug 'editorconfig/editorconfig-vim' " Check .editorconfig settings
 
 " Colors
+" Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 Plug 'nanotech/jellybeans.vim' " The only theme I ever liked...
 Plug 'vim-airline/vim-airline' " Vim powerline
 Plug 'vim-airline/vim-airline-themes' " Themes for powerline
@@ -44,6 +45,7 @@ Plug 'sheerun/vim-polyglot' " Huge language pack
 Plug 'hashivim/vim-vagrant'
 Plug 'lervag/vimtex'
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'nvim-treesitter/nvim-treesitter-context'
 
 call plug#end()
 
