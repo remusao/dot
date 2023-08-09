@@ -170,8 +170,8 @@ export PIP_REQUIRE_VIRTUALENV=true
 
 # History management
 HISTFILE=$HOME/.zsh_history      # enable history saving on shell exit
-HISTSIZE=50000                   # lines of history to maintain memory
-SAVEHIST=50000                   # lines of history to maintain in history file.
+HISTSIZE=1000000                   # lines of history to maintain memory
+SAVEHIST=1000000                   # lines of history to maintain in history file.
 
 setopt EXTENDED_HISTORY         # save timestamp and runtime information
 setopt APPEND_HISTORY           # append rather than overwrite history file.
