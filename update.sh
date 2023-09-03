@@ -14,7 +14,7 @@ set -e
 . ./nuggets/docker/hadolint.sh
 
 # Go
-. ./nuggets/go/go.sh
+# . ./nuggets/go/go.sh
 
 # Python
 . ./nuggets/python/pyenv.sh

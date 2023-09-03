@@ -12,6 +12,7 @@ augroup END
 let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
 set grepprg=rg\ --color\ never\ --no-heading
 let g:ctrlp_user_command = 'rg %s --files --color=never --glob ""'
+" rg is faster
 " let g:ctrlp_user_command = 'fd --type f --color=never "" %s'
 let g:ctrlp_match_func = {'match': 'cpsm#CtrlPMatch'}
 let g:ctrlp_use_caching = 0
@@ -88,7 +89,7 @@ nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
 let g:airline#extensions#ale#enabled = 1
 let g:ale_lint_on_text_changed = 'normal'
-let g:ale_lint_delay = 500
+let g:ale_lint_delay = 2000
 let g:ale_lint_on_save = 1
 " let g:ale_max_signs = 10
 let g:ale_set_signs = 1
@@ -107,11 +108,6 @@ let g:haskell_enable_static_pointers = 1  " to enable highlighting of `static`
 let g:haskell_backpack = 1                " to enable highlighting of backpack keywords
 " let g:haskell_classic_highlighting = 1
 let g:haskell_indent_disable = 1
-" }}}
-
-
-" vim LargeFile {{{
-let g:LargeFile = 50
 " }}}
 
 
@@ -304,8 +300,13 @@ let g:python_highlight_func_calls = 0
 
 let g:vim_svelte_plugin_use_typescript = 1
 
-
 lua << EOF
+
+local api = vim.api
+local function ts_disable(_, bufnr)
+    return api.nvim_buf_line_count(bufnr) > 10000
+end
+
 require'nvim-treesitter.configs'.setup {
   -- A list of parser names, or "all"
   ensure_installed = { "svelte", "typescript", "html", "css", "javascript", "python", "rust", "yaml", "json", "bash", "make", "lua", "toml" },
@@ -319,12 +320,18 @@ require'nvim-treesitter.configs'.setup {
 
   highlight = {
     enable = true,
-    disable = {"svelte", "toml"}
+    disable = ts_disable,
+    additional_vim_regex_highlighting = false,
+  },
+
+  incremental_selection = {
+    enable = true,
   },
 
   indent = {
     enable = true,
-    disable = {"svelte", "html", "javascript", "typescript", "rust", "toml"}
+    -- disable = {"svelte", "html", "javascript", "typescript", "rust", "toml"}
   },
+
 }
 EOF

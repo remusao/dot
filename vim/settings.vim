@@ -65,7 +65,12 @@ set softtabstop=2   " default to 2 spaces for the soft tab
 set shiftwidth=2    " for when <TAB> is pressed at the beginning of a line
 set expandtab       " Expand tabs into spaces
 set smartindent
-set nofoldenable
+
+" Very slow on big files
+" set foldmethod=expr
+" set foldexpr=nvim_treesitter#foldexpr()
+set nofoldenable                     " Disable folding at startup.
+
 set autoindent      " always set autoindenting on
 set smarttab        " insert tabs on the start of a line according to shiftwidth, not tabstop
 set shiftround      " use multiple of shiftwidth when indenting with '<' and '>'
@@ -109,7 +114,7 @@ autocmd Filetype gitcommit setlocal spell textwidth=80
 " When editing a file, always jump to the last known cursor position.
 " Don't do it when the position is invalid or when inside an event handler
 " (happens when dropping a file on gvim).
-autocmd BufReadPost *
-            \ if line("'\"") > 0 && line("'\"") <= line("$") |
-            \ execute "normal! g`\"" |
-            \ endif
+" autocmd BufReadPost *
+"             \ if line("'\"") > 0 && line("'\"") <= line("$") |
+"             \ execute "normal! g`\"" |
+"             \ endif
