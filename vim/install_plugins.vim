@@ -7,7 +7,6 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'dense-analysis/ale'
 
 " Autocomplete
-" Plug 'ycm-core/YouCompleteMe', { 'commit': '4117a99861b537830d717c3113e3d584523bc573', 'do': './install.py --ts-completer --rust-completer' }
 Plug 'ycm-core/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }
 Plug 'SirVer/ultisnips' " Snippets engine
 Plug 'honza/vim-snippets' " Actual snippets
@@ -28,25 +27,27 @@ Plug 'jiangmiao/auto-pairs'
 Plug 'editorconfig/editorconfig-vim' " Check .editorconfig settings
 
 " Colors
-" Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 Plug 'nanotech/jellybeans.vim' " The only theme I ever liked...
 Plug 'vim-airline/vim-airline' " Vim powerline
 Plug 'vim-airline/vim-airline-themes' " Themes for powerline
-Plug 'gorodinskiy/vim-coloresque',  {'for': ['css', 'less', 'sass', 'html']}
+Plug 'ap/vim-css-color',  {'for': ['css', 'less', 'sass', 'html', 'scss']}
 
 " Notes
 Plug 'xolox/vim-notes', { 'for': ['notes'], 'on': 'Note' }    " Managing notes in vim
 Plug 'xolox/vim-misc', { 'for': ['notes'], 'on': 'Note' }     " Dependency of vim-notes
 
 " Languages
-let g:polyglot_disabled = ['python.plugin', 'javascript.plugin', 'typescript.plugin', 'rust.plugin', 'css.plugin', 'html.plugin', 'json.plugin', 'yaml.plugin', 'autoindent']
-Plug 'sheerun/vim-polyglot' " Huge language pack
+" let g:polyglot_disabled = ['html.plugin', 'python.plugin', 'javascript.plugin', 'rust.plugin', 'svelte.plugin', 'typescript.plugin', 'yaml.plugin', 'json.plugin', 'css.plugin', 'autoindent']
+" Plug 'sheerun/vim-polyglot' " Huge language pack
 
-Plug 'hashivim/vim-vagrant'
-Plug 'lervag/vimtex'
+Plug 'hashivim/vim-vagrant', { 'for': ['ruby'] }
+Plug 'lervag/vimtex', { 'for': ['tex'] }
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-Plug 'nvim-treesitter/nvim-treesitter-context'
 
+" This seems very slow...
+" Plug 'nvim-treesitter/nvim-treesitter-context'
+
+Plug 'tweekmonster/startuptime.vim'
 call plug#end()
 
 " filetype plugin indent on " enable detection, plugins and indenting in one step
