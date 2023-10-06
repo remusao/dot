@@ -39,6 +39,7 @@ Plug 'xolox/vim-misc', { 'for': ['notes'], 'on': 'Note' }     " Dependency of vi
 " Languages
 " let g:polyglot_disabled = ['html.plugin', 'python.plugin', 'javascript.plugin', 'rust.plugin', 'svelte.plugin', 'typescript.plugin', 'yaml.plugin', 'json.plugin', 'css.plugin', 'autoindent']
 " Plug 'sheerun/vim-polyglot' " Huge language pack
+Plug 'rust-lang/rust.vim'
 
 Plug 'hashivim/vim-vagrant', { 'for': ['ruby'] }
 Plug 'lervag/vimtex', { 'for': ['tex'] }
@@ -47,7 +48,9 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 " This seems very slow...
 " Plug 'nvim-treesitter/nvim-treesitter-context'
 
-Plug 'tweekmonster/startuptime.vim'
+" Plug 'folke/which-key.nvim'
+" Plug 'tweekmonster/startuptime.vim'
+
 call plug#end()
 
 " filetype plugin indent on " enable detection, plugins and indenting in one step
