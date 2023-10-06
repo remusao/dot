@@ -1,11 +1,11 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="20.5.1"
+export NODEJS="20.8.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.7.6"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM="v0.9.1"
+export NEOVIM="v0.9.2"
 
 # https://github.com/hadolint/hadolint/releases/latest
 export HADOLINT="2.10.0"
@@ -14,7 +14,7 @@ export HADOLINT="2.10.0"
 export RIPGREP="13.0.0"
 
 # https://github.com/rust-analyzer/rust-analyzer/releases/latest
-export RUST_ANALYZER="144526c"
+export RUST_ANALYZER="0566644"
 
 # https://github.com/mozilla/sccache/releases/latest
 export SCCACHE="0.5.4"

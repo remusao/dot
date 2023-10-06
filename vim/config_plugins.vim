@@ -301,6 +301,9 @@ let g:python_highlight_func_calls = 0
 let g:vim_svelte_plugin_use_typescript = 1
 
 lua << EOF
+-- vim.o.timeout = true
+-- vim.o.timeoutlen = 100
+-- require("which-key").setup({})
 
 local api = vim.api
 local function ts_disable(_, bufnr)
