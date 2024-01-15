@@ -20,14 +20,14 @@
 # git submodule update --init --recursive
 
 # Install custom fonts
-echo "Install fonts"
-if test ! -d /tmp/fonts ; then
-    git clone --depth=1 https://github.com/powerline/fonts.git /tmp/fonts
-fi
-/tmp/fonts/install.sh
+# echo "Install fonts"
+# if test ! -d /tmp/fonts ; then
+#     git clone --depth=1 https://github.com/powerline/fonts.git /tmp/fonts
+# fi
+# /tmp/fonts/install.sh
 
-ZSH_HOME='/home/remi/.zsh/'
-mkdir -pv ${ZSH_HOME}
+# ZSH_HOME='/home/remi/.zsh/'
+# mkdir -pv ${ZSH_HOME}
  
 # # Install zsh completion
 # if test ! -d ${ZSH_HOME}/zsh-completions ; then
@@ -40,9 +40,9 @@ mkdir -pv ${ZSH_HOME}
 # fi
 
 # Install zsh prompt
-if test ! -d ${ZSH_HOME}/powerlevel9k ; then
-    git clone https://github.com/bhilburn/powerlevel9k.git ${ZSH_HOME}/powerlevel9k
-fi
+# if test ! -d ${ZSH_HOME}/powerlevel9k ; then
+#     git clone https://github.com/bhilburn/powerlevel9k.git ${ZSH_HOME}/powerlevel9k
+# fi
 
 # Create symlinks to config files
 for file in Xresources \
@@ -67,7 +67,7 @@ for file in Xresources \
             rm "$path"
         else
             echo "$path already exists (action: save)"
-            backupfile "$path"
+            # backupfile "$path"
         fi
     fi
     echo "Creating symlink $file -> $path"

@@ -13,5 +13,5 @@ else
 fi
 
 if [ "${NEEDS_BUILD}" = "1" ]; then
-  cargo install ripgrep
+  RUSTFLAGS="-C target-cpu=native" cargo install ripgrep --features pcre2
 fi
