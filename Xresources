@@ -53,6 +53,8 @@ URxvt.tabbed.tabbar-bg: 0
 URxvt.tabbed.tab-fg: 0
 URxvt.tabbed.tab-bg: 3
 ! URxvt.perl-ext-common: default,matcher,resize-font,fullscreen
+URxvt.perl-ext:
+URxvt.perl-ext-common:
 
 
 ! URxvt.resize-font.smaller: C-Down

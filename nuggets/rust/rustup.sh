@@ -8,4 +8,4 @@ else
   rustup self update
 fi
 
-rustup toolchain install stable --component rust-src
+rustup toolchain install stable --component rust-src rust-analyzer clippy rust-docs rustfmt cargo
