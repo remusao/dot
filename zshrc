@@ -242,7 +242,7 @@ fi
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # Customize fzf
-export FZF_DEFAULT_COMMAND='rg --files --smartcase --glob "!.git/*"'
+# export FZF_DEFAULT_COMMAND='rg --files --smart-case --glob "!.git/*"'
 
 # Run vim with ctrl-p when ctrl-p is pressed in zsh
 ctrlp() {
@@ -251,6 +251,14 @@ ctrlp() {
 zle -N ctrlp
 
 bindkey "^p" ctrlp
+
+# Run vim with Fzf when ctrl-f is pressed in zsh
+nvim_fzf() {
+  </dev/tty vim -c Rg
+}
+zle -N nvim_fzf
+
+bindkey "^f" nvim_fzf
 
 zmodload zsh/zpty
 
