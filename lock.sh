@@ -1,8 +1,8 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="21.5.0"
+export NODEJS="21.7.1"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
-export KEEPASSXC="2.7.6"
+export KEEPASSXC="2.7.7"
 
 # https://github.com/neovim/neovim/releases/latest
 export NEOVIM="v0.9.5"
@@ -17,20 +17,20 @@ export RIPGREP="14.1.0"
 # export RUST_ANALYZER="0566644"
 
 # https://github.com/mozilla/sccache/releases/latest
-export SCCACHE="0.7.5"
+export SCCACHE="0.7.7"
 
 # https://github.com/docker/compose/releases/latest
-export DOCKER_COMPOSE="v2.24.0"
+export DOCKER_COMPOSE="v2.25.0"
 
 # https://www.vagrantup.com/downloads
-export VAGRANT="2.4.0"
+export VAGRANT="2.4.1"
 
 # https://github.com/hashicorp/terraform/releases/latest
 # https://www.terraform.io/downloads.html
 export TERRAFORM="1.1.9"
 
 # https://www.python.org/downloads/
-export PYTHON_VERSION="3.11.7"
+export PYTHON_VERSION="3.12.2"
 
 # https://golang.org/dl/
 export GO="1.21.6"
@@ -39,5 +39,5 @@ export GO="1.21.6"
 # export SHELLCHECK="0.9.0"
 
 # Glasgow Haskell Compiler
-export HASKELL_GHC="9.8.1"
-export HASKELL_LANGUAGE_SERVER="2.5.0.0"
+export HASKELL_GHC="9.8.2"
+export HASKELL_LANGUAGE_SERVER="2.7.0.0"

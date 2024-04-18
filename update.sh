@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 
+# https://github.com/dandavison/delta/releases
+# https://github.com/sharkdp/bat
+
 set -e
 
 . ./lock.sh
