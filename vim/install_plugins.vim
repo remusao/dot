@@ -11,6 +11,10 @@ Plug 'ycm-core/YouCompleteMe', { 'do': './install.py --ts-completer --rust-compl
 Plug 'SirVer/ultisnips' " Snippets engine
 Plug 'honza/vim-snippets' " Actual snippets
 
+" Mostly for history search
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+
 " Git
 Plug 'airblade/vim-gitgutter'
 Plug 'tpope/vim-fugitive' " Git integration in Vim
@@ -44,6 +48,8 @@ Plug 'rust-lang/rust.vim'
 Plug 'hashivim/vim-vagrant', { 'for': ['ruby'] }
 Plug 'lervag/vimtex', { 'for': ['tex'] }
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+
+Plug 'github/copilot.vim'
 
 " This seems very slow...
 " Plug 'nvim-treesitter/nvim-treesitter-context'

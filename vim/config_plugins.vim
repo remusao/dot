@@ -54,25 +54,25 @@ let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
 \   'typescript': ['tslint', 'prettier'],
 \   'javascript': ['eslint', 'prettier'],
+\   'svelte': ['eslint', 'prettier'],
 \   'terraform': ['terraform'],
 \   'c': ['clang-format'],
 \   'swift': ['trim_whitespace'],
 \   'rust': ['rustfmt'],
 \   'sh': ['shfmt'],
 \   'ruby': ['rubocop', 'rufo'],
-\   'python': [],
+\   'python': ['isort', 'black'],
 \   'haskell': ['ormolu'],
 \}
 
-let g:ale_fix_on_save = 0
+" 'ruff_format'
+
+let g:ale_fix_on_save = 1
 
 let g:ale_completion_enabled = 0
 
 " NOTE: for rust I removed 'rustc' as it does not know about the dependencies
 " somehow so whole files are highlighted with warnings.
-let g:ale_fixers = {
-\   'svelte': ['eslint', 'prettier']
-\}
 let g:ale_linter_aliases = {
 \   'svelte': ['javascript', 'svelte']
 \}
@@ -81,6 +81,7 @@ let g:ale_linters = {
 \   'typescript': ['eslint', 'tsserver', 'tslint'],
 \   'svelte': ['svelteserver', 'eslint'],
 \   'terraform': ['tflint'],
+\   'python': ['ruff', 'pyright', 'mypy'],
 \   'rust': ['analyzer'],
 \}
 
@@ -167,97 +168,34 @@ let g:ycm_semantic_triggers = {
 let s:lsp = '/home/remi/.dot/vim/lsp'
 let g:ycm_language_server = [
   \   {
-  \     'name': 'angular',
-  \     'cmdline': [ 'node' ,
-  \        expand( s:lsp . '/angular/node_modules/@angular/language-server' ),
-  \        '--ngProbeLocations',
-  \        expand( s:lsp . '/angular/node_modules/' ),
-  \        '--tsProbeLocations',
-  \        expand( s:lsp . '/angular/node_modules/' ),
-  \        '--stdio' ],
-  \     'filetypes': [ 'ts','html' ],
-  \   },
-  \   {
   \     'name': 'bash',
-  \     'cmdline': [ 'node', expand( s:lsp . '/bash/node_modules/.bin/bash-language-server' ), 'start' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v21.7.1/bin/bash-language-server', 'start' ],
   \     'filetypes': [ 'sh', 'bash' ],
   \   },
   \   {
-  \     'name': 'dart',
-  \     'cmdline': [ 'dart', expand( s:lsp . '/dart/analysis_server.dart.snapshot' ), '--lsp' ],
-  \     'filetypes': [ 'dart' ],
-  \   },
-  \   {
-  \     'name': 'groovy',
-  \     'cmdline': [ 'java', '-jar', expand( s:lsp . '/groovy/groovy-language-server/build/libs/groovy-language-server-all.jar' ) ],
-  \     'filetypes': [ 'groovy' ]
-  \   },
-  \   {
   \     'name': 'yaml',
-  \     'cmdline': [ 'node', expand( s:lsp . '/yaml/node_modules/.bin/yaml-language-server' ), '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v21.7.1/bin/yaml-language-server', '--stdio' ],
   \     'filetypes': [ 'yaml' ],
-  \   },
-  \   {
-  \     'name': 'php',
-  \     'cmdline': [ 'php', expand( s:lsp . '/php/vendor/bin/php-language-server.php' ) ],
-  \     'filetypes': [ 'php' ],
-  \   },
-  \   {
-  \     'name': 'json',
-  \     'cmdline': [ 'node', expand( s:lsp . '/json/node_modules/.bin/vscode-json-languageserver' ), '--stdio' ],
-  \     'filetypes': [ 'json' ],
-  \   },
-  \   {
-  \     'name': 'ruby',
-  \     'cmdline': [ expand( s:lsp . '/ruby/bin/solargraph' ), 'stdio' ],
-  \     'filetypes': [ 'ruby' ],
-  \   },
-  \   { 'name': 'kotlin',
-  \     'filetypes': [ 'kotlin' ],
-  \     'cmdline': [ expand( s:lsp . '/kotlin/server/build/install/server/bin/server' ) ],
-  \   },
-  \   { 'name': 'd',
-  \     'filetypes': [ 'd' ],
-  \     'cmdline': [ expand( s:lsp . '/d/serve-d' ) ],
-  \   },
-  \   { 'name': 'vue',
-  \     'filetypes': [ 'vue' ],
-  \     'cmdline': [ expand( s:lsp . '/vue/node_modules/.bin/vls' ) ]
   \   },
   \   { 'name': 'docker',
   \     'filetypes': [ 'dockerfile' ],
-  \     'cmdline': [ expand( s:lsp . '/docker/node_modules/.bin/docker-langserver' ), '--stdio' ]
+  \     'cmdline': [ '/home/remi/.nvm/versions/node/v21.7.1/bin/docker-langserver', '--stdio' ]
   \   },
-  \   { 'name': 'vim',
-  \     'filetypes': [ 'vim' ],
-  \     'cmdline': [ expand( s:lsp . '/viml/node_modules/.bin/vim-language-server' ), '--stdio' ]
-  \   },
-  \   { 'name': 'scala',
-  \     'filetypes': [ 'scala' ],
-  \     'cmdline': [ 'metals-vim' ],
-  \     'project_root_files': [ 'build.sbt' ]
-  \   },
-  \   { 'name': 'purescript',
-  \     'filetypes': [ 'purescript' ],
-  \     'cmdline': [ expand( s:lsp . '/viml/node_modules/.bin/purescript-language-server' ), '--stdio' ]
-  \   },
-  \   { 'name': 'fortran',
-  \     'filetypes': [ 'fortran' ],
-  \     'cmdline': [ 'fortls' ],
-  \   },
-  \   { 'name': 'haskell-language-server',
-  \     'filetypes': [ 'haskell', 'lhaskell' ],
+  \   {
+  \     'name': 'haskell-language-server',
   \     'cmdline': [ 'haskell-language-server-wrapper', '--lsp' ],
-  \     'project_root_files': [ 'stack.yaml', 'cabal.project', 'package.yaml', 'hie.yaml' ]
+  \     'filetypes': [ 'haskell', 'lhaskell' ],
+  \     'project_root_files': [ 'stack.yaml', 'cabal.project', 'package.yaml', 'hie.yaml' ],
   \   },
   \   { 'name': 'lua',
   \     'filetypes': [ 'lua' ],
-  \     'cmdline': [ expand( s:lsp . '/lua/lua-language-server/root/extension/server/bin/macOS/lua-language-server'),
-  \                  expand( s:lsp . '/lua/lua-language-server/root/extension/server/main.lua' ) ]
+  \     'cmdline': [ '/home/remi/.sandboxes/firefox/Downloads/lua-language-server-3.7.4-linux-x64/bin/lua-language-server' ],
+  \     'capabilities': { 'textDocument': { 'completion': { 'completionItem': { 'snippetSupport': v:true } } } },
+  \     'triggerCharacters': []
   \   },
   \   {
   \     'name': 'svelte',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v18.11.0/bin/svelteserver', '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v21.7.1/bin/svelteserver', '--stdio' ],
   \     'filetypes': [ 'svelte' ],
   \   },
   \ ]
@@ -338,3 +276,18 @@ require'nvim-treesitter.configs'.setup {
 
 }
 EOF
+
+
+" Copilot
+" imap <silent><script><expr> <C-J> copilot#Accept("\<CR>")
+" let g:copilot_no_tab_map = v:true
+
+let g:copilot_filetypes = {
+      \ '*': v:false,
+      \ 'python': v:true,
+      \ 'rust': v:true,
+      \ 'javascript': v:true,
+      \ 'svelte': v:true,
+      \ 'typescript': v:true,
+      \ 'sh': v:true,
+      \ }
