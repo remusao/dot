@@ -1,5 +1,5 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="21.7.1"
+export NODEJS="22.1.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.7.7"
@@ -17,10 +17,10 @@ export RIPGREP="14.1.0"
 # export RUST_ANALYZER="0566644"
 
 # https://github.com/mozilla/sccache/releases/latest
-export SCCACHE="0.7.7"
+export SCCACHE="0.8.0"
 
 # https://github.com/docker/compose/releases/latest
-export DOCKER_COMPOSE="v2.25.0"
+export DOCKER_COMPOSE="v2.27.0"
 
 # https://www.vagrantup.com/downloads
 export VAGRANT="2.4.1"
@@ -30,7 +30,7 @@ export VAGRANT="2.4.1"
 export TERRAFORM="1.1.9"
 
 # https://www.python.org/downloads/
-export PYTHON_VERSION="3.12.2"
+export PYTHON_VERSION="3.12.3"
 
 # https://golang.org/dl/
 export GO="1.21.6"

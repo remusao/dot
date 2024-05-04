@@ -61,11 +61,12 @@ let g:ale_fixers = {
 \   'rust': ['rustfmt'],
 \   'sh': ['shfmt'],
 \   'ruby': ['rubocop', 'rufo'],
-\   'python': ['isort', 'black'],
+\   'python': ['ruff', 'ruff_format'],
 \   'haskell': ['ormolu'],
 \}
 
-" 'ruff_format'
+let g:ale_python_ruff_options = '--extend-select I'
+" let g:ale_python_ruff_change_directory = 0
 
 let g:ale_fix_on_save = 1
 
@@ -81,7 +82,7 @@ let g:ale_linters = {
 \   'typescript': ['eslint', 'tsserver', 'tslint'],
 \   'svelte': ['svelteserver', 'eslint'],
 \   'terraform': ['tflint'],
-\   'python': ['ruff', 'pyright', 'mypy'],
+\   'python': ['ruff', 'pyright', 'mypy', 'ruff_format'],
 \   'rust': ['analyzer'],
 \}
 
@@ -169,17 +170,17 @@ let s:lsp = '/home/remi/.dot/vim/lsp'
 let g:ycm_language_server = [
   \   {
   \     'name': 'bash',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v21.7.1/bin/bash-language-server', 'start' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.1.0/bin/bash-language-server', 'start' ],
   \     'filetypes': [ 'sh', 'bash' ],
   \   },
   \   {
   \     'name': 'yaml',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v21.7.1/bin/yaml-language-server', '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.1.0/bin/yaml-language-server', '--stdio' ],
   \     'filetypes': [ 'yaml' ],
   \   },
   \   { 'name': 'docker',
   \     'filetypes': [ 'dockerfile' ],
-  \     'cmdline': [ '/home/remi/.nvm/versions/node/v21.7.1/bin/docker-langserver', '--stdio' ]
+  \     'cmdline': [ '/home/remi/.nvm/versions/node/v22.1.0/bin/docker-langserver', '--stdio' ]
   \   },
   \   {
   \     'name': 'haskell-language-server',
@@ -195,7 +196,7 @@ let g:ycm_language_server = [
   \   },
   \   {
   \     'name': 'svelte',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v21.7.1/bin/svelteserver', '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.1.0/bin/svelteserver', '--stdio' ],
   \     'filetypes': [ 'svelte' ],
   \   },
   \ ]
