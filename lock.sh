@@ -1,11 +1,11 @@
 # https://github.com/nodejs/node/releases/latest
-export NODEJS="22.1.0"
+export NODEJS="22.2.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
-export KEEPASSXC="2.7.7"
+export KEEPASSXC="2.7.8"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM="v0.9.5"
+export NEOVIM="v0.10.0"
 
 # https://github.com/hadolint/hadolint/releases/latest
 export HADOLINT="2.10.0"
@@ -40,4 +40,4 @@ export GO="1.21.6"
 
 # Glasgow Haskell Compiler
 export HASKELL_GHC="9.8.2"
-export HASKELL_LANGUAGE_SERVER="2.7.0.0"
+export HASKELL_LANGUAGE_SERVER="2.8.0.0"
