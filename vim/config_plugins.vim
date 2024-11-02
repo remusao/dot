@@ -62,7 +62,7 @@ let g:ale_fixers = {
 \   'sh': ['shfmt'],
 \   'ruby': ['rubocop', 'rufo'],
 \   'python': ['ruff', 'ruff_format'],
-\   'haskell': ['ormolu'],
+\   'haskell': ['ormolu', 'fourmolu'],
 \}
 
 let g:ale_python_ruff_options = '--extend-select I'
@@ -170,17 +170,17 @@ let s:lsp = '/home/remi/.dot/vim/lsp'
 let g:ycm_language_server = [
   \   {
   \     'name': 'bash',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.2.0/bin/bash-language-server', 'start' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.11.0/bin/bash-language-server', 'start' ],
   \     'filetypes': [ 'sh', 'bash' ],
   \   },
   \   {
   \     'name': 'yaml',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.2.0/bin/yaml-language-server', '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.11.0/bin/yaml-language-server', '--stdio' ],
   \     'filetypes': [ 'yaml' ],
   \   },
   \   { 'name': 'docker',
   \     'filetypes': [ 'dockerfile' ],
-  \     'cmdline': [ '/home/remi/.nvm/versions/node/v22.2.0/bin/docker-langserver', '--stdio' ]
+  \     'cmdline': [ '/home/remi/.nvm/versions/node/v22.11.0/bin/docker-langserver', '--stdio' ]
   \   },
   \   {
   \     'name': 'haskell-language-server',
@@ -196,7 +196,7 @@ let g:ycm_language_server = [
   \   },
   \   {
   \     'name': 'svelte',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.2.0/bin/svelteserver', '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.11.0/bin/svelteserver', '--stdio' ],
   \     'filetypes': [ 'svelte' ],
   \   },
   \ ]
@@ -285,10 +285,11 @@ EOF
 
 let g:copilot_filetypes = {
       \ '*': v:false,
+      \ 'haskell': v:true,
+      \ 'javascript': v:true,
       \ 'python': v:true,
       \ 'rust': v:true,
-      \ 'javascript': v:true,
+      \ 'sh': v:true,
       \ 'svelte': v:true,
       \ 'typescript': v:true,
-      \ 'sh': v:true,
       \ }

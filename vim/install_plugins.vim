@@ -32,9 +32,10 @@ Plug 'editorconfig/editorconfig-vim' " Check .editorconfig settings
 
 " Colors
 Plug 'nanotech/jellybeans.vim' " The only theme I ever liked...
+" Plug 'themercorp/themer.lua' " For jellybeans, The only theme I ever liked...
 Plug 'vim-airline/vim-airline' " Vim powerline
 Plug 'vim-airline/vim-airline-themes' " Themes for powerline
-Plug 'ap/vim-css-color',  {'for': ['css', 'less', 'sass', 'html', 'scss']}
+Plug 'ap/vim-css-color',  {'for': ['css', 'less', 'sass', 'html', 'scss', 'vim']}
 
 " Notes
 Plug 'xolox/vim-notes', { 'for': ['notes'], 'on': 'Note' }    " Managing notes in vim
