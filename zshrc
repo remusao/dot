@@ -106,6 +106,7 @@ alias se='apt-cache search'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade'
 alias vim='nvim'
+alias aws='~/.virtualenvs/neovim3/bin/aws'
 
 alias runpyenv='eval "$(pyenv init -)"'
 alias runnvm='source ~/.nvm/nvm.sh'
@@ -139,7 +140,8 @@ export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 export PATH=$PATH:/home/remi/.go/bin
 export PATH=$PATH:/home/remi/go/bin
 export PATH=$PATH:/opt/ghc/bin/ # Haskell
-export PATH=$HOME/.ghcup/bin/:$PATH # Haskell
+export PATH=$HOME/.ghcup/bin/:$PATH # Haskell (ghcup)
+export PATH=$HOME/.cabal/bin/:$PATH # Haskell (Cabal)
 
 export GOPATH=/home/remi/go
 
@@ -273,7 +275,6 @@ export PATH="$HOME/.poetry/bin:$PATH"
 # initialise completions with ZSH's compinit
 autoload -Uz compinit && compinit
 
-# [ -f "/home/remi/.ghcup/env" ] && source "/home/remi/.ghcup/env" # ghcup-env
 
 ######################
 # Semgrep single PRs #
@@ -292,3 +293,5 @@ spr() {
 	popd
 	rm -rf $TEMPDIR
 }
+
+[ -f "/home/remi/.ghcup/env" ] && . "/home/remi/.ghcup/env" # ghcup-env
