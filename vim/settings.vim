@@ -38,9 +38,9 @@ set hidden                          " Hide buffers in background
 set textwidth=0
 
 " Don't store swap files
-set nobackup
-set noswapfile
-set nowritebackup
+" set nobackup
+" set noswapfile
+" set nowritebackup
 
 " Reduce processing for syntax highlighting to make it less of a pain.
 " set synmaxcol=1000
