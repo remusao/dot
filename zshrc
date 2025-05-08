@@ -91,6 +91,8 @@ alias -g ....='../../..'
 alias -g .....='../../../..'
 alias -g ......='../../../../..'
 
+alias aws=/home/remi/.virtualenvs/neovim3/bin/aws
+alias rm='rm -i'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias ag='rg --smart-case --pretty'
 alias c='clear'
@@ -275,23 +277,23 @@ export PATH="$HOME/.poetry/bin:$PATH"
 # initialise completions with ZSH's compinit
 autoload -Uz compinit && compinit
 
-
 ######################
 # Semgrep single PRs #
 ######################
-spr() {
-	last="${@:$#}" # last parameter
-	other="${*%${!#}}" # all parameters except the last
-	BASE_COMMIT=${BASE_COMMIT:-origin/master}
-	NEW_HEAD="$last"
-	TEMPDIR="$(mktemp -d)"
-	pushd "$PWD"
-	git worktree add $TEMPDIR $last
-	cd $TEMPDIR
-	FILES="$(git --no-pager diff --name-only $last $(git merge-base $last $BASE_COMMIT) | xargs ls -d 2>/dev/null)"
-	semgrep $other $FILES
-	popd
-	rm -rf $TEMPDIR
-}
+# spr() {
+# 	last="${@:$#}" # last parameter
+# 	other="${*%${!#}}" # all parameters except the last
+# 	BASE_COMMIT=${BASE_COMMIT:-origin/master}
+# 	NEW_HEAD="$last"
+# 	TEMPDIR="$(mktemp -d)"
+# 	pushd "$PWD"
+# 	git worktree add $TEMPDIR $last
+# 	cd $TEMPDIR
+# 	FILES="$(git --no-pager diff --name-only $last $(git merge-base $last $BASE_COMMIT) | xargs ls -d 2>/dev/null)"
+# 	semgrep $other $FILES
+# 	popd
+# 	rm -rf $TEMPDIR
+# }
 
-[ -f "/home/remi/.ghcup/env" ] && . "/home/remi/.ghcup/env" # ghcup-env
+# [ -f "/home/remi/.ghcup/env" ] && . "/home/remi/.ghcup/env" # ghcup-env
+# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
