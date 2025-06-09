@@ -1,11 +1,12 @@
 # https://github.com/nodejs/node/releases/latest
 # export NODEJS="20.18.1"
-export NODEJS="22.15.0"
+export NODEJS="22.16.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.7.10"
 
 # https://github.com/neovim/neovim/releases/latest
+# Latest is v0.11.2 but it breaks jellybeans theme ;(
 export NEOVIM="v0.9.5"
 
 # https://github.com/hadolint/hadolint/releases/latest
@@ -21,7 +22,7 @@ export RIPGREP="14.1.1"
 export SCCACHE="0.10.0"
 
 # https://github.com/docker/compose/releases/latest
-export DOCKER_COMPOSE="v2.36.0"
+export DOCKER_COMPOSE="v2.37.0"
 
 # https://www.vagrantup.com/downloads
 export VAGRANT="2.4.1"
@@ -31,7 +32,7 @@ export VAGRANT="2.4.1"
 export TERRAFORM="1.1.9"
 
 # https://www.python.org/downloads/
-export PYTHON_VERSION="3.12.10"
+export PYTHON_VERSION="3.12.11"
 
 # https://golang.org/dl/
 export GO="1.23.4"
