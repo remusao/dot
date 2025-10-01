@@ -1,6 +1,6 @@
 # https://github.com/nodejs/node/releases/latest
 # export NODEJS="20.18.1"
-export NODEJS="22.16.0"
+export NODEJS="22.20.0"
 
 # https://github.com/keepassxreboot/keepassxc/releases/latest
 export KEEPASSXC="2.7.10"
@@ -22,7 +22,7 @@ export RIPGREP="14.1.1"
 export SCCACHE="0.10.0"
 
 # https://github.com/docker/compose/releases/latest
-export DOCKER_COMPOSE="v2.37.0"
+export DOCKER_COMPOSE="v2.39.3"
 
 # https://www.vagrantup.com/downloads
 export VAGRANT="2.4.1"
