@@ -156,6 +156,7 @@ let g:terraform_align = 1
 " }}}
 
 " YouCompleteMe {{{
+let g:ycm_rust_toolchain_root='$HOME/.rustup/toolchains/stable-x86_64-unknown-linux-gnu'
 let g:ycm_show_diagnostics_ui = 0
 let g:ycm_collect_identifiers_from_tags_files = 1
 let g:ycm_add_preview_to_completeopt = 1
@@ -170,17 +171,17 @@ let s:lsp = '/home/remi/.dot/vim/lsp'
 let g:ycm_language_server = [
   \   {
   \     'name': 'bash',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.16.0/bin/bash-language-server', 'start' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.20.0/bin/bash-language-server', 'start' ],
   \     'filetypes': [ 'sh', 'bash' ],
   \   },
   \   {
   \     'name': 'yaml',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.16.0/bin/yaml-language-server', '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.20.0/bin/yaml-language-server', '--stdio' ],
   \     'filetypes': [ 'yaml' ],
   \   },
   \   { 'name': 'docker',
   \     'filetypes': [ 'dockerfile' ],
-  \     'cmdline': [ '/home/remi/.nvm/versions/node/v22.16.0/bin/docker-langserver', '--stdio' ]
+  \     'cmdline': [ '/home/remi/.nvm/versions/node/v22.20.0/bin/docker-langserver', '--stdio' ]
   \   },
   \   {
   \     'name': 'haskell-language-server',
@@ -196,7 +197,7 @@ let g:ycm_language_server = [
   \   },
   \   {
   \     'name': 'svelte',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.16.0/bin/svelteserver', '--stdio' ],
+  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v22.20.0/bin/svelteserver', '--stdio' ],
   \     'filetypes': [ 'svelte' ],
   \   },
   \ ]
