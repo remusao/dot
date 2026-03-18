@@ -50,7 +50,7 @@ bindsym $mod+Mod1+Right workspace next_on_output
 bindsym $mod+c exec i3lock --color 475263
 
 # Caps lock
-bindsym --release Caps_Lock exec pkill -SIGRTMIN+11 i3blocks
+# bindsym --release Caps_Lock exec pkill -SIGRTMIN+11 i3blocks
 
 # Adjust screen color
 exec --no-startup-id redshift -l 48.8:11.34
@@ -71,9 +71,9 @@ bindsym XF86AudioRaiseVolume exec --no-startup-id pamixer -i 5 # increase sound 
 bindsym XF86AudioLowerVolume exec --no-startup-id pamixer -d 5 # decrease sound volume
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle # mute sound
 
-# Sreen brightness controls
-bindsym XF86MonBrightnessUp exec xbacklight -inc 5 # increase screen brightness
-bindsym XF86MonBrightnessDown exec xbacklight -dec 5 # decrease screen brightness
+# Screen brightness controls
+bindsym XF86MonBrightnessUp exec brightnessctl set +5%
+bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
 
 # Touchpad controls
 # bindsym XF86TouchpadToggle exec /some/path/toggletouchpad.sh # toggle touchpad
