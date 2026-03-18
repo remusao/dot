@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source ~/.dot/lock.sh
+export PATH="${HOME}/.local/bin:${HOME}/.pyenv/bin:${PATH}"
 
 SKIP_SNAP=${DOTFILES_SKIP_SNAP:-0}
 SKIP_DOCKER=${DOTFILES_SKIP_DOCKER:-0}
@@ -54,7 +55,7 @@ check "virtualenvwrapper" test -f /usr/share/virtualenvwrapper/virtualenvwrapper
 
 # ─── APT CORE PACKAGES ──────────────────────────────────
 section "Apt packages: core tools"
-for cmd in zsh git curl wget cmake ninja-build unzip; do
+for cmd in zsh git curl wget cmake ninja unzip; do
   check "$cmd" command -v "$cmd"
 done
 check "git-lfs" git lfs version
@@ -84,7 +85,7 @@ check "libboost-dev" dpkg -s libboost-all-dev
 
 section "Apt packages: pyenv build deps"
 for pkg in libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
-           libncursesw5-dev libffi-dev liblzma-dev libxml2-dev libxmlsec1-dev \
+           libncurses-dev libffi-dev liblzma-dev libxml2-dev libxmlsec1-dev \
            tk-dev xz-utils; do
   check "$pkg" dpkg -s "$pkg"
 done
@@ -180,10 +181,12 @@ check "font cache" bash -c "fc-list | grep -qi inconsolata"
 # ─── NPM PACKAGES ───────────────────────────────────────
 section "npm global packages"
 NODE_BIN="$HOME/.nvm/versions/node/v${NODEJS}/bin"
-for pkg in bash-language-server prettier typescript yaml-language-server \
-           svelte-language-server dockerfile-language-server-nodejs svgo stylelint; do
+for pkg in bash-language-server prettier yaml-language-server svgo stylelint; do
   check "npm: $pkg" test -x "$NODE_BIN/$pkg" -o -f "$NODE_BIN/$pkg"
 done
+check "npm: typescript" test -x "$NODE_BIN/tsc"
+check "npm: svelte-language-server" test -x "$NODE_BIN/svelteserver"
+check "npm: dockerfile-language-server-nodejs" test -x "$NODE_BIN/docker-langserver"
 
 # ─── CLAUDE & OPENCODE ──────────────────────────────────
 section "AI tools"
@@ -223,18 +226,18 @@ check "obsidian" dpkg -s obsidian
 
 # ─── CONFIG SANITY CHECKS ───────────────────────────────
 section "Config sanity"
-check "ssh_config: no UseRoaming" ! grep -q "UseRoaming" "$HOME/.dot/ssh_config"
-check "ssh_config: no ssh-rsa" ! grep -q "ssh-rsa" "$HOME/.dot/ssh_config"
+check "ssh_config: no UseRoaming" bash -c '! grep -q "UseRoaming" "$HOME/.dot/ssh_config"'
+check "ssh_config: no ssh-rsa" bash -c '! grep -q "ssh-rsa" "$HOME/.dot/ssh_config"'
 check "ssh_config: KbdInteractive" grep -q "KbdInteractiveAuthentication" "$HOME/.dot/ssh_config"
 check "i3/config: brightnessctl" grep -q "brightnessctl" "$HOME/.dot/i3/config"
-check "i3/config: no xbacklight" ! grep -q "xbacklight" "$HOME/.dot/i3/config"
+check "i3/config: no xbacklight" bash -c '! grep -q "xbacklight" "$HOME/.dot/i3/config"'
 check "zshrc: python3 for venvwrapper" grep -q "VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" "$HOME/.dot/zshrc"
-check "zshrc: no spark PATH" ! grep -q "spark-1.6.1" "$HOME/.dot/zshrc"
-check "zshrc: no ruby 2.5 PATH" ! grep -q "ruby/2.5.0" "$HOME/.dot/zshrc"
-check "zshrc: no Nim PATH" ! grep -q "Nim/bin" "$HOME/.dot/zshrc"
+check "zshrc: no spark PATH" bash -c '! grep -q "spark-1.6.1" "$HOME/.dot/zshrc"'
+check "zshrc: no ruby 2.5 PATH" bash -c '! grep -q "ruby/2.5.0" "$HOME/.dot/zshrc"'
+check "zshrc: no Nim PATH" bash -c '! grep -q "Nim/bin" "$HOME/.dot/zshrc"'
 check "lock.sh: NVM_VERSION" grep -q "NVM_VERSION" "$HOME/.dot/lock.sh"
-check "lock.sh: no KEEPASSXC" ! grep -q "^export KEEPASSXC" "$HOME/.dot/lock.sh"
-check "packages.sh: no tslint" ! grep -q "tslint" "$HOME/.dot/nuggets/javascript/packages.sh"
+check "lock.sh: no KEEPASSXC" bash -c '! grep -q "^export KEEPASSXC" "$HOME/.dot/lock.sh"'
+check "packages.sh: no tslint" bash -c '! grep -q "tslint" "$HOME/.dot/nuggets/javascript/packages.sh"'
 check "no keepassxc.sh" test ! -f "$HOME/.dot/nuggets/utilities/keepassxc.sh"
 check "no docker-compose.sh" test ! -f "$HOME/.dot/nuggets/docker/docker-compose.sh"
 

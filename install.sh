@@ -57,7 +57,7 @@ sudo apt-get install "${APT_OPTS[@]}" \
   xclip \
   libboost-all-dev libzstd-dev \
   libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
-  libsqlite3-dev libncursesw5-dev libffi-dev liblzma-dev \
+  libsqlite3-dev libncurses-dev libffi-dev liblzma-dev \
   libxml2-dev libxmlsec1-dev \
   tk-dev xz-utils \
   fonts-inconsolata fonts-powerline fonts-dejavu fontconfig \
