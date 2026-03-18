@@ -91,7 +91,6 @@ alias -g ....='../../..'
 alias -g .....='../../../..'
 alias -g ......='../../../../..'
 
-alias aws=/home/remi/.virtualenvs/neovim3/bin/aws
 alias rm='rm -i'
 alias Byobu='byobu -A -D -RR -fa -h 150000 -l -O -U'
 alias ag='rg --smart-case --pretty'
@@ -108,8 +107,6 @@ alias se='apt-cache search'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade'
 alias vim='nvim'
-alias aws='~/.virtualenvs/neovim3/bin/aws'
-
 alias runpyenv='eval "$(pyenv init -)"'
 alias runnvm='source ~/.nvm/nvm.sh'
 alias runasdf='source ~/.asdf/asdf.sh'
@@ -132,21 +129,13 @@ export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
 export PATH=$PATH:/usr/local/sbin:/usr/bin
 export PATH=$HOME/usr/local/bin:$PATH                   # Use local first
 export PATH=$HOME/.local/bin:$PATH                      # ~/.local/bin
-export PATH=$HOME/.local/spark-1.6.1/bin:$PATH          # ~/.local/spark-1.6.1/
 export PATH=$HOME/.local/nodejs/bin:$PATH               # nodejs packages (npm)
 export PATH=$HOME/.cargo/bin:$PATH                      # Rust
-export PATH=$HOME/dev/repositories/public/Nim/bin:$PATH # Nim
-export PATH=$HOME/.gem/ruby/2.5.0/bin:$PATH             # Ruby gems
-export PATH=$HOME/dev/repositories/public/julia/usr/bin:$PATH # Julialang
 export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
 export PATH=$HOME/.pyenv/versions/${PYTHON_VERSION}/bin:$PATH   # Add python to PATH
-export PATH=$HOME/.jsvu:$PATH                           # Javascript engines
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 export PATH=$PATH:/home/remi/.go/bin
 export PATH=$PATH:/home/remi/go/bin
-export PATH=$PATH:/opt/ghc/bin/ # Haskell
-export PATH=$HOME/.ghcup/bin/:$PATH # Haskell (ghcup)
-export PATH=$HOME/.cabal/bin/:$PATH # Haskell (Cabal)
 
 export GOPATH=/home/remi/go
 
@@ -155,19 +144,12 @@ export GOPATH=/home/remi/go
 
 export GEM_HOME=$HOME/.gem/
 
-# Init Android Studio
-export ANDROID_HOME=$HOME/.sandboxes/android-studio/Android/Sdk
-export PATH=$PATH:$ANDROID_HOME/emulator
-export PATH=$PATH:$ANDROID_HOME/tools
-export PATH=$PATH:$ANDROID_HOME/tools/bin
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
-export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
 export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME

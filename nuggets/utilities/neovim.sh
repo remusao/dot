@@ -1,9 +1,9 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -e
 
 NEEDS_BUILD="0"
-if ! [ -f "/home/remi/.local/bin/nvim" ]; then
+if ! [ -f "${HOME}/.local/bin/nvim" ]; then
   NEEDS_BUILD="1"
 else
   CURRENT_VERSION=$(nvim --version | head -n 1)
@@ -13,39 +13,14 @@ else
 fi
 
 if [ "${NEEDS_BUILD}" = "1" ]; then
-  # Build deps
-  sudo apt-get install --yes \
-    autoconf \
-    automake \
-    cmake \
-    g++ \
-    gettext \
-    gperf \
-    libjemalloc-dev \
-    libluajit-5.1-dev \
-    libmsgpack-dev \
-    libtermkey-dev \
-    libtool \
-    libtool-bin \
-    libunibilium-dev \
-    libvterm-dev \
-    lua-bitop \
-    lua-lpeg \
-    lua-mpack \
-    lua5.1 \
-    ninja-build \
-    pkg-config \
-    unzip
+  sudo apt-get install --yes ninja-build gettext cmake curl build-essential
 
-  TEMP=/tmp/neovim
   (
-    rm -fr "${TEMP}"
-    mkdir "${TEMP}"
-    git clone --depth=1 --branch "${NEOVIM}" git@github.com:neovim/neovim.git "${TEMP}"
-    cd "${TEMP}" || exit 1
-
-    make -j8 CMAKE_EXTRA_FLAGS="-DCMAKE_INSTALL_PREFIX=/home/remi/.local" CMAKE_BUILD_TYPE=Release
+    TEMP=$(mktemp -d)
+    trap 'rm -rf "$TEMP"' EXIT
+    git clone --depth=1 --branch "${NEOVIM}" https://github.com/neovim/neovim.git "${TEMP}"
+    cd "${TEMP}"
+    make CMAKE_INSTALL_PREFIX="${HOME}/.local" CMAKE_BUILD_TYPE=RelWithDebInfo
     make install
-    rm -fr "${TEMP}"
   )
 fi

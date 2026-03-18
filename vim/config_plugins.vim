@@ -168,36 +168,25 @@ let g:ycm_semantic_triggers = {
      \}
 
 let s:lsp = '/home/remi/.dot/vim/lsp'
+let s:node_bin = '/home/remi/.nvm/versions/node/v' . $NODEJS . '/bin'
 let g:ycm_language_server = [
   \   {
   \     'name': 'bash',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v24.11.1/bin/bash-language-server', 'start' ],
+  \     'cmdline': [ 'node', s:node_bin . '/bash-language-server', 'start' ],
   \     'filetypes': [ 'sh', 'bash' ],
   \   },
   \   {
   \     'name': 'yaml',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v24.11.1/bin/yaml-language-server', '--stdio' ],
+  \     'cmdline': [ 'node', s:node_bin . '/yaml-language-server', '--stdio' ],
   \     'filetypes': [ 'yaml' ],
   \   },
   \   { 'name': 'docker',
   \     'filetypes': [ 'dockerfile' ],
-  \     'cmdline': [ '/home/remi/.nvm/versions/node/v24.11.1/bin/docker-langserver', '--stdio' ]
-  \   },
-  \   {
-  \     'name': 'haskell-language-server',
-  \     'cmdline': [ 'haskell-language-server-wrapper', '--lsp' ],
-  \     'filetypes': [ 'haskell', 'lhaskell' ],
-  \     'project_root_files': [ 'stack.yaml', 'cabal.project', 'package.yaml', 'hie.yaml' ],
-  \   },
-  \   { 'name': 'lua',
-  \     'filetypes': [ 'lua' ],
-  \     'cmdline': [ '/home/remi/.sandboxes/firefox/Downloads/lua-language-server-3.7.4-linux-x64/bin/lua-language-server' ],
-  \     'capabilities': { 'textDocument': { 'completion': { 'completionItem': { 'snippetSupport': v:true } } } },
-  \     'triggerCharacters': []
+  \     'cmdline': [ s:node_bin . '/docker-langserver', '--stdio' ]
   \   },
   \   {
   \     'name': 'svelte',
-  \     'cmdline': [ 'node', '/home/remi/.nvm/versions/node/v24.11.1/bin/svelteserver', '--stdio' ],
+  \     'cmdline': [ 'node', s:node_bin . '/svelteserver', '--stdio' ],
   \     'filetypes': [ 'svelte' ],
   \   },
   \ ]

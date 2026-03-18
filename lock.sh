@@ -1,45 +1,29 @@
 # https://github.com/nodejs/node/releases/latest
-# export NODEJS="20.18.1"
-export NODEJS="24.11.1"
-
-# https://github.com/keepassxreboot/keepassxc/releases/latest
-export KEEPASSXC="2.7.10"
+export NODEJS="24.14.0"
 
 # https://github.com/neovim/neovim/releases/latest
-# Latest is v0.11.2 but it breaks jellybeans theme ;(
-export NEOVIM="v0.9.5"
+export NEOVIM="v0.11.6"
 
-# https://github.com/hadolint/hadolint/releases/latest
-export HADOLINT="2.10.0"
+# https://www.python.org/downloads/
+export PYTHON_VERSION="3.12.13"
 
 # https://github.com/BurntSushi/ripgrep/releases/latest
 export RIPGREP="15.1.0"
 
-# https://github.com/rust-analyzer/rust-analyzer/releases/latest
-# export RUST_ANALYZER="0566644"
-
 # https://github.com/mozilla/sccache/releases/latest
-export SCCACHE="0.10.0"
+export SCCACHE="0.14.0"
 
-# https://github.com/docker/compose/releases/latest
-export DOCKER_COMPOSE="v2.40.3"
+# https://github.com/hadolint/hadolint/releases/latest
+export HADOLINT="v2.14.0"
 
-# https://www.vagrantup.com/downloads
-export VAGRANT="2.4.1"
+# https://github.com/nvm-sh/nvm/releases/latest
+export NVM_VERSION="v0.40.4"
 
-# https://github.com/hashicorp/terraform/releases/latest
-# https://www.terraform.io/downloads.html
-export TERRAFORM="1.1.9"
+# https://github.com/restic/restic/releases/latest
+export RESTIC="0.18.1"
 
-# https://www.python.org/downloads/
-export PYTHON_VERSION="3.12.12"
+# https://github.com/netblue30/firejail/releases/latest
+export FIREJAIL="0.9.80"
 
-# https://golang.org/dl/
-export GO="1.23.4"
-
-# https://github.com/koalaman/shellcheck/releases/latest
-# export SHELLCHECK="0.9.0"
-
-# Glasgow Haskell Compiler
-# export HASKELL_GHC="9.10.1"
-# export HASKELL_LANGUAGE_SERVER="2.9.0.1"
+# https://github.com/obsidianmd/obsidian-releases/releases/latest
+export OBSIDIAN="1.12.4"

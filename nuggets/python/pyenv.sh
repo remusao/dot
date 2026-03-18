@@ -1,12 +1,9 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -e
 
-if ! [ -d "${HOME}/.pyenv" ]; then
-  git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+if [ ! -d "${HOME}/.pyenv" ]; then
+  git clone https://github.com/pyenv/pyenv.git "${HOME}/.pyenv"
 else
-  (
-    cd ~/.pyenv
-    git pull origin master
-  )
+  (cd "${HOME}/.pyenv" && git pull --ff-only origin master)
 fi
