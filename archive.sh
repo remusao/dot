@@ -3,12 +3,14 @@
 #
 # Usage:
 #   archive.sh <directory>              Archive a directory to .tar.zst
+#   archive.sh -x <file.tar.zst>       Extract archive to directory
 #   archive.sh <file.tar.bz2|.tar.gz>  Re-compress to .tar.zst
 #   archive.sh --recompress-all DIR     Batch re-compress all archives in DIR
 #
 # Options:
 #   -n, --dry-run          Show what would happen
-#   -k, --keep             Keep original after archiving
+#   -k, --keep             Keep original after archiving/extracting
+#   -x, --extract          Extract a .tar.zst archive to directory
 #   -l, --level LEVEL      zstd compression level 1-19 (default: 9)
 #   --no-cleanup           Skip artifact cleanup step (for directories)
 #   --recompress-all DIR   Batch re-compress all .tar.bz2/.tar.gz in DIR
@@ -33,14 +35,15 @@ KEEP_ORIGINAL=false
 COMPRESSION_LEVEL=9
 DO_CLEANUP=true
 RECOMPRESS_ALL=""
+EXTRACT=false
 PARTIAL_OUTPUT=""   # Tracked for signal-trap cleanup
 
 # --- Signal trap: remove partial output on abort ---
 cleanup_on_exit() {
     set +u
-    if [[ -n "$PARTIAL_OUTPUT" && -f "$PARTIAL_OUTPUT" ]]; then
-        printf '\n%s[ABORT]%s Removing partial archive: %s\n' "$RED" "$NC" "$PARTIAL_OUTPUT"
-        rm -f -- "$PARTIAL_OUTPUT"
+    if [[ -n "$PARTIAL_OUTPUT" ]]; then
+        printf '\n%s[ABORT]%s Removing partial output: %s\n' "$RED" "$NC" "$PARTIAL_OUTPUT"
+        rm -rf -- "$PARTIAL_OUTPUT"
     fi
     set -u
 }
@@ -51,12 +54,14 @@ usage() {
     cat <<'EOF'
 Usage:
   archive.sh <directory>              Archive a directory to .tar.zst
+  archive.sh -x <file.tar.zst>       Extract archive to directory
   archive.sh <file.tar.bz2|.tar.gz>  Re-compress an existing archive to .tar.zst
   archive.sh --recompress-all DIR     Batch re-compress all archives in DIR
 
 Options:
   -n, --dry-run          Show what would happen
-  -k, --keep             Keep original after archiving
+  -k, --keep             Keep original after archiving/extracting
+  -x, --extract          Extract a .tar.zst archive to directory
   -l, --level LEVEL      zstd compression level 1-19 (default: 9)
   --no-cleanup           Skip artifact cleanup step (for directories)
   --recompress-all DIR   Batch re-compress all .tar.bz2/.tar.gz in DIR
@@ -72,6 +77,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -n|--dry-run)       DRY_RUN=true; shift ;;
         -k|--keep)          KEEP_ORIGINAL=true; shift ;;
+        -x|--extract)       EXTRACT=true; shift ;;
         -l|--level)         COMPRESSION_LEVEL="${2:?--level requires an argument}"; shift 2 ;;
         --no-cleanup)       DO_CLEANUP=false; shift ;;
         --recompress-all)   RECOMPRESS_ALL="${2:?--recompress-all requires a directory}"; shift 2 ;;
@@ -466,9 +472,83 @@ batch_recompress() {
     printf '%s============================================================%s\n' "$BOLD" "$NC"
 }
 
+# --- Mode 4: Extract a .tar.zst archive ---
+extract_archive() {
+    local archive="$1"
+
+    if [[ ! -f "$archive" ]]; then
+        printf '%sError: '\''%s'\'' not found%s\n' "$RED" "$archive" "$NC" >&2
+        return 1
+    fi
+
+    case "$archive" in
+        *.tar.zst) ;;
+        *) printf '%sError: expected .tar.zst file (got '\''%s'\'')%s\n' "$RED" "$archive" "$NC" >&2; return 1 ;;
+    esac
+
+    local parent_dir dir_name output_dir
+    parent_dir="$(cd "$(dirname "$archive")" && pwd)"
+    archive="$parent_dir/$(basename "$archive")"
+    dir_name="$(basename "$archive" .tar.zst)"
+    output_dir="$parent_dir/$dir_name"
+
+    if [[ -d "$output_dir" ]]; then
+        printf '%sError: '\''%s'\'' already exists%s\n' "$RED" "$output_dir" "$NC" >&2
+        return 1
+    fi
+
+    local archive_human
+    archive_human="$(get_size_human "$archive")"
+
+    printf '\n%s============================================================%s\n' "$BOLD" "$NC"
+    printf '%s Extract: %s%s\n' "$BOLD" "$dir_name" "$NC"
+    printf ' %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    if $DRY_RUN; then
+        printf ' %sDRY-RUN MODE%s\n' "$YELLOW" "$NC"
+    fi
+    printf ' Log: %s\n' "$LOG_FILE"
+    printf '%s============================================================%s\n\n' "$BOLD" "$NC"
+
+    if $DRY_RUN; then
+        log "[DRY-RUN] Would extract: $archive -> $output_dir"
+        return 0
+    fi
+
+    log "Extracting ($archive_human compressed)..."
+    PARTIAL_OUTPUT="$output_dir"
+
+    if ! tar -I zstd -xf "$archive" -C "$parent_dir"; then
+        printf '%sError: extraction failed%s\n' "$RED" "$NC" >&2
+        rm -rf -- "$output_dir"
+        PARTIAL_OUTPUT=""
+        return 1
+    fi
+
+    PARTIAL_OUTPUT=""
+
+    local output_human
+    output_human="$(get_size_human "$output_dir")"
+
+    if $KEEP_ORIGINAL; then
+        log "Keeping archive (--keep)"
+    else
+        log "Removing archive..."
+        rm -f -- "$archive"
+    fi
+
+    printf '\n%s============================================================%s\n' "$BOLD" "$NC"
+    printf '%s Summary%s\n' "$BOLD" "$NC"
+    printf '  Archive:    %s\n' "$archive_human"
+    printf '  Extracted:  %s\n' "$output_human"
+    printf '  Output:     %s\n' "$output_dir"
+    printf '%s============================================================%s\n' "$BOLD" "$NC"
+}
+
 # --- Main dispatch ---
 if [[ -n "$RECOMPRESS_ALL" ]]; then
     batch_recompress "$RECOMPRESS_ALL"
+elif $EXTRACT; then
+    extract_archive "$TARGET"
 elif [[ -z "${TARGET:-}" ]]; then
     printf '%sError: no target specified%s\n' "$RED" "$NC" >&2
     usage
