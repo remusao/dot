@@ -125,7 +125,7 @@ safe_remove() {
         # Rename-then-delete: atomic rename prevents race conditions
         local tmp_name="${dir}.cleanup.$$"
         if mv -- "$dir" "$tmp_name" 2>/dev/null; then
-            rm -rf -- "$tmp_name" &
+            rm -rf -- "$tmp_name"
         else
             # Fallback: direct delete if rename fails (cross-device, permissions)
             rm -rf -- "$dir" || printf '  %s[WARN]%s Failed to remove: %s\n' "$RED" "$NC" "$rel_path"
@@ -436,9 +436,6 @@ main() {
     clean_system_caches
     echo
     run_git_gc
-
-    # Wait for background rm processes
-    wait
 
     local end_time duration
     end_time=$(date +%s)
