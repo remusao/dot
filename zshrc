@@ -300,3 +300,13 @@ autoload -Uz compinit && compinit
 
 # [ -f "/home/remi/.ghcup/env" ] && . "/home/remi/.ghcup/env" # ghcup-env
 # [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# bun completions
+[ -s "/home/remi/.bun/_bun" ] && source "/home/remi/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# opencode
+export PATH=/home/remi/.opencode/bin:$PATH

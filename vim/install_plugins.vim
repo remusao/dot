@@ -4,7 +4,7 @@ filetype off
 call plug#begin('~/.local/share/nvim/plugged')
 
 " Linting
-Plug 'dense-analysis/ale'
+Plug 'dense-analysis/ale', { 'tag': 'v4.0.0' }
 
 " Autocomplete
 Plug 'ycm-core/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }
@@ -48,7 +48,7 @@ Plug 'rust-lang/rust.vim'
 
 Plug 'hashivim/vim-vagrant', { 'for': ['ruby'] }
 Plug 'lervag/vimtex', { 'for': ['tex'] }
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate', 'branch': 'master'}
 
 Plug 'github/copilot.vim'
 
