@@ -1,11 +1,11 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -e
 
-if ! [ -d "/home/remi/.nvm" ]; then
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
+if [ ! -d "${HOME}/.nvm" ]; then
+  curl -fo- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
 fi
 
-echo "> Updating Node.js ${NODEJS}"
-. /home/remi/.nvm/nvm.sh
+export TMPDIR="${TMPDIR:-/tmp}"
+. "${HOME}/.nvm/nvm.sh"
 nvm install "${NODEJS}"
