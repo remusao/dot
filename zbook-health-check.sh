@@ -325,7 +325,7 @@ check_kernel_params() {
             fi
         fi
     else
-        fail "pcie_aspm=off not set" "PCIe ASPM regression causes GUI freezes on OEM kernels after 6.14.0-1004-oem (suspected cause: PCIe power state transitions involving MT7925 WiFi). Mouse moves but desktop unresponsive within 1-2 min. Alternative targeted fix: amdgpu.dcdebugmask=0x400 (disables Panel Replay only). Ref: https://bugs.launchpad.net/ubuntu/+source/linux-oem-6.14/+bug/2115969" \
+        fail "pcie_aspm=off not set" "PCIe ASPM regression causes GUI freezes on OEM kernels after 6.14.0-1004-oem (PCIe power state transitions involving MT7925 WiFi). Mouse moves but desktop unresponsive within 1-2 min. Ref: https://bugs.launchpad.net/ubuntu/+source/linux-oem-6.14/+bug/2115969" \
             "sudo sed -i -E 's/pcie_aspm=[^ \"]*//g; s/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 pcie_aspm=off\"/; s/\"  +/\"/; s/  +\"/\"/' /etc/default/grub && sudo update-grub"
     fi
 
@@ -415,15 +415,16 @@ check_kernel_params() {
         skip "ROCm kernel parameter checks" "ROCm not installed (/opt/rocm not found, rocminfo not in PATH)"
     fi
 
-    # PSR check (X11 only — Panel Self Refresh causes flickering)
+    # PSR + Panel Replay check (X11 only — causes GUI freezes, especially with external displays)
     local session_type="${XDG_SESSION_TYPE:-}"
     if [[ "$session_type" == "x11" ]]; then
         local dc_val
         dc_val=$(kparam_value "amdgpu.dcdebugmask") || dc_val=""
         if [[ -n "$dc_val" ]]; then
-            info "amdgpu.dcdebugmask=$dc_val — X11 Panel Self Refresh control active. Ref: https://docs.kernel.org/gpu/amdgpu/display/dc-debug.html"
+            ok "amdgpu.dcdebugmask=$dc_val — PSR/Panel Replay control active for X11 stability"
         else
-            info "X11 session: if display flickers, add amdgpu.dcdebugmask=0x600 — disables PSR-SU + Panel Replay while keeping PSR v1 (preserves battery). Ref: https://wiki.archlinux.org/title/AMDGPU"
+            warn "amdgpu.dcdebugmask not set (X11 session)" \
+                "PSR + Panel Replay enabled — known cause of GUI freezes on X11 with external displays (desktop unresponsive, mouse moves). Try amdgpu.dcdebugmask=0x10 first (DC_DISABLE_PSR — disables PSR v1+SU, keeps Panel Replay, lower battery impact). If freezes persist, escalate to 0x410 (also disables Panel Replay). Trade-off: ~0.5W higher idle (Intel measurement; no AMD data) plus IPS cannot activate (depends on PSR). Ref: https://wiki.archlinux.org/title/AMDGPU"
         fi
     fi
 }
@@ -1079,6 +1080,77 @@ check_peripherals() {
         info "Keyboard backlight on (brightness: $kbd_brightness) — draws ~2W (significant at 7W idle). Reduce on battery for power savings. Ref: https://geohot.github.io/blog/jekyll/update/2025/11/28/replacing-my-macbook.html"
     fi
 
+    # Touchpad configuration (i3/X11 — GNOME handles this automatically)
+    if [[ -f /etc/X11/xorg.conf.d/30-touchpad.conf ]]; then
+        ok "Touchpad config exists (/etc/X11/xorg.conf.d/30-touchpad.conf)"
+    else
+        fail "Touchpad config missing" "tap-to-click, clickfinger, and natural scrolling are not configured for i3/X11" \
+            "Create /etc/X11/xorg.conf.d/30-touchpad.conf — see Section 14 of the report, or re-run install.sh"
+    fi
+
+    if cmd_exists xinput; then
+        local tp_name="SYNA3133:00 06CB:CFE2 Touchpad"
+        local tp_props
+        tp_props=$(xinput list-props "$tp_name" 2>/dev/null) || tp_props=""
+        if [[ -n "$tp_props" ]]; then
+            # Check tapping
+            if echo "$tp_props" | grep -q "libinput Tapping Enabled (.*):.*1"; then
+                ok "Touchpad tap-to-click enabled"
+            else
+                warn "Touchpad tap-to-click disabled" "enable with: xinput set-prop '$tp_name' 'libinput Tapping Enabled' 1 (or reboot after creating 30-touchpad.conf)"
+            fi
+            # Check click method (clickfinger = 0, 1)
+            if echo "$tp_props" | grep -q "libinput Click Method Enabled (.*):.*0,.*1"; then
+                ok "Touchpad click method: clickfinger"
+            else
+                warn "Touchpad click method: not clickfinger" "2-finger click won't right-click. Fix: add Option \"ClickMethod\" \"clickfinger\" to 30-touchpad.conf"
+            fi
+            # Check natural scrolling
+            if echo "$tp_props" | grep -q "libinput Natural Scrolling Enabled (.*):.*1"; then
+                ok "Touchpad natural scrolling enabled"
+            else
+                info "Touchpad natural scrolling disabled (personal preference — enable in 30-touchpad.conf if desired)"
+            fi
+        else
+            skip "Touchpad properties" "xinput could not read '$tp_name' (not on X11, or device name changed)"
+        fi
+    fi
+
+    # Keyboard XKB options
+    if cmd_exists setxkbmap; then
+        local xkb_opts
+        xkb_opts=$(setxkbmap -query 2>/dev/null | grep "options:" | sed 's/.*options:\s*//') || xkb_opts=""
+        if [[ "$xkb_opts" == *"ctrl:nocaps"* ]]; then
+            ok "XKB: Caps Lock as Ctrl (ctrl:nocaps)"
+        else
+            warn "XKB: Caps Lock is not mapped to Ctrl" "recommended for ZBook's awkward CTRL position. Fix: add ctrl:nocaps to XKBOPTIONS in /etc/default/keyboard"
+        fi
+        if [[ "$xkb_opts" == *"compose:ralt"* ]]; then
+            ok "XKB: Right Alt as Compose (compose:ralt)"
+        else
+            info "XKB: compose:ralt not set (optional — enables accented character input)"
+        fi
+        if [[ "$xkb_opts" == *"terminate:ctrl_alt_bksp"* ]]; then
+            ok "XKB: Ctrl+Alt+Backspace kills X (terminate:ctrl_alt_bksp)"
+        else
+            info "XKB: terminate:ctrl_alt_bksp not set (optional — emergency X11 kill)"
+        fi
+    fi
+
+    # Trackpad gestures (libinput-gestures)
+    if cmd_exists libinput-gestures-setup; then
+        if pgrep -f libinput-gestures &>/dev/null; then
+            ok "libinput-gestures running (3/4-finger swipe gestures active)"
+        else
+            warn "libinput-gestures installed but not running" "start with: libinput-gestures-setup start"
+        fi
+    else
+        info "libinput-gestures not installed (optional — enables 3/4-finger swipe gestures for i3). Install: sudo apt install libinput-gestures"
+    fi
+    if ! id -nG "$USER" 2>/dev/null | grep -qw input; then
+        warn "User not in 'input' group" "required for trackpad gestures. Fix: sudo gpasswd -a $USER input (then log out/in)"
+    fi
+
     # NVMe TRIM (important for SSD longevity, especially with LUKS discard)
     local trim_gran
     trim_gran=$(lsblk -Drn 2>/dev/null | grep nvme | head -1 | awk '{print $3}') || trim_gran=""
@@ -1164,12 +1236,152 @@ check_display() {
                 info "GNOME fractional scaling enabled"
             fi
         fi
+
+        # i3-specific desktop service checks
+        if [[ "${wm_name,,}" == *"i3"* ]]; then
+            # video group (required for brightnessctl without root)
+            if id -nG 2>/dev/null | grep -qw video; then
+                ok "User in 'video' group — brightnessctl can control backlight"
+            else
+                fail "User not in 'video' group" "brightnessctl will fail with 'Permission denied'" \
+                    "sudo usermod -aG video \$USER && logout/login"
+            fi
+
+            # Backlight writable
+            local bl_path="/sys/class/backlight"
+            if [[ -d "$bl_path" ]]; then
+                local bl_dev
+                bl_dev=$(find "$bl_path" -maxdepth 1 -mindepth 1 -printf '%f\n' 2>/dev/null | head -1)
+                if [[ -n "$bl_dev" ]] && [[ -w "$bl_path/$bl_dev/brightness" ]]; then
+                    ok "Backlight '$bl_dev' writable"
+                elif [[ -n "$bl_dev" ]]; then
+                    fail "Backlight '$bl_dev' not writable" "user must be in 'video' group" \
+                        "sudo usermod -aG video \$USER && logout/login"
+                fi
+            fi
+
+            # xss-lock (screen lock on suspend)
+            if pgrep -x xss-lock &>/dev/null; then
+                ok "xss-lock running — screen locks on suspend"
+            else
+                fail "xss-lock not running" "screen will NOT lock on suspend/lid close" \
+                    "Add to i3 config: exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork --color 475263"
+            fi
+
+            # polkit agent (GUI privilege escalation)
+            if pgrep -f polkit-gnome-auth &>/dev/null || pgrep -f lxpolkit &>/dev/null; then
+                ok "Polkit authentication agent running"
+            else
+                warn "No polkit authentication agent" "GUI privilege escalation will silently fail. Fix: add to i3 config: exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1"
+            fi
+
+            # playerctl (generic MPRIS media controls)
+            if cmd_exists playerctl; then
+                ok "playerctl installed — media keys work with any MPRIS player"
+            else
+                warn "playerctl not installed" "media keys limited to hardcoded player. Fix: sudo apt install playerctl"
+            fi
+        fi
     elif [[ -n "$session_type" ]]; then
         info "Session type: $session_type"
     fi
 }
 
-# ── Section 12: Summary & Remediation ────────────────────────────────────────
+# ── Section 13: Pareto Security (Endpoint Compliance) ─────────────────────
+check_pareto() {
+    section "Pareto Security — Endpoint Compliance"
+
+    # Binary
+    if ! cmd_exists paretosecurity; then
+        skip "Pareto Security" "not installed (sudo apt install paretosecurity)"
+        return
+    fi
+    ok "Pareto Security installed ($(paretosecurity --version 2>/dev/null | head -1 || echo 'unknown version'))"
+
+    # Team linking
+    local pareto_conf="$HOME/.config/pareto.toml"
+    if [[ -r "$pareto_conf" ]]; then
+        local team_id
+        team_id=$(grep -oP '^TeamID\s*=\s*"\K[^"]+' "$pareto_conf" 2>/dev/null) || team_id=""
+        if [[ -n "$team_id" && "$team_id" != '""' ]]; then
+            ok "Linked to team: $team_id"
+        else
+            warn "Pareto not linked to a team" "run: paretosecurity link <invite-url>"
+        fi
+    else
+        warn "Pareto config missing" "expected $pareto_conf — run: paretosecurity link <invite-url>"
+    fi
+
+    # Systemd socket (system-level, root helper)
+    if svc_active paretosecurity.socket; then
+        ok "Root helper socket active"
+    else
+        fail "Root helper socket inactive" "root checks (firewall, encryption, updates) will fail" \
+            "sudo systemctl enable --now paretosecurity.socket"
+    fi
+
+    # User timer (intentionally disabled — manual-only mode)
+    if systemctl --user is-enabled paretosecurity-user.timer &>/dev/null; then
+        info "Hourly check timer enabled — checks run automatically every hour"
+    else
+        info "Hourly check timer disabled — manual-only mode (run: paretosecurity check)"
+    fi
+
+    # ── Pareto check prerequisites (what the checks actually verify) ──
+
+    # Firewall (Pareto checks iptables/nftables for DROP/REJECT or ufw/firewalld chains)
+    if has_root; then
+        local ufw_status
+        ufw_status=$(ufw status 2>/dev/null) || ufw_status=""
+        if [[ "$ufw_status" == *"Status: active"* ]]; then
+            ok "UFW firewall active — Pareto firewall check will pass"
+        else
+            fail "UFW firewall inactive" "Pareto reports: Firewall is off" \
+                "sudo ufw enable    # add 'sudo ufw allow OpenSSH' first ONLY if others SSH into this laptop"
+        fi
+    else
+        skip "Firewall check" "requires root"
+    fi
+
+    # docker.io residual (Pareto false positive: dpkg-query -W returns 0 for uninstalled packages in database)
+    local docker_io_status
+    docker_io_status=$(dpkg-query -W -f='${Status}' docker.io 2>/dev/null) || docker_io_status=""
+    if [[ -z "$docker_io_status" ]]; then
+        ok "No docker.io in dpkg database — Pareto docker.io check OK"
+    elif [[ "$docker_io_status" == "install ok installed" ]]; then
+        fail "docker.io package installed" "Pareto reports: Deprecated docker.io package. Replace with docker-ce" \
+            "sudo apt-get remove docker.io && sudo apt-get install docker-ce docker-ce-cli containerd.io"
+    else
+        # Status is "unknown ok not-installed" or similar — residual entry, triggers Pareto false positive
+        fail "Residual docker.io in dpkg database (status: $docker_io_status)" "triggers Pareto false positive" \
+            "sudo dpkg --purge docker.io"
+    fi
+
+    # Docker rootless mode (Pareto checks docker info --format {{.SecurityOptions}} for "rootless")
+    if cmd_exists docker; then
+        local docker_sec
+        docker_sec=$(docker info --format '{{.SecurityOptions}}' 2>/dev/null) || docker_sec=""
+        if [[ "$docker_sec" == *"rootless"* ]]; then
+            ok "Docker running in rootless mode — Pareto docker check will pass"
+        elif [[ -n "$docker_sec" ]]; then
+            warn "Docker not in rootless mode" "Pareto will report failure. Rootless is a significant change (different networking/storage). Accept or disable check: add 25443ceb-c1ec-408c-b4f3-2328ea0c84e1 to DisableChecks in ~/.config/pareto.toml"
+        fi
+    fi
+
+    # Snap updates (Pareto runs snap refresh --list)
+    if cmd_exists snap && svc_active snapd; then
+        local snap_updates
+        snap_updates=$(snap refresh --list 2>/dev/null) || snap_updates=""
+        if [[ -z "$snap_updates" ]] || [[ "$snap_updates" == *"All snaps up to date"* ]]; then
+            ok "All snaps up to date — Pareto app updates check OK"
+        else
+            fail "Snap updates available" "Pareto reports: Updates available for: Snap" \
+                "sudo snap refresh"
+        fi
+    fi
+}
+
+# ── Section 14: Summary & Remediation ────────────────────────────────────────
 print_summary() {
     section "Summary"
 
@@ -1267,6 +1479,7 @@ main() {
     check_firmware
     check_peripherals
     check_display
+    check_pareto
     print_summary
 
     # Exit code: 0 if no FAILs, 1 if any FAILs

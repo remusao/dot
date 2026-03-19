@@ -21,11 +21,13 @@
 11. [Full Disk Encryption Setup — Deep Dive](#11-full-disk-encryption-setup--deep-dive)
 12. [Other Linux Distributions — Comparison](#12-other-linux-distributions--comparison)
 13. [Complete Hardware Status Matrix](#13-complete-hardware-status-matrix)
-14. [Recommended Setup — Step by Step](#14-recommended-setup--step-by-step)
-15. [HP Wolf Security — Linux Compatibility and Reinstall Safety](#15-hp-wolf-security--linux-compatibility-and-reinstall-safety)
-16. [Support Channels](#16-support-channels)
-17. [All Sources](#17-all-sources)
-18. [Open Bugs & Workaround Tracking](#18-open-bugs--workaround-tracking)
+14. [Input Device Configuration for i3/X11](#14-input-device-configuration-for-i3x11)
+15. [Recommended Setup — Step by Step](#15-recommended-setup--step-by-step)
+16. [HP Wolf Security — Linux Compatibility and Reinstall Safety](#16-hp-wolf-security--linux-compatibility-and-reinstall-safety)
+17. [Support Channels](#17-support-channels)
+18. [All Sources](#18-all-sources)
+19. [Open Bugs & Workaround Tracking](#19-open-bugs--workaround-tracking)
+20. [Pareto Security — Endpoint Compliance](#20-pareto-security--endpoint-compliance)
 
 ---
 
@@ -298,6 +300,36 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 There is no Ubuntu-specific recovery partition. The HP OEM ISO serves as the recovery mechanism. **Download and keep a copy** before making any changes.
 
+### 8.12 Panel Self Refresh / Panel Replay — Display Freezes on X11
+
+- **Cause:** PSR (Panel Self Refresh) and Panel Replay are display controller power-saving features (managed by DCN 3.5.1's DMUB firmware) that allow the GPU scanout engine to sleep when screen content is static. On X11, the compositor's damage tracking does not properly signal dirty regions to the display controller, so the panel stays in its self-refreshed (frozen) state. External displays via USB-C/DP exacerbate this — hotplug events trigger PSR state machine transitions that X11 cannot track. **This is independent of the PCIe ASPM issue** (Section 8.1) — you may need both `pcie_aspm=off` and `amdgpu.dcdebugmask=0x410`.
+- **Symptoms:** Identical to 8.1 — desktop unresponsive, mouse moves, TTY accessible. More frequent when connecting/disconnecting external displays.
+- **Wayland is not affected** — Wayland compositors (Mutter, KWin) have proper PSR integration.
+- **Fix:** Add `amdgpu.dcdebugmask=0x410` to kernel parameters.
+
+**Understanding `dcdebugmask` — the `DC_DEBUG_MASK` enum** (source: [`drivers/gpu/drm/amd/include/amd_shared.h`](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/amd/include/amd_shared.h)):
+
+| Bit | Name | Effect |
+|---|---|---|
+| `0x10` | `DC_DISABLE_PSR` | Disables PSR v1 **and** PSR-SU (kdoc: "disable Panel self refresh v1 and PSR-SU") |
+| `0x200` | `DC_DISABLE_PSR_SU` | Disables PSR-SU only (leaves PSR v1). Currently redundant — PSR-SU is hardcoded off in mainline (`link_supports_psrsu()` returns `false`) |
+| `0x400` | `DC_DISABLE_REPLAY` | Disables Panel Replay (FreeSync Panel Replay, eDP 1.5) |
+| `0x800` | `DC_DISABLE_IPS` | Disables all Idle Power States |
+
+**Common values:**
+
+| Value | What it disables | Use case |
+|---|---|---|
+| `0x10` | PSR v1 + PSR-SU | Standard fix for PSR freezes |
+| `0x410` | PSR + Panel Replay | **Recommended for X11** — comprehensive display stability |
+| `0x600` | PSR-SU + Panel Replay | ⚠️ Leaves PSR v1 active — incomplete fix despite being widely cited ([CachyOS](https://discuss.cachyos.org/t/tutorial-mitigate-gfx-crash-lockup-apparent-freeze-with-amdgpu/10842), [EndeavourOS](https://forum.endeavouros.com/t/howto-mitigate-gfx-crash-lockup-apparent-freeze-with-amdgpu/73082)) |
+
+How it works: in `amdgpu_dm.c`, `DC_DISABLE_PSR` (0x10) prevents `psr_feature_enabled` from being set to `true`, so `amdgpu_dm_set_psr_caps()` is never called — PSR v1 and PSR-SU are both prevented from initializing. `DC_DISABLE_REPLAY` (0x400) separately disables Panel Replay. DCN 3.5.1 (Strix Halo, `IP_VERSION(3, 5, 1)`) is in the explicit switch-case list where PSR is enabled by default.
+
+- **Battery trade-off:** Disabling PSR forces the GPU scanout engine to remain active at the panel's refresh rate (120Hz) even when content is static. PSR power savings are ~0.5W (measured on Intel i915 — [Hans de Goede, Red Hat](https://hansdegoede.livejournal.com/18653.html); no public AMD-specific measurements exist). Additionally, IPS (Idle Power States) depends on PSR — `amdgpu_dm_psr_enable()` calls `dc_allow_idle_optimizations(true)` when `caps.ips_support` is set, so with PSR disabled, the DCN block cannot enter deep idle. The compounding IPS cost is unquantified but likely larger than PSR alone. Other power mechanisms (DPMS, clock gating, GFXOFF, `amd_pstate=active`) still function normally. Measure your own impact with `powertop` on battery.
+- **Graduated approach:** Try `0x10` alone first (disables PSR, keeps Panel Replay). Escalate to `0x410` if freezes persist. On Wayland, this parameter is unnecessary.
+- **References:** [Arch Wiki AMDGPU](https://wiki.archlinux.org/title/AMDGPU), [kernel DC debug docs](https://docs.kernel.org/gpu/amdgpu/display/dc-debug.html), [Ubuntu PSR-SU bug #2024774](https://bugs.launchpad.net/bugs/2024774), [Ubuntu PSR-SU disable #2046131](https://bugs.launchpad.net/bugs/2046131)
+
 ---
 
 ## 9. Suspend, Sleep, and Hibernate — Deep Dive
@@ -412,7 +444,7 @@ HibernateDelaySec=30min
 ### 9.9 Complete Recommended Kernel Parameters
 
 ```
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410"
 ```
 
 | Parameter | Purpose |
@@ -420,6 +452,7 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_as
 | `amd_pstate=active` | Reduces idle power from 10-15W to 7-11W (down to 3-4W with GPU low-power extension) |
 | `amd_iommu=off` | Fixes suspend (security tradeoff — see 9.4; also disables NPU) |
 | `pcie_aspm=off` | Fixes GUI freezes (may lose Ethernet) |
+| `amdgpu.dcdebugmask=0x410` | Fixes PSR/Panel Replay display freezes on X11 (see 8.12). Trade-off: higher idle power |
 
 **Additional parameters for specific use cases:**
 
@@ -428,7 +461,6 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_as
 | `resume=UUID=<swap-UUID>` | If using hibernate |
 | `ttm.pages_limit=32505856` | For GPU compute with large unified memory (replaces deprecated `amdgpu.gttsize`) |
 | `amdgpu.cwsr_enable=0` | Fix ROCm GPU hangs during AI/compute workloads ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)). Only affects compute (CWSR = Compute Wave Save/Restore) — no impact on display or 3D rendering. |
-| `amdgpu.dcdebugmask=0x600` | Fix Panel Self Refresh display issues on X11 |
 
 After editing `/etc/default/grub`:
 ```bash
@@ -721,7 +753,7 @@ The [Level1Techs guide](https://forum.level1techs.com/t/the-ultimate-arch-secure
 
 - **Optimized kernel:** BORE scheduler, sched-ext, AMD P-State EPP, AVX-512 enabled — 5-10% performance gains
 - **Known issues:** Random Xorg freezes during install. **KDE is significantly more stable than GNOME** on Strix Halo ([CachyOS forum](https://discuss.cachyos.org/t/installer-crash-on-strix-halo-laptop/13980))
-- **Workarounds:** Disable Secure Boot temporarily, disable Adaptive Sync, boot with `amdgpu.dcdebugmask=0x600`, or use Wayland
+- **Workarounds:** Disable Secure Boot temporarily, disable Adaptive Sync, boot with `amdgpu.dcdebugmask=0x410`, or use Wayland
 - **AUR:** Same `amdisp4-dkms` package available for webcam
 
 ### 12.5 Debian 13 "Trixie"
@@ -786,7 +818,7 @@ The [Level1Techs guide](https://forum.level1techs.com/t/the-ultimate-arch-secure
 | NVMe Storage | Works | any | Standard nvme driver |
 | Audio (Cirrus Logic amp) | Works | 6.14+ | Degraded quality vs Windows |
 | Fingerprint Reader (Synaptics) | Works | any | [libfprint](https://launchpad.net/ubuntu/+source/libfprint/+bug/2058193); `fprintd-enroll` |
-| Touchpad (Synaptics) | Works | any | — |
+| Touchpad (Synaptics) | Works | any | Requires [libinput config for i3/X11](#14-input-device-configuration-for-i3x11) — GNOME configures automatically |
 | Touchscreen (ELAN) | Works | any | On OLED model only |
 | Thunderbolt 4 | Works | 6.14+ | Dock disconnection bug with >90W PD |
 | NPU (XDNA 2, 50 TOPS) | **Not usable** | 6.14+ | Kernel driver exists; userspace stack not ready. Note: `amd_iommu=off` (needed for suspend) also disables the NPU. |
@@ -795,10 +827,221 @@ The [Level1Techs guide](https://forum.level1techs.com/t/the-ultimate-arch-secure
 | LVFS/fwupd | Works | — | BIOS + PD firmware updates from Linux |
 | Secure Boot | Works | — | OEM kernel is signed; keep enabled |
 | TPM 2.0 / Pluton | Works | 6.3+ | Must stay enabled — disabling breaks suspend (see Section 9.3) |
+| Function/Media Keys | Works (needs i3 config) | any | Brightness requires `video` group; keyboard backlight is firmware-handled. See [Section 14](#14-input-device-configuration-for-i3x11) |
 
 ---
 
-## 14. Recommended Setup — Step by Step
+## 14. Input Device Configuration for i3/X11
+
+GNOME's `gnome-settings-daemon` automatically configures the touchpad (tap-to-click, clickfinger, natural scrolling) and keyboard options. When running i3 or another standalone WM on X11, these must be configured manually.
+
+### Touchpad
+
+Create `/etc/X11/xorg.conf.d/30-touchpad.conf`:
+
+```
+Section "InputClass"
+    Identifier "touchpad"
+    MatchIsTouchpad "on"
+    Driver "libinput"
+    Option "Tapping" "on"
+    Option "TappingButtonMap" "lrm"
+    Option "TappingDragLock" "on"
+    Option "NaturalScrolling" "on"
+    Option "ClickMethod" "clickfinger"
+EndSection
+```
+
+| Option | Default | Set to | Why |
+|---|---|---|---|
+| Tapping | off | on | 1-finger tap = left click |
+| TappingButtonMap | lrm | lrm | 2-finger tap = right click, 3-finger = middle |
+| TappingDragLock | off | on | Lift and reposition finger mid-drag without releasing |
+| NaturalScrolling | off | on | Swipe down = content moves down (macOS/GNOME style) |
+| ClickMethod | buttonareas | clickfinger | 2-finger physical click = right click (recommended by [libinput docs](https://wayland.freedesktop.org/libinput/doc/latest/clickpad-softbuttons.html)) |
+
+Settings left at defaults (already optimal): `DisableWhileTyping` (on), `TappingDrag` (on), `AccelProfile` (adaptive), `AccelSpeed` (0.0), `ScrollMethod` (twofinger), `ScrollingPixelDistance` (15).
+
+No conflict with `/usr/share/X11/xorg.conf.d/40-libinput.conf` — that file only assigns the driver, sets no options. Custom files in `/etc/X11/xorg.conf.d/` take precedence.
+
+**Sources:** [ArchWiki — libinput](https://wiki.archlinux.org/title/Libinput), [libinput(4) man page](https://man.archlinux.org/man/libinput.4.en)
+
+### Keyboard
+
+The ZBook Ultra G1a's physical keyboard layout has the bottom-left row ordered CTRL > FN > WIN > ALT, making Ctrl+shortcuts and especially Ctrl+Alt+shortcuts uncomfortable. Remapping Caps Lock to Ctrl puts a Ctrl key on the home row.
+
+Update `/etc/default/keyboard`:
+```
+XKBOPTIONS="ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp"
+```
+
+Then apply: `sudo dpkg-reconfigure -f noninteractive keyboard-configuration`
+
+Also update the `setxkbmap` line in the i3 config to match:
+```
+exec --no-startup-id setxkbmap -layout us -option ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp
+```
+
+| Option | Effect |
+|---|---|
+| `ctrl:nocaps` | Caps Lock becomes Ctrl — home-row Ctrl for all shortcuts |
+| `compose:ralt` | Right Alt becomes Compose key — type accented chars (Compose → ' → e = é) |
+| `terminate:ctrl_alt_bksp` | Ctrl+Alt+Backspace kills X server — emergency escape hatch |
+
+**Sources:** [ArchWiki — Xorg/Keyboard](https://wiki.archlinux.org/title/Xorg/Keyboard_configuration), [xkeyboard-config(7)](https://manpages.ubuntu.com/manpages/noble/man7/xkeyboard-config.7.html)
+
+### Verification
+
+```bash
+# Touchpad
+xinput list-props "SYNA3133:00 06CB:CFE2 Touchpad" | grep -E "Tapping Enabled|Click Method|Natural Scrolling"
+# Expected: Tapping Enabled: 1, Click Method Enabled: 0, 1, Natural Scrolling Enabled: 1
+
+# Keyboard
+setxkbmap -query | grep options
+# Expected: ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp
+```
+
+### Trackpad Gestures (libinput-gestures)
+
+GNOME provides built-in 3/4-finger swipe gestures for workspace switching. On i3, install [`libinput-gestures`](https://github.com/bulletmark/libinput-gestures) to get similar functionality.
+
+```bash
+sudo apt install libinput-gestures libinput-tools xdotool wmctrl
+sudo gpasswd -a $USER input  # required — log out/in after
+```
+
+Create `~/.config/libinput-gestures.conf`:
+```conf
+# i3 workspace switching — 3-finger swipes
+gesture swipe left  3 i3-msg workspace next
+gesture swipe right 3 i3-msg workspace prev
+gesture swipe up    3 i3-msg fullscreen toggle
+gesture swipe down  3 i3-msg floating toggle
+
+# Move container to adjacent workspace — 4-finger swipes
+gesture swipe left  4 i3-msg move container to workspace next, workspace next
+gesture swipe right 4 i3-msg move container to workspace prev, workspace prev
+
+# Pinch to zoom (browsers, terminals, etc.)
+gesture pinch in    xdotool key ctrl+minus
+gesture pinch out   xdotool key ctrl+plus
+```
+
+Enable and start:
+```bash
+libinput-gestures-setup autostart
+libinput-gestures-setup start
+```
+
+Add to i3 config: `exec --no-startup-id libinput-gestures-setup start`
+
+**Sources:** [libinput-gestures](https://github.com/bulletmark/libinput-gestures), [ArchWiki — libinput](https://wiki.archlinux.org/title/Libinput)
+
+### i3 Desktop Services & Media Keys
+
+GNOME's `gnome-settings-daemon` handles media keys (brightness, volume, mic mute, media player), screen locking, PolicyKit authentication, and DPI scaling automatically. In i3, each must be configured explicitly.
+
+#### Brightness
+
+The backlight device (`/sys/class/backlight/amdgpu_bl1/brightness`) is owned by `root:video` with `664` permissions. The user must be in the `video` group for `brightnessctl` to work without root.
+
+```bash
+sudo usermod -aG video $USER  # log out/in after
+```
+
+In i3 config:
+```
+bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl -c backlight set +5%
+bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl -c backlight --min-value=1 set 5%-
+```
+
+| Flag | Purpose |
+|---|---|
+| `--no-startup-id` | Prevents 60-second busy cursor (CLI tools never send X11 startup notification) |
+| `-c backlight` | Targets only backlight class; avoids LED devices; survives device name changes across kernels (`amdgpu_bl0` → `amdgpu_bl1`) |
+| `--min-value=1` | Prevents setting brightness to 0 (completely black screen, unrecoverable without SSH) |
+
+**Keyboard backlight (F5):** No sysfs LED is exposed (`/sys/class/leds/` has no `kbd_backlight`). The keyboard backlight toggle is handled entirely by firmware/EC — no i3 binding needed.
+
+#### Volume & Mic Mute
+
+```
+bindsym XF86AudioRaiseVolume exec --no-startup-id pamixer -i 5
+bindsym XF86AudioLowerVolume exec --no-startup-id pamixer -d 5
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
+bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+```
+
+Ubuntu 24.04 uses PipeWire with PulseAudio compatibility. Both `pamixer` and `pactl` work via `pipewire-pulse`.
+
+#### Media Player Controls
+
+Use `playerctl` (the i3 community standard for MPRIS media controls). Works with any player (Spotify, Firefox, VLC, etc.):
+
+```bash
+sudo apt install playerctl
+```
+
+```
+bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
+bindsym XF86AudioStop exec --no-startup-id playerctl stop
+bindsym XF86AudioPrev exec --no-startup-id playerctl previous
+bindsym XF86AudioNext exec --no-startup-id playerctl next
+```
+
+#### Screen Lock (xss-lock)
+
+Without `xss-lock`, the screen is NOT locked on suspend/lid close — a security hole. `xss-lock` intercepts systemd's "prepare for sleep" signal and launches i3lock before suspend completes.
+
+```
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork --color 475263
+bindsym $mod+c exec --no-startup-id loginctl lock-session
+```
+
+`--transfer-sleep-lock` holds a systemd inhibitor so suspend waits until i3lock is ready. `--nofork` is required for xss-lock to track the i3lock process. The manual `$mod+c` binding uses `loginctl lock-session` which xss-lock intercepts, avoiding conflicting i3lock instances.
+
+#### PolicyKit Authentication Agent
+
+Without a polkit agent, GUI apps that need privilege escalation (mounting drives, managing printers, etc.) silently fail.
+
+```bash
+sudo apt install policykit-1-gnome
+```
+
+```
+exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+```
+
+#### DPI
+
+GDM does not source `~/.xinitrc` — it launches i3 directly via `/usr/share/xsessions/i3.desktop`. Set DPI in i3 config instead:
+
+```
+exec --no-startup-id xrandr --dpi 96
+```
+
+#### Display Output Names
+
+AMD amdgpu uses different output names than Intel:
+
+| Intel (old) | AMD amdgpu (this laptop) |
+|---|---|
+| `eDP1` | `eDP` |
+| `HDMI2` | `HDMI-A-0` |
+| `DP1` | `DisplayPort-0` through `DisplayPort-6` |
+
+Verify with `xrandr --query`. Update workspace assignments in i3 config accordingly.
+
+**Sources:** [ArchWiki — i3](https://wiki.archlinux.org/title/I3), [ArchWiki — Backlight](https://wiki.archlinux.org/title/Backlight), [ArchWiki — Session lock](https://wiki.archlinux.org/title/Session_lock), [i3 FAQ — multimedia keys](https://faq.i3wm.org/question/3747/enabling-multimedia-keys.1.html), [playerctl](https://github.com/altdesktop/playerctl)
+
+### What this does NOT fix
+
+**Kinetic (momentum) scrolling** — GNOME/mutter implements this at the compositor level. libinput deliberately does not provide it. On i3/X11, scrolling stops immediately when fingers lift. This is the one remaining "feel" gap vs GNOME that cannot be fixed with input configuration.
+
+---
+
+## 15. Recommended Setup — Step by Step
 
 ### If your current HP OEM install works
 
@@ -807,7 +1050,7 @@ The [Level1Techs guide](https://forum.level1techs.com/t/the-ultimate-arch-secure
 sudo apt install linux-oem-24.04
 
 # 2. Apply kernel parameters
-sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off"/' /etc/default/grub
+sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410"/' /etc/default/grub
 sudo update-grub
 
 # 3. Update firmware
@@ -840,7 +1083,30 @@ EOF
 
 sudo systemctl enable wifi-suspend-fix.service wifi-pre-suspend.service
 
-# 5. Reboot
+# 5. Input device configuration (i3/X11 only — skip if using GNOME)
+# See Section 14 for details
+sudo tee /etc/X11/xorg.conf.d/30-touchpad.conf > /dev/null << 'EOF'
+Section "InputClass"
+    Identifier "touchpad"
+    MatchIsTouchpad "on"
+    Driver "libinput"
+    Option "Tapping" "on"
+    Option "TappingButtonMap" "lrm"
+    Option "TappingDragLock" "on"
+    Option "NaturalScrolling" "on"
+    Option "ClickMethod" "clickfinger"
+EndSection
+EOF
+
+sudo sed -i 's/^XKBOPTIONS=.*/XKBOPTIONS="ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp"/' /etc/default/keyboard
+sudo dpkg-reconfigure -f noninteractive keyboard-configuration
+
+# 6. i3 desktop services (i3/X11 only — skip if using GNOME)
+# See Section 14 "i3 Desktop Services & Media Keys" for details
+sudo apt install playerctl xss-lock policykit-1-gnome
+sudo usermod -aG video "$USER"  # required for brightnessctl backlight access
+
+# 7. Reboot
 sudo reboot
 ```
 
@@ -849,7 +1115,7 @@ sudo reboot
 1. **Download HP OEM ISO** from [HP Support](https://support.hp.com/us-en/drivers/hp-zbook-ultra-g1a-14-inch-mobile-workstation-pc/2102737532) — **keep a backup copy** (no recovery partition exists)
 2. Or use stock Ubuntu 24.04 ISO and install `linux-oem-24.04` afterward
 3. During install: select "Erase disk" → "Advanced features" → "Use LVM and encryption"
-4. After install, apply steps 1-5 above
+4. After install, apply steps 1-6 above
 5. Optionally set up Clevis + TPM2 (see [Section 11.5](#115-clevis--tpm2-automatic-unlock-recommended-for-2404))
 
 ### BIOS tweaks (F10 at boot)
@@ -870,7 +1136,7 @@ sudo reboot
 
 ---
 
-## 15. HP Wolf Security — Linux Compatibility and Reinstall Safety
+## 16. HP Wolf Security — Linux Compatibility and Reinstall Safety
 
 HP Wolf Security is HP's enterprise security platform. Understanding what it does — and what it doesn't do — on Linux is critical before deciding whether to reinstall or tweak your setup.
 
@@ -977,7 +1243,7 @@ These have **zero interaction with Linux**. If you see references to these in HP
 
 ---
 
-## 16. Support Channels
+## 17. Support Channels
 
 | Channel | What to expect |
 |---|---|
@@ -992,7 +1258,7 @@ These have **zero interaction with Linux**. If you see references to these in HP
 
 ---
 
-## 17. All Sources
+## 18. All Sources
 
 ### Official / Vendor
 
@@ -1113,6 +1379,14 @@ These have **zero interaction with Linux**. If you see references to these in HP
 - [UAPI Group — Linux TPM PCR Registry](https://uapi-group.org/specifications/specs/linux_tpm_pcr_registry/)
 - [systemd-cryptenroll Man Page](https://www.freedesktop.org/software/systemd/man/systemd-cryptenroll.html)
 
+### Pareto Security
+
+- [Pareto Security — Linux Checks](https://paretosecurity.com/linux/checks)
+- [Pareto Security — Privacy Policy](https://paretosecurity.com/legal/privacy)
+- [Pareto Security — FAQ](https://paretosecurity.com/docs/faq)
+- [Pareto Security Agent — GitHub (GPL-3.0)](https://github.com/ParetoSecurity/agent)
+- [Docker Rootless Mode — Official Docs](https://docs.docker.com/engine/security/rootless/)
+
 ### Hacker News Discussions
 
 - [First Impressions (Dec 2025)](https://news.ycombinator.com/item?id=46320214)
@@ -1129,7 +1403,7 @@ These have **zero interaction with Linux**. If you see references to these in HP
 
 ---
 
-## 18. Open Bugs & Workaround Tracking
+## 19. Open Bugs & Workaround Tracking
 
 Track these upstream bugs to know when workarounds can be removed.
 
@@ -1144,3 +1418,106 @@ Track these upstream bugs to know when workarounds can be removed.
 | Webcam (OEM kernel) | [AMD ISP4 v9 patches](https://lkml.org/lkml/2026/3/2/278) | Under review | ISP4 merged into mainline (targeting 7.1+) |
 | Random reboots | [HP #9549358](https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358) | Hardware | BIOS update or motherboard replacement |
 | Dock disconnect >90W | [HP #9521854](https://h30434.www3.hp.com/t5/Business-PCs-Workstations-and-Point-of-Sale-Systems/Ultrabook-G1a-constantly-disconnecting-from-docks-any-docks/td-p/9521854) | Open | PD firmware or BIOS fix |
+
+---
+
+## 20. Pareto Security — Endpoint Compliance
+
+Pareto Security is a **lightweight, read-only endpoint security auditing tool** installed per Brave company policy. It is NOT an MDM — it cannot control, access, or modify your device remotely. The agent is open source ([GPL-3.0, Go](https://github.com/ParetoSecurity/agent)). The cloud dashboard is proprietary SaaS.
+
+### What It Does
+
+Runs **15 security hygiene checks** every hour (when the timer is enabled) and reports **pass/fail status only** (not detail strings) to your Brave team's Pareto Cloud dashboard. Named after the Pareto principle: 20% of security tasks that prevent 80% of problems.
+
+### What Data Leaves Your Machine
+
+Verified by source code audit of every HTTP call in the agent ([`team/report.go`](https://github.com/ParetoSecurity/agent/blob/main/team/report.go)):
+
+| Endpoint | Data Sent |
+|---|---|
+| `PATCH cloud.paretosecurity.com/api/v1/team/{teamID}/device` | Pass/fail per check UUID, device UUID, hostname, OS version, model name, agent version |
+| `GET paretosecurity.com/api/updates` | Device UUID, agent version, OS version, platform |
+| `POST cloud.paretosecurity.com/api/v1/team/enroll` | One-time enrollment (device info + invite ID) |
+
+**Not collected:** file contents, browsing history, keystrokes, screenshots, process lists, network traffic, application usage. No Sentry/analytics SDK in the agent (Sentry is cloud-side only per [privacy policy](https://paretosecurity.com/legal/privacy)). Reporting times are randomized so admins cannot determine when you are online ([FAQ](https://paretosecurity.com/docs/faq)).
+
+### Remote Control Capabilities
+
+**None.** The API is strictly one-way (device → cloud). The response handler ([`report.go:123-128`](https://github.com/ParetoSecurity/agent/blob/main/team/report.go)) only checks HTTP status codes. The root helper ([`runner/root_runner.go`](https://github.com/ParetoSecurity/agent/blob/main/runner/root_runner.go)) only accepts check UUIDs from a local Unix socket. No WebSocket, polling, or command-execution mechanism exists in the codebase.
+
+Your IT team **can** see pass/fail results and set alerts. They **cannot** run commands, install software, lock/wipe, access files, or push config changes.
+
+### The 15 Checks
+
+| Category | Check | Requires Root |
+|---|---|---|
+| System Integrity | Filesystem encryption enabled | Yes |
+| System Integrity | SecureBoot enabled | No |
+| System Integrity | Cloud receiving reports | No |
+| Access Security | Docker restricted (rootless mode) | No |
+| Access Security | Screen lock password required | No |
+| Access Security | SSH keys have password protection | No |
+| Access Security | SSH keys use strong encryption | No |
+| Access Security | Automatic login disabled | No |
+| Access Security | Password manager present | No |
+| Firewall & Sharing | Firewall configured | Yes |
+| Firewall & Sharing | Remote login disabled | No |
+| Firewall & Sharing | Printer sharing off | No |
+| Firewall & Sharing | File sharing disabled | No |
+| Application Updates | Apps up to date | Yes |
+| Application Updates | Pareto up to date | No |
+
+Source: [`checks/linux/`](https://github.com/ParetoSecurity/agent/tree/main/checks/linux) + [`checks/shared/`](https://github.com/ParetoSecurity/agent/tree/main/checks/shared)
+
+### Known Failures and Fixes on the ZBook Ultra G1a
+
+**Failure 1: Docker — "Deprecated docker.io package installed via apt"**
+
+This is a **false positive**. `docker.io` has dpkg status `un` (never fully installed) but `dpkg-query -W` returns exit 0 for packages merely in the database. The check at [`docker.go:41-47`](https://github.com/ParetoSecurity/agent/blob/main/checks/linux/docker.go) doesn't verify installation status. Known class of bug (same issue in [AWS SSM Agent](https://github.com/aws/amazon-ssm-agent/issues/421)).
+
+After purging the residual entry, the check proceeds to verify Docker rootless mode ([`docker.go:57`](https://github.com/ParetoSecurity/agent/blob/main/checks/linux/docker.go)). Docker CE is installed in standard (root daemon) mode, so this will also fail. Rootless Docker is a significant operational change (different networking, storage location, no AppArmor — see [Docker rootless docs](https://docs.docker.com/engine/security/rootless/)).
+
+```bash
+# Fix the false positive (no side effects)
+sudo dpkg --purge docker.io
+
+# Rootless mode: either accept the failure, or disable the check:
+# Edit ~/.config/pareto.toml → DisableChecks = ["25443ceb-c1ec-408c-b4f3-2328ea0c84e1"]
+```
+
+**Failure 2: Firewall — "Firewall is off"**
+
+The check at [`firewall.go:186-191`](https://github.com/ParetoSecurity/agent/blob/main/checks/linux/firewall.go) runs `iptables -L INPUT` (falls back to `nft list ruleset`) and passes if it finds DROP/REJECT policy, explicit rules, or known firewall chains (`ufw*`, `nixos-fw*`, `firewalld*`). UFW is not enabled.
+
+```bash
+sudo ufw enable            # safe — existing connections preserved via conntrack RELATED,ESTABLISHED
+# Outgoing SSH to remote servers always works (UFW defaults: deny incoming, allow outgoing).
+# Only add 'sudo ufw allow OpenSSH' if others need to SSH INTO this laptop.
+```
+
+**Failure 3: App updates — "Updates available for: Snap"**
+
+The check at [`application_updates.go:96-108`](https://github.com/ParetoSecurity/agent/blob/main/checks/linux/application_updates.go) runs `snap refresh --list`. Snaps auto-update 4×/day but can be delayed by holds or metered connections.
+
+```bash
+sudo snap refresh
+```
+
+### CLI Commands
+
+```bash
+paretosecurity check             # run all 15 checks
+paretosecurity check --verbose   # detailed output
+paretosecurity status            # cached results table
+paretosecurity info              # device/system info
+paretosecurity schema            # JSON check definitions
+```
+
+### Systemd Services
+
+| Service | Purpose | Recommended Status |
+|---|---|---|
+| `paretosecurity.socket` (system) | Local Unix socket for root helper — sits idle, only activates when you manually run `paretosecurity check`. No automatic checks, no network activity. | **Enabled** (keep — needed for manual checks) |
+| `paretosecurity.service` (system) | Root helper (socket-activated on demand) | On-demand |
+| `paretosecurity-user.timer` (user) | Would run checks hourly if enabled | **Disabled** (leave disabled for manual-only mode) |
+| `paretosecurity-trayicon.service` (user) | Desktop tray icon | **Disabled** (optional) |

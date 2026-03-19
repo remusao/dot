@@ -6,6 +6,10 @@
 
 [core]
   editor = nvim
+  untrackedCache = true
+  fsmonitor = true
+[feature]
+  manyFiles = true
 
 [color]
   branch = auto
@@ -55,3 +59,17 @@
 	gpgsign = true
 [tag]
 	gpgsign = true
+[diff]
+	algorithm = histogram
+[fetch]
+	writeCommitGraph = true
+	prune = true
+	negotiationAlgorithm = skipping
+[pack]
+	threads = 0
+[checkout]
+	workers = 0
+[push]
+	autoSetupRemote = true
+[rerere]
+	enabled = true
