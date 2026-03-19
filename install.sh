@@ -64,7 +64,8 @@ sudo apt-get install "${APT_OPTS[@]}" \
   gimp evince libreoffice vlc \
   libfido2-1 libu2f-udev \
   virtualenvwrapper tree editorconfig xdg-utils \
-  tldr rsync whois zstd apache2-utils
+  tldr rsync whois zstd apache2-utils \
+  htop dfc earlyoom
 ok "System packages"
 
 # ── Firefox snap → deb ─────────────────────────────────────────────────────
