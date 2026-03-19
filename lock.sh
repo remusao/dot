@@ -27,3 +27,9 @@ export FIREJAIL="0.9.80"
 
 # https://github.com/obsidianmd/obsidian-releases/releases/latest
 export OBSIDIAN="1.12.4"
+
+# https://github.com/99designs/aws-vault/releases/latest
+export AWS_VAULT="v7.2.0"
+
+# https://github.com/99designs/aws-vault/releases/latest
+export AWS_VAULT="v7.2.0"
