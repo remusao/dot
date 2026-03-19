@@ -1,6 +1,6 @@
 #! /usr/bin/zsh
 
-# Load ssh key
+# Load ssh key (must be before P10k instant prompt — keychain produces console output)
 eval `keychain --agents 'ssh,gpg' --eval id_ed25519 id_rsa_perso id_rsa_cliqz`
 export GPG_TTY=$(tty)
 
