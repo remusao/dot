@@ -37,6 +37,9 @@ if [[ -r /proc/cmdline ]]; then
     read -ra CMDLINE_PARAMS < /proc/cmdline
 fi
 
+# ── Real user detection (handles sudo correctly) ──────────────────────────────
+REAL_USER="${SUDO_USER:-${USER:-$(id -un)}}"
+
 # ── Helper functions ─────────────────────────────────────────────────────────
 ok()   { COUNT_OK=$((COUNT_OK+1));   printf '%s[  OK  ]%s %s\n' "$C_GREEN"  "$C_RESET" "$1"; }
 warn() { COUNT_WARN=$((COUNT_WARN+1)); printf '%s[ WARN ]%s %s — %s\n' "$C_YELLOW" "$C_RESET" "$1" "$2"; }
@@ -904,7 +907,7 @@ check_fde() {
     local keyslot_count
     keyslot_count=$(echo "$luks_dump" | grep -cE "^\s+[0-9]+: luks2") || keyslot_count=0
     if [[ "$keyslot_count" -le 1 ]] 2>/dev/null; then
-        warn "Only $keyslot_count active LUKS keyslot(s)" "no recovery passphrase — if your primary passphrase is lost, ALL data is gone. Fix: sudo cryptsetup luksAddKey --key-slot 1 $luks_device. Ref: https://wiki.archlinux.org/title/Dm-crypt/Device_encryption"
+        warn "Only $keyslot_count active LUKS keyslot(s)" "no recovery passphrase — if your primary passphrase is lost, ALL data is gone. Fix: sudo cryptsetup luksAddKey --key-slot 1 $luks_device && sudo cryptsetup open --test-passphrase --key-slot 1 --verbose $luks_device. Then back up header (backup captures keyslot state at time of backup). Ref: https://wiki.archlinux.org/title/Dm-crypt/Device_encryption"
     else
         ok "Multiple LUKS keyslots active ($keyslot_count) — recovery passphrase available"
     fi
@@ -944,9 +947,13 @@ check_wifi() {
         return
     fi
 
-    # Driver
+    # Driver — only FAIL if no wireless interface is UP (driver may show under a different name)
+    local wl_up
+    wl_up=$(ip -br link 2>/dev/null | grep -E "^wl.*UP") || wl_up=""
     if lsmod 2>/dev/null | grep -q mt7925e; then
         ok "mt7925e driver loaded"
+    elif [[ -n "$wl_up" ]]; then
+        ok "WiFi interface UP (driver active)"
     else
         fail "mt7925e driver not loaded" "WiFi adapter present but driver missing — may need linux-firmware update. Ref: https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2118937" \
             "sudo modprobe mt7925e"
@@ -1163,8 +1170,8 @@ check_peripherals() {
     else
         info "fusuma not installed (optional — enables trackpad gestures for i3). Install: sudo gem install fusuma"
     fi
-    if ! id -nG "$USER" 2>/dev/null | grep -qw input; then
-        warn "User not in 'input' group" "required for trackpad gestures. Fix: sudo gpasswd -a $USER input (then log out/in)"
+    if ! id -nG "$REAL_USER" 2>/dev/null | grep -qw input; then
+        warn "User '$REAL_USER' not in 'input' group" "required for trackpad gestures. Fix: sudo gpasswd -a $REAL_USER input (then log out/in)"
     fi
 
     # NVMe TRIM (important for SSD longevity, especially with LUKS discard)
@@ -1411,7 +1418,7 @@ check_pareto() {
         if [[ "$docker_sec" == *"rootless"* ]]; then
             ok "Docker running in rootless mode — Pareto docker check will pass"
         elif [[ -n "$docker_sec" ]]; then
-            warn "Docker not in rootless mode" "Pareto will report failure. Rootless is a significant change (different networking/storage). Accept or disable check: add 25443ceb-c1ec-408c-b4f3-2328ea0c84e1 to DisableChecks in ~/.config/pareto.toml"
+            warn "Docker not in rootless mode" "Pareto will report failure. Rootless is a significant change (different networking/storage). Accept or disable check: paretosecurity config disable 25443ceb-c1ec-408c-b4f3-2328ea0c84e1"
         fi
     fi
 
@@ -1423,7 +1430,7 @@ check_pareto() {
             ok "All snaps up to date — Pareto app updates check OK"
         else
             fail "Snap updates available" "Pareto reports: Updates available for: Snap" \
-                "sudo snap refresh"
+                "killall snap-store 2>/dev/null; sudo snap refresh"
         fi
     fi
 }
