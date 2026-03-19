@@ -321,10 +321,6 @@ ln -sf "${DOT_DIR}/dunst/dunstrc" ~/.config/dunst/dunstrc
 ln -sf "${DOT_DIR}/i3status-rust/config.toml" ~/.config/i3status-rust/config.toml
 ok "rofi/picom/dunst/i3status-rust configs"
 
-# ── Git LFS ────────────────────────────────────────────────────────────────
-git lfs install
-ok "Git LFS"
-
 # ── Udev rules ────────────────────────────────────────────────────────────
 info "Installing udev rules..."
 UDEV_CHANGED=0
