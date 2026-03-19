@@ -33,3 +33,36 @@ export AWS_VAULT="v7.2.0"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS="v3.9.4"
+
+# https://github.com/rustsec/rustsec/releases/latest
+export CARGO_AUDIT="0.22.1"
+
+# https://github.com/rust-fuzz/cargo-fuzz/releases/latest
+export CARGO_FUZZ="0.13.1"
+
+# https://github.com/flamegraph-rs/flamegraph/releases/latest
+export FLAMEGRAPH="0.6.11"
+
+# https://github.com/cgag/loc/releases/latest
+export LOC="0.5.0"
+
+# https://github.com/shssoichiro/oxipng/releases/latest
+export OXIPNG="10.1.0"
+
+# https://github.com/XAMPPRocky/tokei/releases/latest
+export TOKEI="14.0.0"
+
+# https://github.com/tree-sitter/tree-sitter/releases/latest
+export TREE_SITTER_CLI="0.26.3"
+
+# https://github.com/eza-community/eza/releases/latest
+export EZA="0.23.4"
+
+# https://github.com/bootandy/dust/releases/latest
+export DU_DUST="1.2.4"
+
+# https://github.com/Wilfred/difftastic/releases/latest
+export DIFFTASTIC="0.68.0"
+
+# https://github.com/jesseduffield/lazygit/releases/latest
+export LAZYGIT="0.60.0"
