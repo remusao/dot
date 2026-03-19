@@ -150,7 +150,7 @@ sudo_restic() {
     [[ -n "${RESTIC_PASSWORD:-}" ]] && preserve+=(--preserve-env=RESTIC_PASSWORD)
     [[ -n "${RESTIC_PASSWORD_FILE:-}" ]] && preserve+=(--preserve-env=RESTIC_PASSWORD_FILE)
     [[ -n "${RESTIC_PASSWORD_COMMAND:-}" ]] && preserve+=(--preserve-env=RESTIC_PASSWORD_COMMAND)
-    sudo "${preserve[@]}" restic "$@"
+    sudo "${preserve[@]}" "$(command -v restic)" "$@"
 }
 
 confirm() {
