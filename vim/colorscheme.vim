@@ -9,13 +9,13 @@ let g:jellybeans_use_lowcolor_black = 0
 " correctly through jellybeans' base groups. Only override groups where the
 " default behavior doesn't match jellybeans' intent.
 if has('nvim-0.10')
-  " @variable gets a direct guifg (#e0e2ea) from Neovim defaults instead of
-  " a link — doesn't match jellybeans' Normal foreground (#e8e8d3).
-  hi! link @variable            Normal
+  " @variable: Neovim defaults set a direct guifg (#e0e2ea, cool grey).
+  " Link to Identifier (#c6b6ee, lavender) to match the jellybeans palette.
+  hi! link @variable            Identifier
 
-  " Modules/namespaces: default links to Structure (blue-cyan). Original
-  " jellybeans regex syntax had no special module coloring — plain text.
-  hi! link @module              Normal
+  " Modules/namespaces: Identifier (#c6b6ee) keeps visual consistency with
+  " variables rather than fading into Normal text.
+  hi! link @module              Identifier
 
   " Builtins: Neovim defaults link all *.builtin to Special (green #799d6a).
   " Original jellybeans had: Boolean→Constant, pythonBuiltin→Function, Type→Type.

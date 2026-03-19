@@ -18,7 +18,6 @@ set showmatch
 set mouse=a
 set wrap linebreak nolist
 set termguicolors
-set signcolumn=yes    " prevent layout shift from signs appearing
 set updatetime=250    " faster CursorHold events (default 4000)
 
 " Persistent undo
