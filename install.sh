@@ -168,6 +168,13 @@ if ! has_repo /etc/apt/sources.list.d/github-cli.list; then
   REPOS_ADDED=1
 fi
 
+# ── Git (latest stable) ───────────────────────────────────────────────────
+if ! has_repo /etc/apt/sources.list.d/git-core-ubuntu-ppa-noble.sources; then
+  info "Adding git-core PPA..."
+  sudo add-apt-repository -y ppa:git-core/ppa
+  REPOS_ADDED=1
+fi
+
 # ── Pareto Security ──────────────────────────────────────────────────────
 if ! has_repo /etc/apt/sources.list.d/pareto.list; then
   info "Adding Pareto Security repo..."
@@ -211,9 +218,9 @@ ALL_PKGS=(
   network-manager-gnome gnome-keyring
   libdbus-1-dev libsensors-dev
   x11-xserver-utils x11-xkb-utils lxrandr
-  zsh-syntax-highlighting keychain fzf fd-find shellcheck
+  zsh-syntax-highlighting keychain shellcheck
   xclip
-  jq git-delta hyperfine sd hexyl entr just
+  jq sd hexyl entr just
   ffmpeg mitmproxy pandoc socat pv pigz 7zip ncdu
   zoxide duf btop nmap wireguard
   protobuf-compiler libsnappy-dev libboost-all-dev libzstd-dev
@@ -313,6 +320,10 @@ ok "$HOME/.ssh/config"
 mkdir -p ~/.config/alacritty
 ln -sf "${DOT_DIR}/alacritty.toml" ~/.config/alacritty/alacritty.toml
 ok "$HOME/.config/alacritty/alacritty.toml"
+
+mkdir -p ~/.config/fontconfig
+ln -sf "${DOT_DIR}/fontconfig/fonts.conf" ~/.config/fontconfig/fonts.conf
+ok "$HOME/.config/fontconfig/fonts.conf"
 
 mkdir -p ~/.config/rofi ~/.config/picom ~/.config/dunst ~/.config/i3status-rust
 ln -sf "${DOT_DIR}/rofi/config.rasi" ~/.config/rofi/config.rasi
@@ -493,6 +504,10 @@ if [ ! -d "$P10K_DIR" ]; then
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR"
 fi
 ok "Zsh + Powerlevel10k"
+
+# ── IBus (hide tray icon — single layout, no need for indicator) ──────
+gsettings set org.freedesktop.ibus.panel show-icon-on-systray false
+ok "IBus tray icon hidden"
 
 # ── Fonts ──────────────────────────────────────────────────────────────────
 info "Installing fonts..."
