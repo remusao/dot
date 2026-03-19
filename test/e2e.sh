@@ -221,11 +221,9 @@ fi
 if [ "$SKIP_FIREJAIL" != "1" ]; then
   section "Firejail"
   check "firejail" command -v firejail
-  check "firejail wrapper: firefox" test -x /usr/local/bin/firefox
-  check "firejail wrapper: thunderbird" test -x /usr/local/bin/thunderbird
   check "firejail wrapper: chrome" test -x /usr/local/bin/chrome
-  check "sandbox dir: firefox" test -d "$HOME/.sandboxes/firefox"
-  check "sandbox dir: thunderbird" test -d "$HOME/.sandboxes/thunderbird"
+  check "no stale firefox wrapper" test ! -f /usr/local/bin/firefox
+  check "no stale thunderbird wrapper" test ! -f /usr/local/bin/thunderbird
   check "no stale brave wrapper" test ! -f /usr/local/bin/brave.bkp
 else
   skip "firejail"
