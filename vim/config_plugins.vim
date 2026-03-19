@@ -52,7 +52,7 @@ let g:ale_python_mypy_ignore_invalid_syntax = 1
 
 let g:ale_fixers = {
 \   '*': ['remove_trailing_lines', 'trim_whitespace'],
-\   'typescript': ['tslint', 'prettier'],
+\   'typescript': ['prettier'],
 \   'javascript': ['eslint', 'prettier'],
 \   'svelte': ['eslint', 'prettier'],
 \   'terraform': ['terraform'],
@@ -78,8 +78,8 @@ let g:ale_linter_aliases = {
 \   'svelte': ['javascript', 'svelte']
 \}
 let g:ale_linters = {
-\   'javascript': ['eslint', 'tslint', 'tsserver'],
-\   'typescript': ['eslint', 'tsserver', 'tslint'],
+\   'javascript': ['eslint', 'tsserver'],
+\   'typescript': ['eslint', 'tsserver'],
 \   'svelte': ['svelteserver', 'eslint'],
 \   'terraform': ['tflint'],
 \   'python': ['ruff', 'pyright', 'mypy', 'ruff_format'],

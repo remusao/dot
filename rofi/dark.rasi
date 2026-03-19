@@ -1,0 +1,142 @@
+/**
+ * Dark theme for rofi — matches i3/dunst/i3status-rust palette.
+ */
+
+* {
+    bg:          #222222;
+    bg-dark:     #000000;
+    bg-light:    #333333;
+    accent:      #285577;
+    fg:          #ffffff;
+    fg-dim:      #888888;
+    urgent:      #900000;
+
+    background-color: transparent;
+    text-color:       @fg;
+    spacing:          0;
+}
+
+window {
+    background-color: @bg;
+    border:           2px solid;
+    border-color:     @accent;
+    border-radius:    4px;
+    padding:          12px;
+    width:            640px;
+}
+
+mainbox {
+    spacing: 8px;
+}
+
+inputbar {
+    background-color: @bg-dark;
+    border-radius:    4px;
+    padding:          8px 12px;
+    spacing:          8px;
+    children:         [ prompt, entry, num-filtered-rows, textbox-num-sep, num-rows ];
+}
+
+prompt {
+    text-color: @accent;
+}
+
+entry {
+    placeholder:       "Search...";
+    placeholder-color: @fg-dim;
+    cursor:            text;
+}
+
+num-filtered-rows, num-rows {
+    text-color: @fg-dim;
+    expand:     false;
+}
+
+textbox-num-sep {
+    expand:     false;
+    str:        "/";
+    text-color: @fg-dim;
+}
+
+listview {
+    lines:        12;
+    scrollbar:    true;
+    fixed-height: true;
+    spacing:      2px;
+    border:       0;
+}
+
+scrollbar {
+    handle-width: 4px;
+    handle-color: @fg-dim;
+    border:       0;
+    padding:      0 0 0 4px;
+}
+
+element {
+    padding:       8px 12px;
+    spacing:       8px;
+    border-radius: 4px;
+    cursor:        pointer;
+}
+
+element normal.normal,
+element alternate.normal {
+    background-color: transparent;
+    text-color:       @fg;
+}
+
+element normal.urgent,
+element alternate.urgent {
+    background-color: transparent;
+    text-color:       @urgent;
+}
+
+element normal.active,
+element alternate.active {
+    background-color: transparent;
+    text-color:       @accent;
+}
+
+element selected.normal {
+    background-color: @accent;
+    text-color:       @fg;
+}
+
+element selected.urgent {
+    background-color: @urgent;
+    text-color:       @fg;
+}
+
+element selected.active {
+    background-color: @accent;
+    text-color:       @fg;
+}
+
+element-text {
+    background-color: inherit;
+    text-color:       inherit;
+    highlight:        bold;
+}
+
+element-icon {
+    background-color: inherit;
+    text-color:       inherit;
+    size:             1.2em;
+}
+
+message {
+    background-color: @bg-dark;
+    border-radius:    4px;
+    padding:          8px 12px;
+}
+
+textbox {
+    text-color: @fg;
+}
+
+error-message {
+    background-color: @urgent;
+    border-radius:    4px;
+    padding:          8px 12px;
+}

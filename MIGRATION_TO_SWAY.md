@@ -108,7 +108,7 @@ input type:touchpad {
     tap enabled
     tap_button_map lrm
     drag_lock enabled
-    natural_scroll enabled
+    natural_scroll disabled
     click_method clickfinger
 }
 

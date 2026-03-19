@@ -342,7 +342,7 @@ PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)
 if [[ "$PRODUCT_NAME" == *"ZBook Ultra G1a"* ]]; then
     info "Configuring input devices (ZBook Ultra G1a)..."
 
-    # Touchpad: tap-to-click, clickfinger, natural scroll, drag lock
+    # Touchpad: tap-to-click, clickfinger, drag lock
     sudo tee /etc/X11/xorg.conf.d/30-touchpad.conf > /dev/null << 'XORG'
 Section "InputClass"
     Identifier "touchpad"
@@ -351,7 +351,7 @@ Section "InputClass"
     Option "Tapping" "on"
     Option "TappingButtonMap" "lrm"
     Option "TappingDragLock" "on"
-    Option "NaturalScrolling" "on"
+    Option "NaturalScrolling" "off"
     Option "ClickMethod" "clickfinger"
 EndSection
 XORG
@@ -362,28 +362,43 @@ XORG
     sudo dpkg-reconfigure -f noninteractive keyboard-configuration
     ok "Keyboard XKB options (ctrl:nocaps, compose:ralt, terminate:ctrl_alt_bksp)"
 
-    # Trackpad gestures: 3/4-finger swipes for i3 workspace navigation
-    sudo apt-get install "${APT_OPTS[@]}" libinput-tools xdotool wmctrl
+    # Trackpad gestures: fusuma (fires mid-gesture, snappier than libinput-gestures)
+    sudo apt-get install "${APT_OPTS[@]}" libinput-tools ruby xdotool
     sudo gpasswd -a "$USER" input
-    source "${DOT_DIR}/nuggets/utilities/libinput-gestures.sh"
-    mkdir -p "${HOME}/.config"
-    cat > "${HOME}/.config/libinput-gestures.conf" << 'GESTURES'
-# i3 workspace switching — 3-finger swipes
-gesture swipe left  3 i3-msg workspace next
-gesture swipe right 3 i3-msg workspace prev
-gesture swipe up    3 i3-msg fullscreen toggle
-gesture swipe down  3 i3-msg floating toggle
+    source "${DOT_DIR}/nuggets/utilities/fusuma.sh"
+    mkdir -p "${HOME}/.config/fusuma"
+    cat > "${HOME}/.config/fusuma/config.yml" << 'GESTURES'
+swipe:
+  3:
+    left:
+      command: 'i3-msg workspace next'
+    right:
+      command: 'i3-msg workspace prev'
+    up:
+      command: 'i3-msg fullscreen enable'
+    down:
+      command: 'i3-msg fullscreen disable'
+  4:
+    left:
+      command: 'i3-msg move container to workspace next, workspace next'
+    right:
+      command: 'i3-msg move container to workspace prev, workspace prev'
 
-# Move container to adjacent workspace — 4-finger swipes
-gesture swipe left  4 i3-msg move container to workspace next, workspace next
-gesture swipe right 4 i3-msg move container to workspace prev, workspace prev
+pinch:
+  in:
+    command: 'xdotool key --delay 0 ctrl+minus'
+  out:
+    command: 'xdotool key --delay 0 ctrl+plus'
 
-# Pinch to zoom (browsers, terminals, etc.)
-gesture pinch in    xdotool key ctrl+minus
-gesture pinch out   xdotool key ctrl+plus
+threshold:
+  swipe: 0.3
+  pinch: 0.1
+
+interval:
+  swipe: 0.7
+  pinch: 0.5
 GESTURES
-    libinput-gestures-setup autostart 2>/dev/null || true
-    ok "Trackpad gestures (libinput-gestures)"
+    ok "Trackpad gestures (fusuma)"
 
     # Power saver: GPU low-power + CPU min freq toggle (AC/battery auto-switch)
     sudo install -m 755 "${DOT_DIR}/nuggets/utilities/cool-ryzen-apply.sh" /usr/local/bin/cool-ryzen-apply

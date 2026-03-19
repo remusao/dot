@@ -1,10 +1,8 @@
 " Enable vim-plug
-filetype off
-
 call plug#begin('~/.local/share/nvim/plugged')
 
 " Linting
-Plug 'dense-analysis/ale', { 'tag': 'v4.0.0' }
+Plug 'dense-analysis/ale'
 
 " Autocomplete
 Plug 'ycm-core/YouCompleteMe', { 'do': './install.py --ts-completer --rust-completer' }

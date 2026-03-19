@@ -1,14 +1,15 @@
 [global]
-    font = DejaVu Sans Mono 10
+    font = Inconsolata for Powerline 11
     markup = full
     format = "<b>%s</b>\n%b"
     sort = yes
     indicate_hidden = yes
     alignment = left
+    vertical_alignment = center
     show_age_threshold = 60
     word_wrap = yes
     ellipsize = middle
-    width = 350
+    width = 380
     height = 200
     origin = top-right
     offset = 10x40
@@ -23,26 +24,45 @@
     min_icon_size = 32
     max_icon_size = 48
     corner_radius = 4
+    frame_width = 2
+    gap_size = 4
+    padding = 12
+    horizontal_padding = 16
+    text_icon_padding = 12
     progress_bar = true
-    progress_bar_height = 10
-    progress_bar_frame_width = 1
-    progress_bar_min_width = 150
-    progress_bar_max_width = 300
+    progress_bar_height = 12
+    progress_bar_frame_width = 0
+    progress_bar_min_width = 200
+    progress_bar_max_width = 340
+    progress_bar_corner_radius = 4
+    separator_color = frame
     mouse_left_click = close_current
     mouse_right_click = close_all
     mouse_middle_click = do_action
 
 [urgency_low]
-    background = "#222222"
+    background = "#222222E6"
     foreground = "#888888"
+    frame_color = "#333333"
+    highlight = "#888888"
     timeout = 5
 
 [urgency_normal]
-    background = "#285577"
+    background = "#222222E6"
     foreground = "#ffffff"
+    frame_color = "#285577"
+    highlight = "#285577"
     timeout = 10
 
 [urgency_critical]
-    background = "#900000"
+    background = "#222222E6"
     foreground = "#ffffff"
+    frame_color = "#900000"
+    highlight = "#900000"
     timeout = 0
+
+[media-keys-osd]
+    appname = "media-keys"
+    history_ignore = yes
+    set_transient = yes
+    timeout = 2

@@ -1098,7 +1098,7 @@ check_peripherals() {
     if [[ -f /etc/X11/xorg.conf.d/30-touchpad.conf ]]; then
         ok "Touchpad config exists (/etc/X11/xorg.conf.d/30-touchpad.conf)"
     else
-        fail "Touchpad config missing" "tap-to-click, clickfinger, and natural scrolling are not configured for i3/X11" \
+        fail "Touchpad config missing" "tap-to-click, clickfinger, and drag lock are not configured for i3/X11" \
             "Create /etc/X11/xorg.conf.d/30-touchpad.conf — see Section 14 of the report, or re-run install.sh"
     fi
 
@@ -1121,9 +1121,9 @@ check_peripherals() {
             fi
             # Check natural scrolling
             if echo "$tp_props" | grep -q "libinput Natural Scrolling Enabled (.*):.*1"; then
-                ok "Touchpad natural scrolling enabled"
+                info "Touchpad natural scrolling enabled (disable in 30-touchpad.conf if not desired)"
             else
-                info "Touchpad natural scrolling disabled (personal preference — enable in 30-touchpad.conf if desired)"
+                ok "Touchpad traditional scrolling (natural scrolling disabled)"
             fi
         else
             skip "Touchpad properties" "xinput could not read '$tp_name' (not on X11, or device name changed)"
@@ -1151,15 +1151,15 @@ check_peripherals() {
         fi
     fi
 
-    # Trackpad gestures (libinput-gestures)
-    if cmd_exists libinput-gestures-setup; then
-        if pgrep -f libinput-gestures &>/dev/null; then
-            ok "libinput-gestures running (3/4-finger swipe gestures active)"
+    # Trackpad gestures (fusuma)
+    if cmd_exists fusuma; then
+        if pgrep -f fusuma &>/dev/null; then
+            ok "fusuma running (trackpad gestures active)"
         else
-            warn "libinput-gestures installed but not running" "start with: libinput-gestures-setup start"
+            warn "fusuma installed but not running" "start with: fusuma -d"
         fi
     else
-        info "libinput-gestures not installed (optional — enables 3/4-finger swipe gestures for i3). Install: sudo apt install libinput-gestures"
+        info "fusuma not installed (optional — enables trackpad gestures for i3). Install: sudo gem install fusuma"
     fi
     if ! id -nG "$USER" 2>/dev/null | grep -qw input; then
         warn "User not in 'input' group" "required for trackpad gestures. Fix: sudo gpasswd -a $USER input (then log out/in)"
