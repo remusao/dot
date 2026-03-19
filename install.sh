@@ -56,14 +56,17 @@ sudo apt-get install "${APT_OPTS[@]}" \
   ca-certificates curl gnupg lsb-release software-properties-common wget \
   zsh git git-lfs build-essential cmake ninja-build gettext unzip \
   python3-pip python3-venv python3-dev \
-  rxvt-unicode \
+  rxvt-unicode alacritty \
   i3 i3lock i3status rofi redshift feh \
-  pamixer pulseaudio-utils brightnessctl \
+  pamixer pulseaudio-utils brightnessctl pavucontrol pulsemixer blueman \
   scrot gnome-screenshot \
   network-manager-gnome pasystray gnome-keyring \
   x11-xserver-utils x11-xkb-utils lxrandr \
   zsh-syntax-highlighting keychain fzf fd-find shellcheck \
   xclip \
+  jq git-delta hyperfine sd hexyl entr just \
+  ffmpeg mitmproxy pandoc socat pv pigz 7zip ncdu \
+  zoxide duf btop nmap wireguard \
   libboost-all-dev libzstd-dev \
   libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
   libsqlite3-dev libncurses-dev libffi-dev liblzma-dev \
