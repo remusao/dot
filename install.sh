@@ -426,7 +426,7 @@ GESTURES
     # Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525
     info "Configuring kernel parameters (ZBook Ultra G1a)..."
     GRUB_CHANGED=0
-    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off"; do
+    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410"; do
         param_name="${kp%%=*}"
         normalized="${param_name//-/_}"
         if ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${normalized}[= \"]" /etc/default/grub 2>/dev/null &&
@@ -439,7 +439,7 @@ GESTURES
     if [[ "$GRUB_CHANGED" == "1" ]]; then
         sudo update-grub
     fi
-    ok "Kernel parameters (amd_pstate=active pcie_aspm=off amd_iommu=off)"
+    ok "Kernel parameters (amd_pstate=active pcie_aspm=off amd_iommu=off amdgpu.dcdebugmask=0x410)"
 
     # WiFi suspend/resume: MT7925 driver timeout -110 after suspend (Ubuntu #2141198)
     info "Installing WiFi suspend services (MT7925)..."
