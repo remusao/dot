@@ -54,7 +54,8 @@ fi
 # Trackpad gestures
 . ./nuggets/utilities/fusuma.sh
 
-# i3 bar icons
+# i3 bar fonts
+. ./nuggets/utilities/jetbrains-mono-nf.sh
 . ./nuggets/utilities/font-awesome.sh
 
 # Clipboard manager
