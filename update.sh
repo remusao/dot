@@ -59,3 +59,9 @@ fi
 
 # Clipboard manager
 . ./nuggets/utilities/greenclip.sh
+
+# CLI tools (binary downloads)
+. ./nuggets/utilities/fzf.sh
+. ./nuggets/utilities/fd.sh
+. ./nuggets/utilities/delta.sh
+. ./nuggets/utilities/hyperfine.sh
