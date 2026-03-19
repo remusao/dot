@@ -1413,6 +1413,7 @@ Track these upstream bugs to know when workarounds can be removed.
 | `amd_iommu=off` | [Kernel #220702](https://bugzilla.kernel.org/show_bug.cgi?id=220702) — ISP4 blocks s2idle | Open | ISP4 driver has proper suspend PM (kernel 7.1+ or OEM backport) |
 | `amd_iommu=off` | [Ubuntu #2141198](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2141198) — MT7925 resume timeout | Open | mt7925e handles suspend/resume natively |
 | `amdgpu.cwsr_enable=0` | [ROCm #5590](https://github.com/ROCm/ROCm/issues/5590) — MES CWSR hang | Open | New MES firmware without CWSR regression |
+| `amdgpu.dcdebugmask=0x410` | [Ubuntu #2024774](https://bugs.launchpad.net/bugs/2024774) — PSR/Panel Replay GUI freeze on X11 | Open | amdgpu driver properly coordinates PSR with X11 damage tracking; or migrate to Wayland |
 | linux-firmware ≥20260110 | [ROCm #5724](https://github.com/ROCm/ROCm/issues/5724) — MES 0x83 page faults | Resolved | Already fixed; don't downgrade below 20260110 |
 | WiFi suspend services | [Ubuntu #2141198](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2141198) | Open | mt7925e handles suspend/resume natively |
 | Webcam (OEM kernel) | [AMD ISP4 v9 patches](https://lkml.org/lkml/2026/3/2/278) | Under review | ISP4 merged into mainline (targeting 7.1+) |
