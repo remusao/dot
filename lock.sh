@@ -73,8 +73,8 @@ export WATCHMAN_VERSION="2026.03.16.00"
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.16.1"
 
-# https://github.com/bulletmark/libinput-gestures/tags
-export LIBINPUT_GESTURES_VERSION="2.81"
+# https://rubygems.org/gems/fusuma
+export FUSUMA_VERSION="3.12.0"
 
 # crates.io: i3status-rs
 export I3STATUS_RUST_VERSION="0.36.0"
