@@ -4,68 +4,68 @@ set background=dark
 colorscheme jellybeans
 let g:jellybeans_use_lowcolor_black = 0
 
-" Neovim 0.10+ compat: hi clear now resets to Neovim's new default
-" colorscheme instead of Vim's legacy defaults (PR #26334). Re-establish
-" standard TreeSitter-to-Vim links for groups jellybeans doesn't define.
+" Neovim 0.10+ compat: hi clear inside jellybeans.vim resets to the built-in
+" default colorscheme (PR #26334). Most default TreeSitter links cascade
+" correctly through jellybeans' base groups. Only override groups where the
+" default behavior doesn't match jellybeans' intent.
 if has('nvim-0.10')
-  " TreeSitter groups → jellybeans base groups
-  hi! link @variable          Identifier
-  hi! link @constant          Constant
-  hi! link @constant.builtin  Special
-  hi! link @module            Identifier
-  hi! link @string            String
-  hi! link @string.escape     Special
-  hi! link @character         Constant
-  hi! link @number            Constant
-  hi! link @boolean           Constant
-  hi! link @function          Function
-  hi! link @function.builtin  Special
-  hi! link @function.call     Function
-  hi! link @constructor       Special
-  hi! link @operator          Structure
-  hi! link @keyword           Statement
-  hi! link @type              Type
-  hi! link @type.builtin      Type
-  hi! link @attribute         PreProc
-  hi! link @comment           Comment
-  hi! link @punctuation       Delimiter
-  hi! link @tag               Statement
-  hi! link @tag.delimiter     Delimiter
-  hi! link @tag.attribute     Identifier
-  hi! link @markup.heading    Title
-  hi! link @markup.link.url   Underlined
+  " @variable gets a direct guifg (#e0e2ea) from Neovim defaults instead of
+  " a link — doesn't match jellybeans' Normal foreground (#e8e8d3).
+  hi! link @variable            Normal
 
-  " Old flat names (Neovim 0.10 / older parsers)
-  hi! link @field             Identifier
-  hi! link @property          Identifier
-  hi! link @parameter         Identifier
-  hi! link @method            Function
-  hi! link @method.call       Function
-  hi! link @conditional       Statement
-  hi! link @repeat            Statement
-  hi! link @exception         Statement
-  hi! link @include           PreProc
-  hi! link @namespace         Identifier
-  hi! link @float             Constant
-  hi! link @string.regex      String
-  hi! link @text.uri          Underlined
+  " Modules/namespaces: default links to Structure (blue-cyan). Original
+  " jellybeans regex syntax had no special module coloring — plain text.
+  hi! link @module              Normal
 
-  " Semantic groups new in 0.10
-  hi! link Added              String
-  hi! link Changed            Statement
-  hi! link Removed            Constant
+  " Builtins: Neovim defaults link all *.builtin to Special (green #799d6a).
+  " Original jellybeans had: Boolean→Constant, pythonBuiltin→Function, Type→Type.
+  hi! link @constant.builtin    Constant
+  hi! link @function.builtin    Function
+  hi! link @type.builtin        Type
 
-  " Float window defaults changed in 0.10
-  hi! link NormalFloat        Pmenu
-  hi! link FloatBorder        VertSplit
+  " HTML/XML tags: jellybeans styles tags as Statement (blue), not Special.
+  " htmlArg→Type in Vim's syntax; delimiters were part of htmlTag→Statement.
+  hi! link @tag                 Statement
+  hi! link @tag.attribute       Type
+  hi! link @tag.delimiter       Statement
+
+  " Import keywords: PreProc (cyan) to match Include tradition.
+  hi! link @keyword.import      PreProc
+
+  " URIs: Underlined has no fg color. Morning glory + underline.
+  hi @string.special.url        guifg=#8fbfdc gui=underline
+  hi! link @markup.link.url     @string.special.url
+
+  " Markup: code blocks as String (green), list markers as Delimiter.
+  hi! link @markup.raw          String
+  hi! link @markup.list         Delimiter
+
+  " Semantic diff — Neovim defaults are bright pastels, too harsh.
+  hi! link Added                String
+  hi! link Changed              Statement
+  hi! link Removed              Constant
+
+  " Diagnostics (jellybeans defines none; ALE uses these via vim.diagnostic).
+  hi DiagnosticError            guifg=#d44141
+  hi DiagnosticWarn             guifg=#ffb964
+  hi DiagnosticInfo             guifg=#b0d0f0
+  hi DiagnosticHint             guifg=#d2ebbe
+  hi DiagnosticOk               guifg=#70b950
+  hi DiagnosticUnderlineError   gui=undercurl guisp=#d44141
+  hi DiagnosticUnderlineWarn    gui=undercurl guisp=#ffb964
+  hi DiagnosticUnderlineInfo    gui=undercurl guisp=#b0d0f0
+  hi DiagnosticUnderlineHint    gui=undercurl guisp=#d2ebbe
+  hi DiagnosticUnderlineOk      gui=undercurl guisp=#70b950
+
+  " Float windows — Neovim default bg (#07080d) is too dark.
+  hi NormalFloat                guifg=#e8e8d3 guibg=#1c1c1c
+  hi FloatBorder                guifg=#777777 guibg=#1c1c1c
+
+  " Window chrome — Neovim links WinSeparator to Normal; we want gravel.
+  hi! link WinSeparator         VertSplit
+
+  " Git gutter signs.
+  hi GitGutterAdd               guifg=#70b950
+  hi GitGutterChange            guifg=#ffb964
+  hi GitGutterDelete            guifg=#d44141
 endif
-
-" lua << EOF
-"   require("themer").setup({
-" 	  colorscheme = "jellybeans",
-"     term_colors = true,
-" 	  styles = {
-"       variable = { fg = "#c6b6ee" },
-" 	  },
-" 	})
-" EOF
