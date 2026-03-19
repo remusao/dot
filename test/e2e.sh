@@ -33,7 +33,7 @@ echo "=============================="
 
 # ─── SYMLINKS ────────────────────────────────────────────
 section "Symlinks"
-for f in .zshrc .vimrc .vim .gitconfig .i3 .i3status.conf .Xresources .xinitrc; do
+for f in .zshrc .vimrc .vim .gitconfig .i3 .i3status.conf .Xresources; do
   check "~/$f is symlink" test -L "$HOME/$f"
   check "~/$f target exists" test -e "$HOME/$f"
 done

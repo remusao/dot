@@ -49,3 +49,6 @@ fi
 
 # Git performance (filesystem monitor)
 . ./nuggets/utilities/watchman.sh
+
+# Trackpad gestures
+. ./nuggets/utilities/libinput-gestures.sh

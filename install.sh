@@ -284,7 +284,7 @@ fi
 
 # ── Symlinks ───────────────────────────────────────────────────────────────
 info "Creating symlinks..."
-for file in Xresources gitconfig i3 i3status.conf vim vimrc xinitrc zshrc; do
+for file in Xresources gitconfig i3 i3status.conf vim vimrc zshrc; do
     target="${HOME}/.${file}"
     src="${DOT_DIR}/${file}"
     if [ -e "$target" ] && [ ! -L "$target" ]; then
@@ -349,8 +349,9 @@ XORG
     ok "Keyboard XKB options (ctrl:nocaps, compose:ralt, terminate:ctrl_alt_bksp)"
 
     # Trackpad gestures: 3/4-finger swipes for i3 workspace navigation
-    sudo apt-get install "${APT_OPTS[@]}" libinput-gestures libinput-tools xdotool wmctrl
+    sudo apt-get install "${APT_OPTS[@]}" libinput-tools xdotool wmctrl
     sudo gpasswd -a "$USER" input
+    source "${DOT_DIR}/nuggets/utilities/libinput-gestures.sh"
     mkdir -p "${HOME}/.config"
     cat > "${HOME}/.config/libinput-gestures.conf" << 'GESTURES'
 # i3 workspace switching — 3-finger swipes
