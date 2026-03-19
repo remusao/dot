@@ -22,6 +22,7 @@ fi
 . ./nuggets/rust/rustup.sh
 . ./nuggets/rust/sccache.sh
 . ./nuggets/rust/ripgrep.sh
+. ./nuggets/rust/cargo-tools.sh
 
 # Python
 . ./nuggets/python/pyenv.sh
@@ -42,3 +43,6 @@ fi
 
 # Backup
 . ./nuggets/utilities/restic.sh
+
+# Git TUI
+. ./nuggets/utilities/lazygit.sh
