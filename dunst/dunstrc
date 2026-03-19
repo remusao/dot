@@ -1,5 +1,5 @@
 [global]
-    font = Inconsolata for Powerline 11
+    font = JetBrainsMono Nerd Font 10
     markup = full
     format = "<b>%s</b>\n%b"
     sort = yes
@@ -49,14 +49,14 @@
 
 [urgency_normal]
     background = "#222222E6"
-    foreground = "#ffffff"
+    foreground = "#b0b8c4"
     frame_color = "#285577"
     highlight = "#285577"
     timeout = 10
 
 [urgency_critical]
     background = "#222222E6"
-    foreground = "#ffffff"
+    foreground = "#b0b8c4"
     frame_color = "#900000"
     highlight = "#900000"
     timeout = 0

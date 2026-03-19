@@ -7,7 +7,7 @@
     bg-dark:     #000000;
     bg-light:    #333333;
     accent:      #285577;
-    fg:          #ffffff;
+    fg:          #b0b8c4;
     fg-dim:      #888888;
     urgent:      #900000;
 
