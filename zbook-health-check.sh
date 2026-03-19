@@ -124,11 +124,13 @@ check_hardware() {
     # CPU — expected: Ryzen AI Max+ PRO 395
     local cpu
     cpu=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | sed 's/.*: //') || cpu="unknown"
+    shopt -s nocasematch
     if [[ "$cpu" == *"Ryzen AI"* && "$cpu" == *"395"* ]]; then
         ok "CPU: $cpu"
     else
         fail "CPU mismatch" "expected Ryzen AI Max+ PRO 395, got: $cpu"
     fi
+    shopt -u nocasematch
 
     # RAM — expected: 128 GB
     local ram_kb ram_gb
