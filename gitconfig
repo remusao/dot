@@ -72,3 +72,5 @@
 	autoSetupRemote = true
 [rerere]
 	enabled = true
+[index]
+	skipHash = false
