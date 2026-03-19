@@ -59,6 +59,7 @@ exec --no-startup-id redshift -l 48.8:11.34
 floating_modifier $mod
 
 # start a terminal
+exec --no-startup-id urxvtd -q -o -f
 bindsym $mod+Return exec urxvtc
 bindsym $mod+Shift+Return exec alacritty
 
