@@ -37,5 +37,8 @@ fi
 # AWS
 . ./nuggets/utilities/aws-vault.sh
 
+# Secrets
+. ./nuggets/utilities/sops.sh
+
 # Backup
 . ./nuggets/utilities/restic.sh
