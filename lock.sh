@@ -84,3 +84,15 @@ export FONT_AWESOME_VERSION="6.7.2"
 
 # https://github.com/erebe/greenclip/releases/latest
 export GREENCLIP_VERSION="4.2"
+
+# https://github.com/junegunn/fzf/releases/latest
+export FZF_VERSION="0.70.0"
+
+# crates.io: fd-find
+export FD_VERSION="10.4.2"
+
+# crates.io: git-delta
+export DELTA_VERSION="0.18.2"
+
+# crates.io: hyperfine
+export HYPERFINE_VERSION="1.20.0"

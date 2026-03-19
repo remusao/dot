@@ -24,24 +24,24 @@ history = 100000
 multiplier = 3
 
 [font]
-size = 16.0
+size = 14.0
 builtin_box_drawing = true
 offset = { x = 0, y = 0 }
 
 [font.normal]
-family = "Inconsolata for Powerline"
+family = "MesloLGS NF"
 style = "Regular"
 
 [font.bold]
-family = "Inconsolata for Powerline"
+family = "MesloLGS NF"
 style = "Bold"
 
 [font.italic]
-family = "Inconsolata for Powerline"
+family = "MesloLGS NF"
 style = "Italic"
 
 [font.bold_italic]
-family = "Inconsolata for Powerline"
+family = "MesloLGS NF"
 style = "Bold Italic"
 
 [colors]

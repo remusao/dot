@@ -40,6 +40,7 @@ done
 check "~/.ssh/config is symlink" test -L "$HOME/.ssh/config"
 check "~/.ssh/config perms" test "$(stat -c %a "$HOME/.dot/ssh_config")" = "600"
 check "~/.ssh dir perms" test "$(stat -c %a "$HOME/.ssh")" = "700"
+check "fontconfig symlink" test -L "$HOME/.config/fontconfig/fonts.conf"
 
 check "no ~/.config symlink" test ! -L "$HOME/.config"
 check "no ~/.hgrc symlink" test ! -L "$HOME/.hgrc"
@@ -180,6 +181,7 @@ section "Fonts"
 check "fonts dir" test -d "$HOME/.local/share/fonts"
 check "Inconsolata Powerline" test -f "$HOME/.local/share/fonts/Inconsolata-dz-Powerline.otf"
 check "font cache" bash -c "fc-list | grep -qi inconsolata"
+check "MesloLGS NF" bash -c "fc-list | grep -qi 'MesloLGS NF'"
 
 # ─── NPM PACKAGES ───────────────────────────────────────
 section "npm global packages"
