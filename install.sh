@@ -61,7 +61,7 @@ sudo apt-get install "${APT_OPTS[@]}" \
   pamixer pulseaudio-utils brightnessctl \
   scrot gnome-screenshot \
   network-manager-gnome pasystray gnome-keyring \
-  x11-xserver-utils x11-xkb-utils \
+  x11-xserver-utils x11-xkb-utils lxrandr \
   zsh-syntax-highlighting keychain fzf fd-find shellcheck \
   xclip \
   libboost-all-dev libzstd-dev \
@@ -74,7 +74,7 @@ sudo apt-get install "${APT_OPTS[@]}" \
   libfido2-1 libu2f-udev \
   virtualenvwrapper tree editorconfig xdg-utils \
   tldr rsync whois zstd apache2-utils \
-  htop dfc earlyoom \
+  htop dfc earlyoom lm-sensors \
   screen tmux parallel
 ok "System packages"
 
