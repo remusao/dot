@@ -79,6 +79,9 @@ export FUSUMA_VERSION="3.12.0"
 # crates.io: i3status-rs
 export I3STATUS_RUST_VERSION="0.36.0"
 
+# https://github.com/ryanoasis/nerd-fonts/releases/latest
+export NERD_FONTS_VERSION="v3.4.0"
+
 # https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
 export FONT_AWESOME_VERSION="6.7.2"
 
