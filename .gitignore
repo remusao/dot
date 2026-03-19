@@ -1,6 +1,8 @@
 backup
 logs
 vim/bundle/
+vim/vim
 config/*
 vim/lsp
+restore/
 .vagrant/
