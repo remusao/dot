@@ -272,6 +272,7 @@ ok "UFW firewall (deny incoming, allow outgoing)"
 # ── Kernel hardening (sysctl) ────────────────────────────────────────────
 info "Applying kernel hardening..."
 for conf in "${DOT_DIR}/restore/etc/sysctl.d/"*.conf; do
+    [[ -f "$conf" && ! -L "$conf" ]] || continue
     sudo install -m 644 "$conf" "/etc/sysctl.d/$(basename "$conf")"
 done
 sudo sysctl --system > /dev/null 2>&1
