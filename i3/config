@@ -10,10 +10,10 @@ popup_during_fullscreen smart
 focus_wrapping workspace
 
 # Window assignments
-for_window [class="(?i)firefox"] move to workspace 2
-assign [class="(?i)chromium-browser"] 2
-assign [class="(?i)brave-browser"] 2
-assign [class="(?i)thunderbird"] 3
+for_window [class="(?i)firefox"] move --no-auto-back-and-forth to workspace 2
+for_window [class="(?i)chromium-browser"] move --no-auto-back-and-forth to workspace 2
+for_window [class="(?i)brave-browser"] move --no-auto-back-and-forth to workspace 2
+for_window [class="(?i)thunderbird"] move --no-auto-back-and-forth to workspace 3
 
 # Multiscreen (AMD amdgpu output names)
 workspace 1 output HDMI-A-0
@@ -28,8 +28,16 @@ workspace 9 output eDP
 workspace 10 output eDP
 
 # Window borders
-default_border pixel 1
+default_border pixel 2
 smart_borders on
+
+# Window colors              border   background  text      indicator  child_border
+client.background            #222222
+client.focused               #285577  #285577     #ffffff   #285577    #285577
+client.focused_inactive      #333333  #222222     #888888   #333333    #333333
+client.unfocused             #222222  #222222     #888888   #222222    #222222
+client.urgent                #900000  #900000     #ffffff   #900000    #900000
+client.placeholder           #000000  #222222     #888888   #000000    #222222
 
 # Font for window decoration
 font pango:DejaVu Sans Mono 10
@@ -106,6 +114,9 @@ bindsym $mod+Shift+v exec --no-startup-id rofi -modes "clipboard:greenclip print
 
 # Program launcher (rofi)
 bindsym $mod+d exec --no-startup-id rofi -show combi
+
+# Brave Search (bx)
+bindsym $mod+b exec --no-startup-id rofi -show bx -modes "bx:~/.i3/bx-search.sh"
 
 # change focus
 bindsym $mod+j focus left
@@ -204,7 +215,7 @@ bindsym $mod+r mode "resize"
 # Desktop services
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork --color 475263 --ignore-empty-password --show-failed-attempts
 exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
-exec --no-startup-id xrandr --dpi 96
+exec --no-startup-id xrandr --dpi 130
 
 # Idle auto-lock (5 minutes)
 exec --no-startup-id xset s 300 0
@@ -214,7 +225,7 @@ exec --no-startup-id xset b off
 exec --no-startup-id xset r rate 300 100
 exec --no-startup-id setxkbmap -layout us -option ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp
 
-exec --no-startup-id libinput-gestures-setup start
+exec --no-startup-id fusuma -d
 
 # Auto-enable power saver on battery at login (udev handles plug/unplug at runtime)
 exec --no-startup-id ~/.i3/battery-powersave.sh
@@ -227,15 +238,18 @@ exec_always --no-startup-id ~/.fehbg
 
 bar {
         status_command i3status-rs ~/.config/i3status-rust/config.toml
-        font pango:DejaVu Sans Mono 10, Font Awesome 6 Free Solid 10
+        font pango:Inconsolata for Powerline, Font Awesome 6 Free Solid 11
         position          top
         colors {
-            background #000000
-            statusline #ffffff
+            background         #222222
+            statusline         #ffffff
+            separator          #333333
 
-            focused_workspace  #ffffff #285577
-            active_workspace   #ffffff #333333
-            inactive_workspace #888888 #222222
-            urgent_workspace   #ffffff #900000
+            #                    border   bg       text
+            focused_workspace    #285577  #285577  #ffffff
+            active_workspace     #333333  #333333  #ffffff
+            inactive_workspace   #222222  #222222  #888888
+            urgent_workspace     #900000  #900000  #ffffff
+            binding_mode         #900000  #900000  #ffffff
         }
 }

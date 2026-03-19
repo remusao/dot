@@ -9,7 +9,7 @@ set -eu
 notify() {
     local tag=$1 text=$2
     shift 2
-    dunstify -h "string:x-dunst-stack-tag:$tag" "$@" "$text"
+    dunstify -a "media-keys" -u low -t 1500 -h "string:x-dunst-stack-tag:$tag" "$@" "$text"
 }
 
 case "${1:-}" in

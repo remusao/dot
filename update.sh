@@ -52,7 +52,7 @@ fi
 . ./nuggets/utilities/watchman.sh
 
 # Trackpad gestures
-. ./nuggets/utilities/libinput-gestures.sh
+. ./nuggets/utilities/fusuma.sh
 
 # i3 bar icons
 . ./nuggets/utilities/font-awesome.sh

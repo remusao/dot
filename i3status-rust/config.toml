@@ -6,7 +6,10 @@ theme = "plain"
 
 [theme.overrides]
 idle_bg = "#222222"
-idle_fg = "#ffffff"
+idle_fg = "#c0c5ce"
+separator = " | "
+separator_bg = "#222222"
+separator_fg = "#333333"
 info_bg = "#285577"
 info_fg = "#ffffff"
 good_bg = "#222222"
@@ -19,21 +22,15 @@ critical_fg = "#ffffff"
 # MPRIS (Firefox, any media player)
 [[block]]
 block = "music"
-format = " $icon {$combo.str(max_w:30) |} "
+format = " $icon {$combo.str(max_w:20) |}"
 [[block.click]]
 button = "left"
 action = "play_pause"
 
-# CPU
-[[block]]
-block = "cpu"
-format = " $icon $utilization "
-interval = 5
-
 # CPU temperature (AMD Ryzen via k10temp)
 [[block]]
 block = "temperature"
-format = " $icon $max "
+format = " $icon $max"
 interval = 5
 chip = "k10temp-*"
 good = 45
@@ -41,51 +38,16 @@ idle = 55
 info = 65
 warning = 80
 
-# AMD GPU temperature (via amdgpu sensor — amd_gpu block has no $temperature)
-[[block]]
-block = "temperature"
-format = " GPU $max "
-interval = 5
-chip = "amdgpu-*"
-good = 50
-idle = 60
-info = 70
-warning = 85
-
-# AMD GPU utilization/VRAM
-[[block]]
-block = "amd_gpu"
-format = " $icon $utilization $vram_used_percents "
-interval = 5
-
-# Memory
-[[block]]
-block = "memory"
-format = " $icon $mem_used_percents "
-interval = 10
-warning_mem = 70.0
-critical_mem = 90.0
-
-# Disk
-[[block]]
-block = "disk_space"
-path = "/"
-format = " $icon $available "
-alert = 10.0
-warning = 20.0
-info_type = "available"
-interval = 30
-
 # Network
 [[block]]
 block = "net"
-format = " $icon {$ssid $signal_strength |$ip} $speed_down.eng(prefix:K) "
+format = " $icon {$signal_strength |$ip}"
 interval = 5
 
 # Sound (replaces pasystray)
 [[block]]
 block = "sound"
-format = " $icon $volume "
+format = " $icon {$volume|}"
 [[block.click]]
 button = "left"
 cmd = "pavucontrol"
@@ -93,15 +55,16 @@ cmd = "pavucontrol"
 # Backlight
 [[block]]
 block = "backlight"
-format = " $icon $brightness "
-invert_icons = true
+format = " $icon $brightness"
+[block.icons_overrides]
+backlight = "\uf185"
 
 # Battery
 [[block]]
 block = "battery"
-format = " $icon $percentage {$time_remaining |}"
-full_format = " $icon $percentage "
-charging_format = " $icon $percentage {$time_remaining |} "
+format = " $icon $percentage {$time_remaining|}"
+full_format = " $icon $percentage"
+charging_format = " $icon $percentage {$time_remaining|}"
 missing_format = ""
 full_threshold = 95
 warning = 30
@@ -110,5 +73,5 @@ critical = 15
 # Date/Time
 [[block]]
 block = "time"
-format = " $icon $timestamp.datetime(f:'%a %d %b %H:%M') "
+format = " $timestamp.datetime(f:'%a %d %b %H:%M') |"
 interval = 30

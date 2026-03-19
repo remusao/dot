@@ -877,7 +877,7 @@ Section "InputClass"
     Option "Tapping" "on"
     Option "TappingButtonMap" "lrm"
     Option "TappingDragLock" "on"
-    Option "NaturalScrolling" "on"
+    Option "NaturalScrolling" "off"
     Option "ClickMethod" "clickfinger"
 EndSection
 ```
@@ -887,7 +887,7 @@ EndSection
 | Tapping | off | on | 1-finger tap = left click |
 | TappingButtonMap | lrm | lrm | 2-finger tap = right click, 3-finger = middle |
 | TappingDragLock | off | on | Lift and reposition finger mid-drag without releasing |
-| NaturalScrolling | off | on | Swipe down = content moves down (macOS/GNOME style) |
+| NaturalScrolling | off | off | Swipe down = content moves up (traditional) |
 | ClickMethod | buttonareas | clickfinger | 2-finger physical click = right click (recommended by [libinput docs](https://wayland.freedesktop.org/libinput/doc/latest/clickpad-softbuttons.html)) |
 
 Settings left at defaults (already optimal): `DisableWhileTyping` (on), `TappingDrag` (on), `AccelProfile` (adaptive), `AccelSpeed` (0.0), `ScrollMethod` (twofinger), `ScrollingPixelDistance` (15).
@@ -1131,7 +1131,7 @@ Section "InputClass"
     Option "Tapping" "on"
     Option "TappingButtonMap" "lrm"
     Option "TappingDragLock" "on"
-    Option "NaturalScrolling" "on"
+    Option "NaturalScrolling" "off"
     Option "ClickMethod" "clickfinger"
 EndSection
 EOF

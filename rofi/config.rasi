@@ -2,6 +2,9 @@ configuration {
     combi-modes: "window,drun,run";
     modes: "combi";
     show-icons: true;
-    font: "DejaVu Sans Mono 13";
+    font: "Inconsolata for Powerline 16";
     terminal: "alacritty";
+    display-combi: "";
 }
+
+@theme "/home/remi/.dot/rofi/dark"
