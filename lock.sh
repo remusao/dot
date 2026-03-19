@@ -72,3 +72,6 @@ export WATCHMAN="2026.03.16.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY="0.16.1"
+
+# https://github.com/bulletmark/libinput-gestures/tags
+export LIBINPUT_GESTURES="2.81"
