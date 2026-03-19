@@ -10,4 +10,4 @@ fi
 export PATH="${HOME}/.cargo/bin:${PATH}"
 
 rustup self update || true
-rustup toolchain install stable --component rust-src
+rustup toolchain install stable --component rust-src --component rust-analyzer
