@@ -207,6 +207,16 @@ check "titan-key udev" test -f /etc/udev/rules.d/70-titan-key.rules
 check "libfido2" dpkg -s libfido2-1
 check "libu2f-udev" dpkg -s libu2f-udev
 
+# ─── ZBOOK ULTRA G1A ─────────────────────────────────────
+PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)
+if [[ "$PRODUCT_NAME" == *"ZBook Ultra G1a"* ]]; then
+  section "ZBook Ultra G1a"
+  check "cool-ryzen-apply installed" test -x /usr/local/bin/cool-ryzen-apply
+  check "cool-ryzen sudoers" test -f /etc/sudoers.d/cool-ryzen
+  check "cool-ryzen udev rule" test -f /etc/udev/rules.d/85-cool-ryzen-ac.rules
+  check "i3 power saver keybinding" grep -q 'cool-ryzen' "$HOME/.dot/i3/config"
+fi
+
 # ─── FIREJAIL ─────────────────────────────────────────────
 if [ "$SKIP_FIREJAIL" != "1" ]; then
   section "Firejail"

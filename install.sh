@@ -321,7 +321,7 @@ if [ "$UDEV_CHANGED" = "1" ]; then
   sudo udevadm control --reload-rules 2>/dev/null || true
   sudo udevadm trigger --subsystem-match=hidraw 2>/dev/null || true
 fi
-ok "Udev rules (Titan key)"
+ok "Udev rules"
 
 # ── Input device configuration (ZBook Ultra G1a) ─────────────────────────
 PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)
@@ -369,6 +369,16 @@ gesture pinch out   xdotool key ctrl+plus
 GESTURES
     libinput-gestures-setup autostart 2>/dev/null || true
     ok "Trackpad gestures (libinput-gestures)"
+
+    # Power saver: GPU low-power + CPU min freq toggle (AC/battery auto-switch)
+    sudo install -m 755 "${DOT_DIR}/nuggets/utilities/cool-ryzen-apply.sh" /usr/local/bin/cool-ryzen-apply
+    printf '%s ALL=(root) NOPASSWD: /usr/local/bin/cool-ryzen-apply on, /usr/local/bin/cool-ryzen-apply off\n' "$USER" \
+        > /tmp/cool-ryzen-sudoers
+    if sudo visudo -cf /tmp/cool-ryzen-sudoers &>/dev/null; then
+        sudo install -m 440 /tmp/cool-ryzen-sudoers /etc/sudoers.d/cool-ryzen
+    fi
+    rm -f /tmp/cool-ryzen-sudoers
+    ok "Power saver toggle (cool-ryzen)"
 fi
 
 # ── Shell setup ────────────────────────────────────────────────────────────
