@@ -40,6 +40,15 @@ SKIP_1PASSWORD=${DOTFILES_SKIP_1PASSWORD:-0}
 SKIP_AI_TOOLS=${DOTFILES_SKIP_AI_TOOLS:-0}
 SKIP_FIREJAIL=${DOTFILES_SKIP_FIREJAIL:-0}
 
+# ── i3 (latest release) ──────────────────────────────────────────────────
+info "Adding i3 official repo..."
+curl -fsSL "https://debian.sur5r.net/i3/pool/main/s/sur5r-keyring/sur5r-keyring_2025.12.14_all.deb" \
+  -o /tmp/sur5r-keyring.deb
+sudo apt-get install "${APT_OPTS[@]}" /tmp/sur5r-keyring.deb
+rm -f /tmp/sur5r-keyring.deb
+echo "deb [signed-by=/usr/share/keyrings/sur5r-keyring.gpg] http://debian.sur5r.net/i3/ $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") universe" \
+  | sudo tee /etc/apt/sources.list.d/sur5r-i3.list > /dev/null
+
 # ── Core apt packages ──────────────────────────────────────────────────────
 info "Installing system packages..."
 sudo apt-get update
@@ -65,7 +74,8 @@ sudo apt-get install "${APT_OPTS[@]}" \
   libfido2-1 libu2f-udev \
   virtualenvwrapper tree editorconfig xdg-utils \
   tldr rsync whois zstd apache2-utils \
-  htop dfc earlyoom
+  htop dfc earlyoom \
+  screen tmux parallel
 ok "System packages"
 
 # ── Firefox snap → deb ─────────────────────────────────────────────────────
@@ -110,6 +120,17 @@ sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
   https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
 sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
   https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
+
+# ── Google Chrome ─────────────────────────────────────────────────────
+info "Adding Google Chrome repo..."
+wget -q -O- https://dl.google.com/linux/linux_signing_key.pub \
+  | sudo gpg --dearmor --output /usr/share/keyrings/google-chrome.gpg --yes
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
+  | sudo tee /etc/apt/sources.list.d/google-chrome.list > /dev/null
+
+# ── OpenRazer ─────────────────────────────────────────────────────────
+info "Adding OpenRazer PPA..."
+sudo add-apt-repository -y ppa:openrazer/stable
 
 # ── Docker Engine ──────────────────────────────────────────────────────────
 if [ "$SKIP_DOCKER" != "1" ]; then
@@ -160,7 +181,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubc
 # ── Install PPA packages ──────────────────────────────────────────────────
 info "Installing PPA packages..."
 sudo apt-get update
-PPA_PKGS=(thunderbird brave-browser tailscale gh)
+PPA_PKGS=(thunderbird brave-browser google-chrome-stable openrazer-meta tailscale gh)
 if [ "$SKIP_DOCKER" != "1" ]; then
   PPA_PKGS+=(docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
 fi
@@ -230,6 +251,22 @@ ok "Zsh + Powerlevel10k"
 info "Installing fonts..."
 mkdir -p ~/.local/share/fonts
 cp "${DOT_DIR}/fonts/"* ~/.local/share/fonts/
+
+# Powerline-patched fonts (provides "Inconsolata for Powerline" etc.)
+POWERLINE_FONTS_DIR=$(mktemp -d)
+git clone --depth=1 https://github.com/powerline/fonts.git "$POWERLINE_FONTS_DIR"
+"$POWERLINE_FONTS_DIR/install.sh"
+rm -rf "$POWERLINE_FONTS_DIR"
+
+# MesloLGS NF – recommended font for Powerlevel10k
+MESLO_URL="https://github.com/romkatv/powerlevel10k-media/raw/master"
+for variant in Regular Bold Italic "Bold Italic"; do
+  file="MesloLGS NF ${variant}.ttf"
+  [ -f "${HOME}/.local/share/fonts/${file}" ] || \
+    curl -fsSL -o "${HOME}/.local/share/fonts/${file}" \
+      "${MESLO_URL}/$(printf '%s' "$file" | sed 's/ /%20/g')"
+done
+
 fc-cache -f
 ok "Fonts"
 

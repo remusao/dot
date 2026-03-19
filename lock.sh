@@ -31,5 +31,5 @@ export OBSIDIAN="1.12.4"
 # https://github.com/99designs/aws-vault/releases/latest
 export AWS_VAULT="v7.2.0"
 
-# https://github.com/99designs/aws-vault/releases/latest
-export AWS_VAULT="v7.2.0"
+# https://github.com/getsops/sops/releases/latest
+export SOPS="v3.9.4"
