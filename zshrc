@@ -84,7 +84,7 @@ POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version command_execution_time background_jobs time)
-POWERLEVEL9K_VCS_MAX_SYNC_LATENCY_SECONDS=0.1
+POWERLEVEL9K_VCS_MAX_SYNC_LATENCY_SECONDS=0.5
 source /home/remi/.zsh/powerlevel10k/powerlevel10k.zsh-theme
 
 # Aliases
