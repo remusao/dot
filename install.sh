@@ -454,6 +454,7 @@ fi
 ~/.virtualenvs/neovim3/bin/pip install --quiet --upgrade pynvim ruff black pyright
 
 nvim --headless +'PlugInstall --sync' +qa 2>/dev/null || true
+nvim --headless '+TSInstallSync! svelte typescript html css javascript python rust yaml json bash make lua toml' +qa 2>/dev/null || true
 ok "Neovim"
 
 echo ""
