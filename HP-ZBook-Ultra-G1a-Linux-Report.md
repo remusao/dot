@@ -526,9 +526,22 @@ powerprofilesctl set balanced    # balanced / performance / power-saver
 
 [geohot measured the keyboard backlight draws **~2W**](https://geohot.github.io/blog/jekyll/update/2025/11/28/replacing-my-macbook.html) — a significant portion of the ~7W lid-open idle power. Disable or reduce it when on battery for meaningful power savings.
 
-### 10.6 GNOME Extension for GPU Power
+### 10.6 iGPU Low-Power Mode
 
-The [Cool My Ryzen AI Max](https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max) GNOME extension forces the iGPU into low-power mode when not under load. Install via GNOME Extensions or from GitHub.
+Forcing the iGPU to `low` and dropping the CPU frequency floor to 1GHz reduces idle PPT from 7-11W to 3-4W.
+
+**What it does:**
+- `/sys/class/drm/card*/device/power_dpm_force_performance_level` → `low` (from `auto`)
+- `/sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq` → `1000000` (from `2000000`)
+
+**GNOME:** Install the [Cool My Ryzen AI Max](https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max) extension.
+
+**i3/CLI:** The dotfiles include `cool-ryzen-apply` (deployed by `install.sh` on ZBook hardware):
+- **Manual toggle:** `$mod+p` or `sudo cool-ryzen-apply on|off`
+- **Automatic:** A [udev rule](udev/85-cool-ryzen-ac.rules) enables power saver on battery and disables it on AC
+- **Boot:** i3 config checks AC state at login and applies accordingly
+
+**Note:** `power-profiles-daemon` does not write to `power_dpm_force_performance_level` — no conflict. When power saver is ON, GPU-heavy tasks will be slower (force it OFF with `$mod+p` before GPU workloads).
 
 ---
 

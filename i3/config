@@ -77,6 +77,9 @@ bindsym XF86AudioMicMute exec --no-startup-id bash -c 'pactl set-source-mute @DE
 bindsym XF86MonBrightnessUp exec --no-startup-id bash -c 'brightnessctl -c backlight set +5%; b=$(brightnessctl -c backlight -m | cut -d, -f4 | tr -d %); dunstify -h string:x-dunst-stack-tag:brightness -h int:value:"$b" "Brightness: $b%"'
 bindsym XF86MonBrightnessDown exec --no-startup-id bash -c 'brightnessctl -c backlight --min-value=1 set 5%-; b=$(brightnessctl -c backlight -m | cut -d, -f4 | tr -d %); dunstify -h string:x-dunst-stack-tag:brightness -h int:value:"$b" "Brightness: $b%"'
 
+# Power saver toggle (GPU DPM low + CPU min 1GHz — drops idle from 7-11W to 3-4W)
+bindsym $mod+p exec --no-startup-id /home/remi/.dot/nuggets/utilities/cool-ryzen.sh
+
 # Touchpad controls
 # bindsym XF86TouchpadToggle exec /some/path/toggletouchpad.sh # toggle touchpad
 
@@ -217,6 +220,9 @@ exec --no-startup-id xset r rate 300 100 # Set initial delay 300ms, repeat 100ms
 exec --no-startup-id setxkbmap -layout us -option ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp
 
 exec --no-startup-id libinput-gestures-setup start
+
+# Auto-enable power saver on battery at login (udev handles plug/unplug at runtime)
+exec --no-startup-id bash -c 'test -x /usr/local/bin/cool-ryzen-apply && test "$(cat /sys/class/power_supply/AC/online 2>/dev/null)" = "0" && sudo /usr/local/bin/cool-ryzen-apply on'
 
 exec --no-startup-id nm-applet
 exec --no-startup-id pasystray
