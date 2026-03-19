@@ -54,7 +54,7 @@ info "Installing system packages..."
 sudo apt-get update
 sudo apt-get install "${APT_OPTS[@]}" \
   ca-certificates curl gnupg lsb-release software-properties-common wget \
-  zsh git git-lfs build-essential cmake ninja-build gettext unzip \
+  zsh git git-lfs build-essential clang g++ cmake ninja-build gettext unzip pkg-config \
   python3-pip python3-venv python3-dev \
   rxvt-unicode alacritty \
   i3 i3lock i3status rofi redshift feh \
@@ -67,10 +67,12 @@ sudo apt-get install "${APT_OPTS[@]}" \
   jq git-delta hyperfine sd hexyl entr just \
   ffmpeg mitmproxy pandoc socat pv pigz 7zip ncdu \
   zoxide duf btop nmap wireguard \
-  libboost-all-dev libzstd-dev \
+  protobuf-compiler libsnappy-dev libboost-all-dev libzstd-dev \
   libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
   libsqlite3-dev libncurses-dev libffi-dev liblzma-dev \
   libxml2-dev libxmlsec1-dev \
+  libclang-dev libopenblas-dev libsasl2-dev liburing-dev libzzip-dev \
+  google-perftools \
   tk-dev xz-utils \
   fonts-inconsolata fonts-powerline fonts-dejavu fontconfig \
   gimp evince libreoffice vlc \
