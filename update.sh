@@ -22,6 +22,7 @@ fi
 . ./nuggets/rust/sccache.sh
 . ./nuggets/rust/ripgrep.sh
 . ./nuggets/rust/alacritty.sh
+. ./nuggets/rust/i3status-rust.sh
 . ./nuggets/rust/cargo-tools.sh
 
 # Python
@@ -52,3 +53,9 @@ fi
 
 # Trackpad gestures
 . ./nuggets/utilities/libinput-gestures.sh
+
+# i3 bar icons
+. ./nuggets/utilities/font-awesome.sh
+
+# Clipboard manager
+. ./nuggets/utilities/greenclip.sh

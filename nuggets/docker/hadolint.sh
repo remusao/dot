@@ -16,7 +16,7 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
   (
     tmp=$(mktemp "${HOME}/.local/bin/.hadolint.XXXXXX")
     trap 'rm -f "$tmp"' EXIT
-    curl -fL "https://github.com/hadolint/hadolint/releases/download/${HADOLINT}/hadolint-Linux-x86_64" \
+    curl -fL "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64" \
       -o "$tmp"
     chmod 755 "$tmp"
     mv "$tmp" "${HOME}/.local/bin/hadolint"

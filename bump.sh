@@ -47,7 +47,7 @@ github_latest() {
   if [[ "$tag" == */* ]]; then
     local prefix
     # Derive prefix from the hint (lowercased var name, e.g. CARGO_AUDIT -> cargo-audit)
-    prefix=$(echo "$hint" | tr '[:upper:]_' '[:lower:]-')
+    prefix=$(echo "$hint" | sed 's/_VERSION$//' | tr '[:upper:]_' '[:lower:]-')
     tag=$(gh_api "/repos/${owner}/${repo}/releases?per_page=50" \
       | jq -r --arg pfx "$prefix" \
         '[.[] | select(.tag_name | startswith($pfx + "/"))][0].tag_name // empty')
@@ -119,7 +119,7 @@ while IFS= read -r line; do
   fi
 
   # Process export lines
-  if [[ "$line" =~ ^export\ ([A-Z_]+)=\"([^\"]*)\" ]]; then
+  if [[ "$line" =~ ^export\ ([A-Z_0-9_]+)=\"([^\"]*)\" ]]; then
     var="${BASH_REMATCH[1]}"
     current="${BASH_REMATCH[2]}"
 

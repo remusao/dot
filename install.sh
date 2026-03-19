@@ -203,11 +203,13 @@ ALL_PKGS=(
   zsh git git-lfs build-essential clang g++ cmake ninja-build gettext unzip pkg-config
   python3-pip python3-venv python3-dev
   rxvt-unicode
-  i3 i3lock i3status rofi redshift feh
-  pamixer pulseaudio-utils brightnessctl pavucontrol pulsemixer blueman playerctl
+  i3 i3lock i3status rofi gammastep feh
+  pamixer pulseaudio-utils brightnessctl pavucontrol pulsemixer blueman playerctl dunst
   xss-lock policykit-1-gnome
-  scrot gnome-screenshot
-  network-manager-gnome pasystray gnome-keyring
+  maim
+  picom autorandr
+  network-manager-gnome gnome-keyring
+  libdbus-1-dev libsensors-dev
   x11-xserver-utils x11-xkb-utils lxrandr
   zsh-syntax-highlighting keychain fzf fd-find shellcheck
   xclip
@@ -227,7 +229,7 @@ ALL_PKGS=(
   libfido2-1 libu2f-udev
   virtualenvwrapper tree editorconfig xdg-utils
   tldr rsync whois zstd apache2-utils
-  htop dfc earlyoom lm-sensors
+  htop dfc earlyoom lm-sensors rasdaemon
   screen tmux parallel
   firefox
   thunderbird brave-browser google-chrome-stable openrazer-meta tailscale gh
@@ -267,6 +269,14 @@ info "Configuring UFW firewall..."
 sudo ufw --force enable
 ok "UFW firewall (deny incoming, allow outgoing)"
 
+# ── Kernel hardening (sysctl) ────────────────────────────────────────────
+info "Applying kernel hardening..."
+for conf in "${DOT_DIR}/restore/etc/sysctl.d/"*.conf; do
+    sudo install -m 644 "$conf" "/etc/sysctl.d/$(basename "$conf")"
+done
+sudo sysctl --system > /dev/null 2>&1
+ok "Kernel hardening (sysctl)"
+
 # ── Claude Code ────────────────────────────────────────────────────────────
 if [ "$SKIP_AI_TOOLS" != "1" ]; then
   if ! command -v claude &>/dev/null; then
@@ -302,6 +312,13 @@ ok "$HOME/.ssh/config"
 mkdir -p ~/.config/alacritty
 ln -sf "${DOT_DIR}/alacritty.toml" ~/.config/alacritty/alacritty.toml
 ok "$HOME/.config/alacritty/alacritty.toml"
+
+mkdir -p ~/.config/rofi ~/.config/picom ~/.config/dunst ~/.config/i3status-rust
+ln -sf "${DOT_DIR}/rofi/config.rasi" ~/.config/rofi/config.rasi
+ln -sf "${DOT_DIR}/picom/picom.conf" ~/.config/picom/picom.conf
+ln -sf "${DOT_DIR}/dunst/dunstrc" ~/.config/dunst/dunstrc
+ln -sf "${DOT_DIR}/i3status-rust/config.toml" ~/.config/i3status-rust/config.toml
+ok "rofi/picom/dunst/i3status-rust configs"
 
 # ── Git LFS ────────────────────────────────────────────────────────────────
 git lfs install
@@ -380,6 +397,18 @@ GESTURES
     fi
     rm -f /tmp/cool-ryzen-sudoers
     ok "Power saver toggle (cool-ryzen)"
+
+    # Webcam: AMD ISP4 requires libcamera with ISP4 pipeline handler (not in stock Noble)
+    if ! has_repo /etc/apt/sources.list.d/amd-team-ubuntu-isp-noble.sources; then
+        info "Adding AMD ISP PPA (libcamera with ISP4 pipeline handler)..."
+        sudo add-apt-repository -y ppa:amd-team/isp
+        sudo apt-get update
+    fi
+    sudo apt-get install "${APT_OPTS[@]}" v4l-utils libcamera-tools \
+        libspa-0.2-libcamera gstreamer1.0-libcamera \
+        gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-gl \
+        xdg-desktop-portal xdg-desktop-portal-gnome
+    ok "Webcam (AMD ISP4 via libcamera + PipeWire)"
 fi
 
 # ── Shell setup ────────────────────────────────────────────────────────────
