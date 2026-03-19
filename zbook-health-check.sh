@@ -177,8 +177,29 @@ check_hardware() {
     # Random reboots advisory (hardware defect affecting subset of units)
     if has_root; then
         if journalctl -b -1 2>/dev/null | grep -qiE "hardware error|machine check|mce:|panic|Oops" 2>/dev/null; then
-            warn "Unexpected reboot indicators found in previous boot journal" "random reboots affect some ZBook Ultra G1a units (3/8 in one batch). Try processor.max_cstate=5 first (blocks C6 deep sleep, preserves battery — but may be silently ignored on AMD per Arch Wiki). If reboots persist, escalate to processor.max_cstate=1 (+5-10W idle). If neither works, may be hardware defect requiring motherboard replacement. Also update BIOS. Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358"
+            warn "Unexpected reboot indicators found in previous boot journal" "random reboots affect some ZBook Ultra G1a units (3/8 in one batch). processor.max_cstate is NOT a reliable fix on AMD Zen 5 (Arch Wiki: parameter may not be applied, C6 state still entered). One user reported it worked for 2 days then failed — root cause was a hardware defect fixed by motherboard replacement. First: ensure pcie_aspm=off and update BIOS. If reboots persist, likely hardware — contact HP for RMA. Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358 https://wiki.archlinux.org/title/Ryzen"
         fi
+    fi
+
+    # Pstore — most reliable source of kernel panic data
+    if ls /sys/fs/pstore/dmesg-* &>/dev/null; then
+        warn "Pstore panic logs found in /sys/fs/pstore/" "kernel panic data captured from a previous crash. Examine: cat /sys/fs/pstore/dmesg-*. Run the diagnostic script: bash ~/zbook-panic-diag.sh"
+    elif ls /var/lib/systemd/pstore/dmesg-* &>/dev/null; then
+        warn "Archived pstore panic logs found" "kernel panic data from a previous crash archived by systemd-pstore. Examine: cat /var/lib/systemd/pstore/dmesg-*"
+    fi
+
+    # Pstore availability (for capturing kernel panics)
+    if [[ -d /sys/fs/pstore ]]; then
+        ok "pstore available — kernel panic logs will be captured automatically"
+    else
+        warn "pstore not available" "kernel panic logs won't be captured. Install: sudo apt install linux-crashdump. Ref: https://wiki.ubuntu.com/Kernel/CrashdumpRecipe"
+    fi
+
+    # Persistent journal (for previous boot logs)
+    if [[ -d /var/log/journal ]]; then
+        ok "journald persistent storage enabled — previous boot logs available via journalctl -b -1"
+    else
+        warn "journald not using persistent storage" "previous boot logs are lost on reboot. Fix: sudo mkdir -p /var/log/journal && sudo systemd-tmpfiles --create --prefix /var/log/journal && sudo systemctl restart systemd-journald"
     fi
 
     # BIOS version — SAFE: only reads bios_version (never serial numbers)
@@ -354,7 +375,7 @@ check_kernel_params() {
         if [[ "$cwsr_val" == "0" ]]; then
             ok "amdgpu.cwsr_enable=0 — prevents GPU hangs during ROCm compute. Ref: https://github.com/ROCm/ROCm/issues/5590"
         else
-            warn "amdgpu.cwsr_enable=0 not set" "MES firmware GPU hang regression affecting ROCm compute. Fix: sudo sed -i -E 's/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 amdgpu.cwsr_enable=0\"/' /etc/default/grub && sudo update-grub. Ref: https://github.com/ROCm/ROCm/issues/5590"
+            warn "amdgpu.cwsr_enable=0 not set" "MES firmware CWSR (Compute Wave Save/Restore) hang regression. Only affects ROCm compute workloads — no impact on display or 3D rendering. Fix: sudo sed -i -E 's/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 amdgpu.cwsr_enable=0\"/' /etc/default/grub && sudo update-grub. Ref: https://github.com/ROCm/ROCm/issues/5590"
         fi
 
         # ttm.pages_limit (only needed on kernel < 6.18.4)
@@ -947,9 +968,9 @@ check_firmware() {
     fw_ver=$(dpkg-query -W -f='${Version}' linux-firmware 2>/dev/null) || fw_ver=""
     if [[ -n "$fw_ver" ]]; then
         if [[ "$fw_ver" == *"20251125"* ]] && [[ "$fw_ver" != *"20251125-2"* ]]; then
-            warn "linux-firmware $fw_ver" "version 20251125 is BROKEN for ROCm on Strix Halo — causes GPU memory faults (GCVM_L2_PROTECTION_FAULT_STATUS). Upgrade to 20260110+. Run: sudo apt update && sudo apt upgrade linux-firmware. Ref: https://community.frame.work/t/fyi-linux-firmware-amdgpu-20251125-breaks-rocm-on-ai-max-395-8060s/78554"
+            warn "linux-firmware $fw_ver" "version 20251125 is BROKEN for Strix Halo — MES firmware 0x83 causes GPU memory faults (GCVM_L2_PROTECTION_FAULT_STATUS:0x00800932, ROCm #5724). Can contribute to kernel panics. Upgrade to 20260110+. Run: sudo apt update && sudo apt upgrade linux-firmware. Ref: https://github.com/ROCm/ROCm/issues/5724"
         elif [[ "$fw_ver" == *"20251125-2"* ]]; then
-            warn "linux-firmware $fw_ver" "version 20251125-2 is a partial fix — did not cover all GPUs. Upgrade to 20260110+ recommended. Run: sudo apt update && sudo apt upgrade linux-firmware. Ref: https://community.frame.work/t/fyi-linux-firmware-amdgpu-20251125-breaks-rocm-on-ai-max-395-8060s/78554"
+            warn "linux-firmware $fw_ver" "version 20251125-2 is a partial fix for MES 0x83 regression — did not cover all GPUs. Upgrade to 20260110+ recommended. Run: sudo apt update && sudo apt upgrade linux-firmware. Ref: https://github.com/ROCm/ROCm/issues/5724"
         else
             ok "linux-firmware: $fw_ver"
         fi
@@ -984,6 +1005,13 @@ check_firmware() {
         else
             info "Could not check firmware updates (fwupdmgr exit code: $fw_rc — may need: sudo fwupdmgr refresh)"
         fi
+    fi
+
+    # rasdaemon — correct MCE monitoring tool for AMD Zen (mcelog is non-functional on AMD)
+    if cmd_exists rasdaemon || systemctl is-active rasdaemon &>/dev/null; then
+        ok "rasdaemon available — hardware error monitoring for AMD Zen. Ref: https://wiki.archlinux.org/title/Rasdaemon"
+    else
+        info "rasdaemon not installed — recommended for AMD Zen MCE/hardware error monitoring (mcelog is non-functional on AMD). Install: sudo apt install rasdaemon"
     fi
 }
 
