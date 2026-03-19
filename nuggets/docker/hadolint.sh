@@ -7,7 +7,7 @@ if ! [ -f "${HOME}/.local/bin/hadolint" ]; then
   NEEDS_BUILD="1"
 else
   CURRENT_VERSION=$("${HOME}/.local/bin/hadolint" --version)
-  if [ "${CURRENT_VERSION}" != "Haskell Dockerfile Linter ${HADOLINT#v}" ]; then
+  if [ "${CURRENT_VERSION}" != "Haskell Dockerfile Linter ${HADOLINT_VERSION#v}" ]; then
     NEEDS_BUILD="1"
   fi
 fi
