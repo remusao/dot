@@ -8,4 +8,4 @@ fi
 
 export TMPDIR="${TMPDIR:-/tmp}"
 . "${HOME}/.nvm/nvm.sh"
-nvm install "${NODEJS}"
+nvm install "${NODEJS_VERSION}"

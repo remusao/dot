@@ -7,7 +7,7 @@ if ! [ -f "${HOME}/.cargo/bin/sccache" ]; then
   NEEDS_BUILD="1"
 else
   CURRENT_VERSION=$("${HOME}/.cargo/bin/sccache" --version)
-  if [ "${CURRENT_VERSION}" != "sccache ${SCCACHE}" ]; then
+  if [ "${CURRENT_VERSION}" != "sccache ${SCCACHE_VERSION}" ]; then
     NEEDS_BUILD="1"
   fi
 fi

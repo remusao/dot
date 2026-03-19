@@ -65,7 +65,7 @@ section "Apt packages: desktop & i3"
 for cmd in i3 i3lock i3status rofi feh; do
   check "$cmd" command -v "$cmd"
 done
-for cmd in pamixer brightnessctl scrot playerctl xss-lock; do
+for cmd in pamixer brightnessctl maim playerctl xss-lock picom gammastep autorandr dunst; do
   check "$cmd" command -v "$cmd"
 done
 check "gnome-keyring" dpkg -s gnome-keyring
@@ -134,7 +134,7 @@ fi
 # ─── NEOVIM ──────────────────────────────────────────────
 section "Neovim"
 check "nvim installed" command -v nvim
-check "nvim version ${NEOVIM}" bash -c "nvim --version | head -1 | grep -q '${NEOVIM}'"
+check "nvim version ${NEOVIM_VERSION}" bash -c "nvim --version | head -1 | grep -q '${NEOVIM_VERSION}'"
 check "nvim from ~/.local/bin" test -x "$HOME/.local/bin/nvim"
 check "vim-plug installed" test -f "$HOME/.local/share/nvim/site/autoload/plug.vim"
 check "nvim undo dir" test -d "$HOME/.config/nvim/backups"
@@ -158,8 +158,8 @@ check "python binary" "$HOME/.pyenv/versions/${PYTHON_VERSION}/bin/python3" --ve
 section "nvm + Node.js"
 check "nvm dir" test -d "$HOME/.nvm"
 check "nvm script" test -f "$HOME/.nvm/nvm.sh"
-check "node ${NODEJS}" test -x "$HOME/.nvm/versions/node/v${NODEJS}/bin/node"
-check "npm" test -x "$HOME/.nvm/versions/node/v${NODEJS}/bin/npm"
+check "node ${NODEJS_VERSION}" test -x "$HOME/.nvm/versions/node/v${NODEJS_VERSION}/bin/node"
+check "npm" test -x "$HOME/.nvm/versions/node/v${NODEJS_VERSION}/bin/npm"
 
 # ─── RUST ────────────────────────────────────────────────
 section "Rust toolchain"
@@ -167,8 +167,8 @@ check "rustup" "$HOME/.cargo/bin/rustup" --version
 check "cargo" "$HOME/.cargo/bin/cargo" --version
 check "rust stable" bash -c "'${HOME}/.cargo/bin/rustup' toolchain list | grep -q stable"
 check "rust-src" bash -c "'${HOME}/.cargo/bin/rustup' component list --installed | grep -q rust-src"
-check "sccache ${SCCACHE}" bash -c "'${HOME}/.cargo/bin/sccache' --version | grep -q '${SCCACHE}'"
-check "ripgrep ${RIPGREP}" bash -c "'${HOME}/.cargo/bin/rg' --version | head -1 | grep -q '${RIPGREP}'"
+check "sccache ${SCCACHE_VERSION}" bash -c "'${HOME}/.cargo/bin/sccache' --version | grep -q '${SCCACHE_VERSION}'"
+check "ripgrep ${RIPGREP_VERSION}" bash -c "'${HOME}/.cargo/bin/rg' --version | head -1 | grep -q '${RIPGREP_VERSION}'"
 check "ripgrep pcre2" "$HOME/.cargo/bin/rg" --pcre2-version
 
 # ─── DOCKER TOOLS ────────────────────────────────────────
@@ -183,7 +183,7 @@ check "font cache" bash -c "fc-list | grep -qi inconsolata"
 
 # ─── NPM PACKAGES ───────────────────────────────────────
 section "npm global packages"
-NODE_BIN="$HOME/.nvm/versions/node/v${NODEJS}/bin"
+NODE_BIN="$HOME/.nvm/versions/node/v${NODEJS_VERSION}/bin"
 for pkg in bash-language-server prettier yaml-language-server svgo stylelint; do
   check "npm: $pkg" test -x "$NODE_BIN/$pkg" -o -f "$NODE_BIN/$pkg"
 done
@@ -247,6 +247,14 @@ check "i3/config: xss-lock" grep -q "xss-lock" "$HOME/.dot/i3/config"
 check "i3/config: mic mute" grep -q "XF86AudioMicMute" "$HOME/.dot/i3/config"
 check "i3/config: no dbus-send spotify" bash -c '! grep -q "org.mpris.MediaPlayer2.spotify" "$HOME/.dot/i3/config"'
 check "i3/config: AMD output names" bash -c '! grep -q "output HDMI2\|output eDP1" "$HOME/.dot/i3/config"'
+check "i3/config: no deprecated new_window" bash -c '! grep -q "new_window" "$HOME/.dot/i3/config"'
+check "i3/config: no redshift" bash -c '! grep -q "redshift" "$HOME/.dot/i3/config"'
+check "i3/config: no scrot" bash -c '! grep -q "scrot" "$HOME/.dot/i3/config"'
+check "i3/config: i3status-rs" grep -q "i3status-rs" "$HOME/.dot/i3/config"
+check "i3/config: no pasystray" bash -c '! grep -q "pasystray" "$HOME/.dot/i3/config"'
+check "i3status-rs" command -v i3status-rs
+check "greenclip" command -v greenclip
+check "Font Awesome 6" bash -c "fc-list | grep -qi 'Font Awesome 6'"
 check "zshrc: python3 for venvwrapper" grep -q "VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" "$HOME/.dot/zshrc"
 check "zshrc: no spark PATH" bash -c '! grep -q "spark-1.6.1" "$HOME/.dot/zshrc"'
 check "zshrc: no ruby 2.5 PATH" bash -c '! grep -q "ruby/2.5.0" "$HOME/.dot/zshrc"'

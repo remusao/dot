@@ -768,6 +768,16 @@ check_security() {
     elif [[ -n "$efi_fs" ]]; then
         fail "EFI partition is $efi_fs" "must be vfat (FAT32) per UEFI specification. Ref: https://wiki.archlinux.org/title/EFI_system_partition"
     fi
+
+    # kexec_load_disabled (prevents bypassing Secure Boot at runtime)
+    local kexec_disabled
+    kexec_disabled=$(cat /proc/sys/kernel/kexec_load_disabled 2>/dev/null) || kexec_disabled=""
+    if [[ "$kexec_disabled" == "1" ]]; then
+        ok "kexec disabled — cannot bypass Secure Boot at runtime"
+    elif [[ "$kexec_disabled" == "0" ]]; then
+        fail "kexec enabled" "allows loading unsigned kernels at runtime, bypassing Secure Boot" \
+            "echo 'kernel.kexec_load_disabled = 1' | sudo tee /etc/sysctl.d/10-kernel-hardening.conf && sudo sysctl -p /etc/sysctl.d/10-kernel-hardening.conf"
+    fi
 }
 
 # ── Section 7: Full Disk Encryption ──────────────────────────────────────────
@@ -1163,6 +1173,25 @@ check_peripherals() {
     elif [[ -n "$trim_gran" ]]; then
         info "NVMe TRIM granularity: $trim_gran"
     fi
+
+    # Webcam (AMD ISP4) — requires libcamera with ISP4 pipeline handler
+    if lsmod 2>/dev/null | grep -q amd_isp4; then
+        if cmd_exists cam; then
+            local cam_list
+            cam_list=$(cam -l 2>/dev/null) || cam_list=""
+            if [[ -n "$cam_list" ]] && [[ "$cam_list" != *"No cameras"* ]]; then
+                ok "AMD ISP4 webcam detected via libcamera: $cam_list"
+            else
+                fail "AMD ISP4 module loaded but libcamera sees no camera" \
+                    "install libcamera with ISP4 pipeline handler from ppa:amd-team/isp. Stock Noble libcamera 0.2.0 lacks the ISP4 handler." \
+                    "sudo add-apt-repository -y ppa:amd-team/isp && sudo apt-get update && sudo apt-get install -y v4l-utils libcamera-tools libspa-0.2-libcamera gstreamer1.0-libcamera"
+            fi
+        else
+            fail "libcamera-tools not installed" \
+                "needed to verify ISP4 webcam. Install from ppa:amd-team/isp" \
+                "sudo add-apt-repository -y ppa:amd-team/isp && sudo apt-get update && sudo apt-get install -y libcamera-tools"
+        fi
+    fi
 }
 
 # ── Section 11: Display & Desktop ────────────────────────────────────────────
@@ -1284,6 +1313,18 @@ check_display() {
                 ok "playerctl installed — media keys work with any MPRIS player"
             else
                 warn "playerctl not installed" "media keys limited to hardcoded player. Fix: sudo apt install playerctl"
+            fi
+
+            # media-keys.sh (volume/brightness with OSD — i3 can't inline compound shell due to ; parsing)
+            local media_keys="${HOME}/.i3/media-keys.sh"
+            if [[ -x "$media_keys" ]]; then
+                ok "media-keys.sh installed — volume/brightness keys with OSD notifications"
+            elif [[ -f "$media_keys" ]]; then
+                fail "media-keys.sh exists but not executable" "volume/brightness keys will not work" \
+                    "chmod +x $media_keys"
+            else
+                fail "media-keys.sh missing" "volume/brightness keys will not work" \
+                    "Re-run install.sh or check that ~/.i3 symlink points to the dotfiles i3/ directory"
             fi
         fi
     elif [[ -n "$session_type" ]]; then

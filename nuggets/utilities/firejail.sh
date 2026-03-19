@@ -6,7 +6,7 @@ if ! command -v firejail &>/dev/null; then
   NEEDS_BUILD="1"
 else
   CURRENT_VERSION=$(firejail --version | head -1 | grep -oP '[\d.]+')
-  if [ "${CURRENT_VERSION}" != "${FIREJAIL}" ]; then
+  if [ "${CURRENT_VERSION}" != "${FIREJAIL_VERSION}" ]; then
     NEEDS_BUILD="1"
   fi
 fi
@@ -15,7 +15,7 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
   (
     DEB=$(mktemp --suffix=.deb)
     trap 'rm -f "$DEB"' EXIT
-    wget -q "https://github.com/netblue30/firejail/releases/download/${FIREJAIL}/firejail_${FIREJAIL}_1_amd64.deb" -O "$DEB"
+    wget -q "https://github.com/netblue30/firejail/releases/download/${FIREJAIL_VERSION}/firejail_${FIREJAIL_VERSION}_1_amd64.deb" -O "$DEB"
     chmod 644 "$DEB"
     sudo apt-get install -y "$DEB"
   )

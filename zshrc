@@ -174,7 +174,7 @@ setopt HIST_IGNORE_SPACE        # prefix with space to omit from history
 setopt HIST_REDUCE_BLANKS
 
 export NVM_DIR="$HOME/.nvm"
-export PATH=${HOME}/.nvm/versions/node/v${NODEJS}/bin/:${PATH}
+export PATH=${HOME}/.nvm/versions/node/v${NODEJS_VERSION}/bin/:${PATH}
 
 # Set title
 set-window-title() {
