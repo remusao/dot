@@ -474,27 +474,31 @@ check_power() {
         fi
     fi
 
-    # iGPU low-power mode (Cool My Ryzen AI Max extension or CLI equivalent)
+    # iGPU low-power mode (cool-ryzen-apply, GNOME extension, or manual)
     local gpu_perf_level=""
     gpu_perf_level=$(cat /sys/class/drm/card0/device/power_dpm_force_performance_level 2>/dev/null ||
                      cat /sys/class/drm/card1/device/power_dpm_force_performance_level 2>/dev/null) || gpu_perf_level=""
     if [[ "$gpu_perf_level" == "low" ]]; then
-        ok "iGPU forced to low-power mode — drops idle from 7-11W to 3-4W. Ref: https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max"
+        ok "iGPU forced to low-power mode — drops idle from 7-11W to 3-4W"
     elif [[ "$gpu_perf_level" == "auto" || "$gpu_perf_level" == "high" ]]; then
-        local ext_dir="${HOME}/.local/share/gnome-shell/extensions"
-        local found_ext=false
-        if [[ -d "$ext_dir" ]]; then
+        # Check for cool-ryzen-apply (i3/CLI) or GNOME extension
+        local found_tooling=false
+        if [[ -x /usr/local/bin/cool-ryzen-apply ]] && [[ -f /etc/udev/rules.d/85-cool-ryzen-ac.rules ]]; then
+            ok "cool-ryzen-apply installed with AC/battery udev rule — toggles automatically (or \$mod+p). DPM currently: $gpu_perf_level"
+            found_tooling=true
+        fi
+        if ! $found_tooling; then
+            local ext_dir="${HOME}/.local/share/gnome-shell/extensions"
             for d in "$ext_dir"/cool*ryzen* "$ext_dir"/cool*amd* "$ext_dir"/*ryzen*ai*max*; do
                 if [[ -d "$d" ]]; then
-                    found_ext=true
+                    ok "Cool My Ryzen AI Max GNOME extension installed"
+                    found_tooling=true
                     break
                 fi
             done
         fi
-        if $found_ext; then
-            ok "Cool My Ryzen AI Max GNOME extension installed. Ref: https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max"
-        else
-            info "iGPU power: $gpu_perf_level — to drop idle from 7-11W to 3-4W, force low-power mode: echo low | sudo tee /sys/class/drm/card0/device/power_dpm_force_performance_level (GNOME users: install Cool My Ryzen AI Max extension). Ref: https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max"
+        if ! $found_tooling; then
+            info "iGPU power: $gpu_perf_level — to drop idle from 7-11W to 3-4W, run install.sh (deploys cool-ryzen-apply + udev auto-switch) or: echo low | sudo tee /sys/class/drm/card*/device/power_dpm_force_performance_level. Ref: https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max"
         fi
     fi
 }
