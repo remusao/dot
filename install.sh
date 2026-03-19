@@ -421,6 +421,64 @@ GESTURES
         gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-gl \
         xdg-desktop-portal xdg-desktop-portal-gnome
     ok "Webcam (AMD ISP4 via libcamera + PipeWire)"
+
+    # Kernel parameters: amd_pstate=active pcie_aspm=off amd_iommu=off
+    # Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525
+    info "Configuring kernel parameters (ZBook Ultra G1a)..."
+    GRUB_CHANGED=0
+    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off"; do
+        param_name="${kp%%=*}"
+        normalized="${param_name//-/_}"
+        if ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${normalized}[= \"]" /etc/default/grub 2>/dev/null &&
+           ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${param_name}[= \"]" /etc/default/grub 2>/dev/null; then
+            sudo sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 ${kp}\"/" /etc/default/grub
+            GRUB_CHANGED=1
+        fi
+    done
+    sudo sed -i 's/  \+/ /g; s/" /"/; s/ "/"/g' /etc/default/grub
+    if [[ "$GRUB_CHANGED" == "1" ]]; then
+        sudo update-grub
+    fi
+    ok "Kernel parameters (amd_pstate=active pcie_aspm=off amd_iommu=off)"
+
+    # WiFi suspend/resume: MT7925 driver timeout -110 after suspend (Ubuntu #2141198)
+    info "Installing WiFi suspend services (MT7925)..."
+    sudo tee /etc/systemd/system/wifi-pre-suspend.service > /dev/null << 'SVC'
+[Unit]
+Description=Unload MT7925 WiFi before suspend
+Before=sleep.target
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/modprobe -r mt7925e
+[Install]
+WantedBy=sleep.target
+SVC
+
+    sudo tee /etc/systemd/system/wifi-suspend-fix.service > /dev/null << 'SVC'
+[Unit]
+Description=Reload MT7925 WiFi after suspend
+After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/modprobe mt7925e
+[Install]
+WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+SVC
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable wifi-pre-suspend.service wifi-suspend-fix.service
+    ok "WiFi suspend services (mt7925e unload/reload)"
+fi
+
+# ── LUKS recovery reminder (interactive — cannot be automated) ────────────
+if lsblk -rf 2>/dev/null | grep -q crypto_LUKS; then
+    echo ""
+    info "LUKS recovery setup (manual steps):"
+    echo "  1. Add recovery keyslot:  sudo cryptsetup luksAddKey --key-slot 1 /dev/nvme0n1p3"
+    echo "  2. Test recovery key:     sudo cryptsetup open --test-passphrase --key-slot 1 --verbose /dev/nvme0n1p3"
+    echo "  3. Back up LUKS header:   sudo cryptsetup luksHeaderBackup /dev/nvme0n1p3 --header-backup-file luks-header.img"
+    echo "  4. Encrypt backup:        gpg --symmetric --cipher-algo AES256 luks-header.img && shred -u luks-header.img"
+    echo "  5. Store .gpg off-device  (USB drive, cloud, etc.)"
 fi
 
 # ── Shell setup ────────────────────────────────────────────────────────────

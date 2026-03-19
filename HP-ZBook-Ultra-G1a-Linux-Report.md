@@ -499,7 +499,7 @@ amd_pstate=active
 - **Disable "Motion Sensing Cooling Mode"** — causes erratic fan bursts based on accelerometer
 - **Add +3 fan offset** — raises the temperature threshold before fans spin up
 
-**Note:** BIOS version matters — version 1.03.00 was [reportedly much quieter than 1.03.02](https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525).
+**Note:** BIOS version matters — version 1.03.00 was [reportedly much quieter than 1.03.02](https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525). **BIOS downgrade is blocked:** Attempting to revert from v1.03.02 to v1.03.00 fails with a "security policy violation" error, even with rollback policy set to permissive ([HP Support Community](https://h30434.www3.hp.com/t5/Business-PCs-Workstations-and-Point-of-Sale-Systems/Zbook-ultra-G1a-fans-constantly-spinning-when-no-usage/td-p/9484899)).
 
 ### 10.4 Power Management Tools
 
@@ -709,6 +709,8 @@ TSME encrypts ALL system RAM with a key generated randomly by the AMD Secure Pro
 
 Performance impact: ~0.7% average on EPYC servers ([Cloudflare benchmark](https://blog.cloudflare.com/securing-memory-at-epyc-scale/)). However, [Phoronix tested the actual Ryzen AI Max+ PRO 395](https://www.phoronix.com/review/amd-memory-guard-ram-encrypt) and found "measurable impact" on some workloads; AMD's own whitepaper cites 3.4% on PCMark 10. Since TSME must stay enabled for suspend to work, you get this protection "for free."
 
+**Verify TSME from Linux (no BIOS needed):** `sudo dmesg | grep -i "Memory Encryption"` — if TSME is active, output shows `Memory Encryption Features active: AMD SME`. Note: the kernel does not distinguish TSME from SME in dmesg output; TSME is transparent to the OS. For definitive verification, AMD provides a test kernel module at [AMDESE/mem-encryption-tests](https://github.com/AMDESE/mem-encryption-tests) (build, load, read `/sys/kernel/tsme`). Warning: `fwupdmgr security --force` can falsely report "Encrypted RAM: Enabled" even when TSME is off ([fwupd #4176](https://github.com/fwupd/fwupd/issues/4176)).
+
 ### 11.8 LUKS Header Backup (Critical)
 
 ```bash
@@ -726,7 +728,13 @@ shred -u luks-header-backup.img
 
 # Also add a recovery passphrase to key slot 1
 sudo cryptsetup luksAddKey --key-slot 1 /dev/nvme0n1p3
+
+# Test recovery passphrase (IMPORTANT: do this before relying on it)
+sudo cryptsetup open --test-passphrase --key-slot 1 --verbose /dev/nvme0n1p3
+# Expected: "Key slot 1 unlocked. Command successful."
 ```
+
+**Important:** Always create the header backup AFTER adding the recovery key — the backup captures keyslot state at time of backup. A backup made before adding the recovery key won't contain it.
 
 ### 11.9 FDE Decision Matrix
 
@@ -1534,7 +1542,7 @@ After purging the residual entry, the check proceeds to verify Docker rootless m
 sudo dpkg --purge docker.io
 
 # Rootless mode: either accept the failure, or disable the check:
-# Edit ~/.config/pareto.toml → DisableChecks = ["25443ceb-c1ec-408c-b4f3-2328ea0c84e1"]
+paretosecurity config disable 25443ceb-c1ec-408c-b4f3-2328ea0c84e1
 ```
 
 **Failure 2: Firewall — "Firewall is off"**
@@ -1549,10 +1557,10 @@ sudo ufw enable            # safe — existing connections preserved via conntra
 
 **Failure 3: App updates — "Updates available for: Snap"**
 
-The check at [`application_updates.go:96-108`](https://github.com/ParetoSecurity/agent/blob/main/checks/linux/application_updates.go) runs `snap refresh --list`. Snaps auto-update 4×/day but can be delayed by holds or metered connections.
+The check at [`application_updates.go:96-108`](https://github.com/ParetoSecurity/agent/blob/main/checks/linux/application_updates.go) runs `snap refresh --list`. Snaps auto-update 4×/day but can be delayed by holds or metered connections. **Note:** snap-store holds a lock on itself while running — `killall snap-store` is required before `snap refresh` will succeed ([Ubuntu Discourse](https://discourse.ubuntu.com/t/how-to-close-the-snap-store-to-allow-snapd-to-update-it/30627)).
 
 ```bash
-sudo snap refresh
+killall snap-store 2>/dev/null; sudo snap refresh
 ```
 
 ### CLI Commands
