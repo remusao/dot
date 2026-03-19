@@ -22,17 +22,17 @@ assign [class="(?i)spotify"] 5
 assign [class="(?i)steam"] 6
 
 
-# Multiscreen
-workspace 1 output HDMI2
-workspace 2 output HDMI2
-workspace 3 output HDMI2
-workspace 4 output HDMI2
-workspace 5 output HDMI2
-workspace 6 output eDP1
-workspace 7 output eDP1
-workspace 8 output eDP1
-workspace 9 output eDP1
-workspace 10 output eDP1
+# Multiscreen (AMD amdgpu output names)
+workspace 1 output HDMI-A-0
+workspace 2 output HDMI-A-0
+workspace 3 output HDMI-A-0
+workspace 4 output HDMI-A-0
+workspace 5 output HDMI-A-0
+workspace 6 output eDP
+workspace 7 output eDP
+workspace 8 output eDP
+workspace 9 output eDP
+workspace 10 output eDP
 
 # Window borders
 # normal, pixel, 1pixel none
@@ -46,8 +46,8 @@ font pango:DejaVu Sans Mono 10
 bindsym $mod+Mod1+Left workspace prev_on_output
 bindsym $mod+Mod1+Right workspace next_on_output
 
-# Lock screen
-bindsym $mod+c exec i3lock --color 475263
+# Lock screen (via xss-lock to avoid conflicting i3lock instances)
+bindsym $mod+c exec --no-startup-id loginctl lock-session
 
 # Caps lock
 # bindsym --release Caps_Lock exec pkill -SIGRTMIN+11 i3blocks
@@ -59,30 +59,32 @@ exec --no-startup-id redshift -l 48.8:11.34
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec urxvt
+bindsym $mod+Return exec urxvtc
+bindsym $mod+Shift+Return exec alacritty
 
 # kill focused window
 bindsym $mod+Shift+q kill
 
 # Multimedia keys
 
-# Pulse Audio controls
-bindsym XF86AudioRaiseVolume exec --no-startup-id pamixer -i 5 # increase sound volume
-bindsym XF86AudioLowerVolume exec --no-startup-id pamixer -d 5 # decrease sound volume
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle # mute sound
+# Pulse Audio controls (with OSD via dunstify)
+bindsym XF86AudioRaiseVolume exec --no-startup-id bash -c 'pamixer -i 5; v=$(pamixer --get-volume); dunstify -h string:x-dunst-stack-tag:volume -h int:value:"$v" "Volume: $v%"'
+bindsym XF86AudioLowerVolume exec --no-startup-id bash -c 'pamixer -d 5; v=$(pamixer --get-volume); dunstify -h string:x-dunst-stack-tag:volume -h int:value:"$v" "Volume: $v%"'
+bindsym XF86AudioMute exec --no-startup-id bash -c 'pactl set-sink-mute @DEFAULT_SINK@ toggle; if pamixer --get-mute | grep -q true; then dunstify -h string:x-dunst-stack-tag:volume "Volume: muted"; else v=$(pamixer --get-volume); dunstify -h string:x-dunst-stack-tag:volume -h int:value:"$v" "Volume: $v%"; fi'
+bindsym XF86AudioMicMute exec --no-startup-id bash -c 'pactl set-source-mute @DEFAULT_SOURCE@ toggle; if pactl get-source-mute @DEFAULT_SOURCE@ | grep -q yes; then dunstify -h string:x-dunst-stack-tag:mic "Mic: muted"; else dunstify -h string:x-dunst-stack-tag:mic "Mic: unmuted"; fi'
 
-# Screen brightness controls
-bindsym XF86MonBrightnessUp exec brightnessctl set +5%
-bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
+# Screen brightness controls (with OSD via dunstify)
+bindsym XF86MonBrightnessUp exec --no-startup-id bash -c 'brightnessctl -c backlight set +5%; b=$(brightnessctl -c backlight -m | cut -d, -f4 | tr -d %); dunstify -h string:x-dunst-stack-tag:brightness -h int:value:"$b" "Brightness: $b%"'
+bindsym XF86MonBrightnessDown exec --no-startup-id bash -c 'brightnessctl -c backlight --min-value=1 set 5%-; b=$(brightnessctl -c backlight -m | cut -d, -f4 | tr -d %); dunstify -h string:x-dunst-stack-tag:brightness -h int:value:"$b" "Brightness: $b%"'
 
 # Touchpad controls
 # bindsym XF86TouchpadToggle exec /some/path/toggletouchpad.sh # toggle touchpad
 
-# Media player controls
-bindsym XF86AudioPlay exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause"
-bindsym XF86AudioStop exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Stop"
-bindsym XF86AudioPrev exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous"
-bindsym XF86AudioNext exec "dbus-send --print-reply --dest=org.mpris.MediaPlayer2.spotify /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next"
+# Media player controls (playerctl works with any MPRIS player)
+bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
+bindsym XF86AudioStop exec --no-startup-id playerctl stop
+bindsym XF86AudioPrev exec --no-startup-id playerctl previous
+bindsym XF86AudioNext exec --no-startup-id playerctl next
 
 # start dmenu (a program launcher)
 # bindsym $mod+d exec dmenu_run
@@ -204,10 +206,17 @@ bindsym $mod+r mode "resize"
 bindsym Print exec scrot -e 'mv $f /tmp/'
 bindsym $mod+Print exec gnome-screenshot -i -a
 
+# Desktop services
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork --color 475263
+exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+exec --no-startup-id xrandr --dpi 96
+
 # Execute specific applications
 exec --no-startup-id xset b off
 exec --no-startup-id xset r rate 300 100 # Set initial delay 300ms, repeat 100ms
-exec --no-startup-id setxkbmap us
+exec --no-startup-id setxkbmap -layout us -option ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp
+
+exec --no-startup-id libinput-gestures-setup start
 
 exec --no-startup-id nm-applet
 exec --no-startup-id pasystray

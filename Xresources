@@ -61,6 +61,7 @@ URxvt.perl-ext-common:
 ! URxvt.resize-font.bigger: C-Up
 
 URxvt.urlLauncher: sensible-browser
+URxvt.iso14755: false
 URxvt*iso14755_52: false
 
 URxvt.internalBorder: 0
@@ -77,7 +78,7 @@ URxvt*scrollColor: grey13
 URxvt*troughColor: black
 URxvt*cursorColor: darkorange1
 URxvt*transparent: false
-URxvt*shading: 33
+! URxvt*shading: 33  # no effect when transparent is false
 ! URxvt*tintColor: gray
 
 

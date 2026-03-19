@@ -66,3 +66,9 @@ export DIFFTASTIC="0.68.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
 export LAZYGIT="0.60.0"
+
+# https://github.com/facebook/watchman/releases/latest
+export WATCHMAN="2026.03.16.00"
+
+# https://github.com/alacritty/alacritty/releases/latest
+export ALACRITTY="0.16.1"

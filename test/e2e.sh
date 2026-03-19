@@ -65,10 +65,12 @@ section "Apt packages: desktop & i3"
 for cmd in i3 i3lock i3status rofi feh; do
   check "$cmd" command -v "$cmd"
 done
-for cmd in pamixer brightnessctl scrot; do
+for cmd in pamixer brightnessctl scrot playerctl xss-lock; do
   check "$cmd" command -v "$cmd"
 done
 check "gnome-keyring" dpkg -s gnome-keyring
+check "policykit-1-gnome" dpkg -s policykit-1-gnome
+check "video group" bash -c "id -nG '$USER' | grep -qw video"
 
 section "Apt packages: terminal & shell tools"
 for cmd in fzf fdfind shellcheck keychain xclip; do
@@ -136,6 +138,7 @@ check "nvim version ${NEOVIM}" bash -c "nvim --version | head -1 | grep -q '${NE
 check "nvim from ~/.local/bin" test -x "$HOME/.local/bin/nvim"
 check "vim-plug installed" test -f "$HOME/.local/share/nvim/site/autoload/plug.vim"
 check "nvim undo dir" test -d "$HOME/.config/nvim/backups"
+check "nvim init.vim" test -L "$HOME/.config/nvim/init.vim"
 
 section "Neovim Python provider"
 check "neovim3 venv exists" test -d "$HOME/.virtualenvs/neovim3"
@@ -231,6 +234,11 @@ check "ssh_config: no ssh-rsa" bash -c '! grep -q "ssh-rsa" "$HOME/.dot/ssh_conf
 check "ssh_config: KbdInteractive" grep -q "KbdInteractiveAuthentication" "$HOME/.dot/ssh_config"
 check "i3/config: brightnessctl" grep -q "brightnessctl" "$HOME/.dot/i3/config"
 check "i3/config: no xbacklight" bash -c '! grep -q "xbacklight" "$HOME/.dot/i3/config"'
+check "i3/config: playerctl" grep -q "playerctl" "$HOME/.dot/i3/config"
+check "i3/config: xss-lock" grep -q "xss-lock" "$HOME/.dot/i3/config"
+check "i3/config: mic mute" grep -q "XF86AudioMicMute" "$HOME/.dot/i3/config"
+check "i3/config: no dbus-send spotify" bash -c '! grep -q "org.mpris.MediaPlayer2.spotify" "$HOME/.dot/i3/config"'
+check "i3/config: AMD output names" bash -c '! grep -q "output HDMI2\|output eDP1" "$HOME/.dot/i3/config"'
 check "zshrc: python3 for venvwrapper" grep -q "VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" "$HOME/.dot/zshrc"
 check "zshrc: no spark PATH" bash -c '! grep -q "spark-1.6.1" "$HOME/.dot/zshrc"'
 check "zshrc: no ruby 2.5 PATH" bash -c '! grep -q "ruby/2.5.0" "$HOME/.dot/zshrc"'
