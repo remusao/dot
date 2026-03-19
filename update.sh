@@ -11,7 +11,6 @@ export PATH="${HOME}/.local/bin:${HOME}/.pyenv/bin:${PATH}"
 
 # Desktop apps
 . ./nuggets/utilities/obsidian.sh
-. ./nuggets/utilities/chrome.sh
 
 # Sandboxing
 if [ "${DOTFILES_SKIP_FIREJAIL:-0}" != "1" ]; then
@@ -22,6 +21,7 @@ fi
 . ./nuggets/rust/rustup.sh
 . ./nuggets/rust/sccache.sh
 . ./nuggets/rust/ripgrep.sh
+. ./nuggets/rust/alacritty.sh
 . ./nuggets/rust/cargo-tools.sh
 
 # Python
@@ -46,3 +46,6 @@ fi
 
 # Git TUI
 . ./nuggets/utilities/lazygit.sh
+
+# Git performance (filesystem monitor)
+. ./nuggets/utilities/watchman.sh

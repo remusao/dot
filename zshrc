@@ -14,16 +14,17 @@ fi
 source ~/.dot/lock.sh
 
 # Options
-# export TERM='xterm-256color'
-export TERM='rxvt-unicode-256color'
 export DEFAULT_USER="remi"
 export EDITOR=/home/remi/.local/bin/nvim
 export VISUAL=/home/remi/.local/bin/nvim
 export TF_PLUGIN_CACHE_DIR=/home/remi/.cache/terraform/
 
-# Cursor speed
-xset b off
-xset r rate 300 100
+# Cursor speed (X11 only)
+if [[ -n "$DISPLAY" ]]; then
+  xset b off
+  xset r rate 300 100
+fi
+setopt NO_BEEP
 
 # Locales
 export LC_COLLATE=en_US.UTF-8
@@ -102,7 +103,7 @@ alias g++='g++ -Wall -Wextra -pedantic -std=c++11'
 alias inst='sudo apt-get install'
 alias lock='i3lock --color 475263'
 alias ls="ls --color=auto"
-alias reload='. ${HOME}/.zshrc'
+alias reload='exec zsh'
 alias se='apt-cache search'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
 alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade'
@@ -136,6 +137,7 @@ export PATH=$HOME/.pyenv/versions/${PYTHON_VERSION}/bin:$PATH   # Add python to 
 export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
 export PATH=$PATH:/home/remi/.go/bin
 export PATH=$PATH:/home/remi/go/bin
+typeset -U path PATH
 
 export GOPATH=/home/remi/go
 
@@ -150,10 +152,11 @@ export PYENV_ROOT="$HOME/.pyenv"
 # Python Virtualenv
 export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-export VIRTUALENVWRAPPER_VIRTUALENV=`which virtualenv`
+export VIRTUALENVWRAPPER_VIRTUALENV=/usr/bin/virtualenv
 export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
 export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
-source /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh
+[[ -f /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh ]] && \
+  source /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh
 
 export PIP_REQUIRE_VIRTUALENV=true
 
@@ -163,10 +166,11 @@ HISTSIZE=1000000                   # lines of history to maintain memory
 SAVEHIST=1000000                   # lines of history to maintain in history file.
 
 setopt EXTENDED_HISTORY         # save timestamp and runtime information
-setopt APPEND_HISTORY           # append rather than overwrite history file.
-setopt SHARE_HISTORY
+setopt SHARE_HISTORY            # implies INC_APPEND_HISTORY
 setopt HIST_FIND_NO_DUPS
 setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_IGNORE_SPACE        # prefix with space to omit from history
 setopt HIST_REDUCE_BLANKS
 
 export NVM_DIR="$HOME/.nvm"
@@ -228,10 +232,9 @@ then
     source $HOME/.zshlocal
 fi
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-# Customize fzf
-# export FZF_DEFAULT_COMMAND='rg --files --smart-case --glob "!.git/*"'
+# fzf
+[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
 
 # Run vim with ctrl-p when ctrl-p is pressed in zsh
 ctrlp() {
@@ -249,18 +252,13 @@ zle -N nvim_fzf
 
 bindkey "^f" nvim_fzf
 
-zmodload zsh/zpty
-
-export PATH="$HOME/.poetry/bin:$PATH"
-
-# ASDF (versions manager)
-# . $HOME/.asdf/asdf.sh
-
-# Completions
-# append completions to fpath
-# fpath=(${ASDF_DIR}/completions $fpath)
-# initialise completions with ZSH's compinit
-autoload -Uz compinit && compinit
+# Completions (full rebuild once per day, fast load otherwise)
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
 
 ######################
 # Semgrep single PRs #

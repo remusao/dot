@@ -1,0 +1,124 @@
+# Alacritty 0.16.x configuration
+# Matches urxvt look-and-feel from Xresources
+# Optimized for: Ubuntu 24.04, AMD GPU (Mesa/RADV), i3/X11, DPI 130
+
+[general]
+live_config_reload = true
+
+[env]
+TERM = "xterm-256color"
+WINIT_X11_SCALE_FACTOR = "1"
+
+[window]
+decorations = "None"
+padding = { x = 0, y = 0 }
+dynamic_padding = false
+resize_increments = true
+opacity = 1.0
+startup_mode = "Windowed"
+dynamic_title = true
+class = { instance = "Alacritty", general = "Alacritty" }
+
+[scrolling]
+history = 100000
+multiplier = 3
+
+[font]
+size = 12.0
+builtin_box_drawing = true
+offset = { x = 0, y = 0 }
+
+[font.normal]
+family = "Inconsolata for Powerline"
+style = "Regular"
+
+[font.bold]
+family = "Inconsolata for Powerline"
+style = "Bold"
+
+[font.italic]
+family = "Inconsolata for Powerline"
+style = "Italic"
+
+[font.bold_italic]
+family = "Inconsolata for Powerline"
+style = "Bold Italic"
+
+[colors]
+draw_bold_text_with_bright_colors = false
+
+[colors.primary]
+background = "#191919"
+foreground = "#c6c6c6"
+
+[colors.cursor]
+text = "CellBackground"
+cursor = "#FF8C00"
+
+[colors.vi_mode_cursor]
+text = "CellBackground"
+cursor = "#FF8C00"
+
+[colors.selection]
+text = "CellBackground"
+background = "CellForeground"
+
+[colors.normal]
+black   = "#073642"
+red     = "#dc322f"
+green   = "#25b20f"
+yellow  = "#b58900"
+blue    = "#268bd2"
+magenta = "#d33682"
+cyan    = "#2aa198"
+white   = "#eee8d5"
+
+[colors.bright]
+black   = "#002b36"
+red     = "#cb4b16"
+green   = "#586e75"
+yellow  = "#657b83"
+blue    = "#839496"
+magenta = "#6c71c4"
+cyan    = "#93a1a1"
+white   = "#fdf6e3"
+
+[bell]
+duration = 0
+
+[selection]
+semantic_escape_chars = ",\u2502`|:\"' ()[]{}<>"
+save_to_clipboard = false
+
+[cursor]
+unfocused_hollow = true
+
+[cursor.style]
+shape = "Block"
+blinking = "Off"
+
+[mouse]
+hide_when_typing = true
+
+[[hints.enabled]]
+regex = "(mailto:|gemini://|gopher://|https://|http://|news:|file:|git://|ssh://|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^`]+"
+hyperlinks = true
+post_processing = true
+persist = false
+action = "Copy"
+binding = { key = "U", mods = "Control|Shift" }
+mouse = { mods = "None", enabled = true }
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Control|Shift"
+action = "SpawnNewInstance"
+
+[debug]
+render_timer = false
+persistent_logging = false
+log_level = "Warn"
+renderer = "None"
+print_events = false
+highlight_damage = false
+prefer_egl = false

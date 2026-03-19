@@ -8,6 +8,7 @@ fi
 
 USER="${USER:-$(whoami)}"
 DOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
 source "${DOT_DIR}/lock.sh"
 
 RED=$(tput setaf 1 2>/dev/null || true)
@@ -21,6 +22,7 @@ ok()    { echo "${GREEN}${BOLD}  ✓${RESET} $*"; }
 err()   { echo "${RED}${BOLD}  ✗${RESET} $*" >&2; }
 
 # ── Sanity checks ──────────────────────────────────────────────────────────
+# shellcheck source=/dev/null
 source /etc/os-release
 if [ "$ID" != "ubuntu" ] || [ "$VERSION_ID" != "24.04" ]; then
   err "Requires Ubuntu 24.04 LTS (detected: $PRETTY_NAME)"; exit 1
@@ -38,107 +40,81 @@ SKIP_SNAP=${DOTFILES_SKIP_SNAP:-0}
 SKIP_DOCKER=${DOTFILES_SKIP_DOCKER:-0}
 SKIP_1PASSWORD=${DOTFILES_SKIP_1PASSWORD:-0}
 SKIP_AI_TOOLS=${DOTFILES_SKIP_AI_TOOLS:-0}
-SKIP_FIREJAIL=${DOTFILES_SKIP_FIREJAIL:-0}
+
+has_repo() { [ -f "$1" ]; }
+REPOS_ADDED=0
+
+# ══════════════════════════════════════════════════════════════════════════
+# APT repositories (each guarded by source-file existence)
+# ══════════════════════════════════════════════════════════════════════════
 
 # ── i3 (latest release) ──────────────────────────────────────────────────
-info "Adding i3 official repo..."
-curl -fsSL "https://debian.sur5r.net/i3/pool/main/s/sur5r-keyring/sur5r-keyring_2025.12.14_all.deb" \
-  -o /tmp/sur5r-keyring.deb
-sudo apt-get install "${APT_OPTS[@]}" /tmp/sur5r-keyring.deb
-rm -f /tmp/sur5r-keyring.deb
-echo "deb [signed-by=/usr/share/keyrings/sur5r-keyring.gpg] http://debian.sur5r.net/i3/ $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") universe" \
-  | sudo tee /etc/apt/sources.list.d/sur5r-i3.list > /dev/null
+if ! has_repo /etc/apt/sources.list.d/sur5r-i3.list; then
+  info "Adding i3 official repo..."
+  curl -fsSL "https://debian.sur5r.net/i3/pool/main/s/sur5r-keyring/sur5r-keyring_2025.12.14_all.deb" \
+    -o /tmp/sur5r-keyring.deb
+  sudo apt-get install "${APT_OPTS[@]}" /tmp/sur5r-keyring.deb
+  rm -f /tmp/sur5r-keyring.deb
+  echo "deb [signed-by=/usr/share/keyrings/sur5r-keyring.gpg] http://debian.sur5r.net/i3/ $(# shellcheck source=/dev/null
+  . /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") universe" \
+    | sudo tee /etc/apt/sources.list.d/sur5r-i3.list > /dev/null
+  REPOS_ADDED=1
+fi
 
-# ── Core apt packages ──────────────────────────────────────────────────────
-info "Installing system packages..."
-sudo apt-get update
-sudo apt-get install "${APT_OPTS[@]}" \
-  ca-certificates curl gnupg lsb-release software-properties-common wget \
-  zsh git git-lfs build-essential clang g++ cmake ninja-build gettext unzip pkg-config \
-  python3-pip python3-venv python3-dev \
-  rxvt-unicode alacritty \
-  i3 i3lock i3status rofi redshift feh \
-  pamixer pulseaudio-utils brightnessctl pavucontrol pulsemixer blueman \
-  scrot gnome-screenshot \
-  network-manager-gnome pasystray gnome-keyring \
-  x11-xserver-utils x11-xkb-utils lxrandr \
-  zsh-syntax-highlighting keychain fzf fd-find shellcheck \
-  xclip \
-  jq git-delta hyperfine sd hexyl entr just \
-  ffmpeg mitmproxy pandoc socat pv pigz 7zip ncdu \
-  zoxide duf btop nmap wireguard \
-  protobuf-compiler libsnappy-dev libboost-all-dev libzstd-dev \
-  libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
-  libsqlite3-dev libncurses-dev libffi-dev liblzma-dev \
-  libxml2-dev libxmlsec1-dev \
-  libclang-dev libopenblas-dev libsasl2-dev liburing-dev libzzip-dev \
-  google-perftools \
-  tk-dev xz-utils \
-  fonts-inconsolata fonts-powerline fonts-dejavu fontconfig \
-  gimp evince libreoffice vlc \
-  libfido2-1 libu2f-udev \
-  virtualenvwrapper tree editorconfig xdg-utils \
-  tldr rsync whois zstd apache2-utils \
-  htop dfc earlyoom lm-sensors \
-  screen tmux parallel
-ok "System packages"
-
-# ── Firefox snap → deb ─────────────────────────────────────────────────────
-info "Replacing Firefox snap with deb..."
-
-sudo install -d -m 0755 /etc/apt/keyrings
-wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- \
-  | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
-echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" \
-  | sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null
-
+# ── Firefox/Mozilla repo ─────────────────────────────────────────────────
+if ! has_repo /etc/apt/sources.list.d/mozilla.list; then
+  info "Adding Mozilla apt repo..."
+  sudo install -d -m 0755 /etc/apt/keyrings
+  wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- \
+    | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
+  echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" \
+    | sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null
+  REPOS_ADDED=1
+fi
+# Pin files are fast + idempotent — always ensure they're correct
 printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' \
   | sudo tee /etc/apt/preferences.d/mozilla > /dev/null
 printf 'Package: firefox*\nPin: release o=Ubuntu*\nPin-Priority: -1\n' \
   | sudo tee /etc/apt/preferences.d/firefox-no-snap > /dev/null
 
-if [ "$SKIP_SNAP" != "1" ]; then
-  sudo systemctl stop var-snap-firefox-common-host-hunspell.mount 2>/dev/null || true
-  sudo systemctl disable var-snap-firefox-common-host-hunspell.mount 2>/dev/null || true
-
-  if snap list firefox &>/dev/null; then
-    sudo snap remove --purge firefox
-  fi
-  sudo apt-get purge -y firefox 2>/dev/null || true
-  sudo rm -f /var/lib/snapd/seed/snaps/firefox_*.snap
-  sudo rm -f /var/lib/snapd/seed/assertions/firefox_*.assert
-fi
-
-sudo apt-get update
-sudo apt-get install "${APT_OPTS[@]}" firefox
-ok "Firefox (deb)"
-
 # ── Thunderbird PPA ────────────────────────────────────────────────────────
-info "Adding Thunderbird PPA..."
-sudo add-apt-repository -y ppa:mozillateam/ppa
+if ! has_repo /etc/apt/sources.list.d/mozillateam-ubuntu-ppa-noble.sources; then
+  info "Adding Thunderbird PPA..."
+  sudo add-apt-repository -y ppa:mozillateam/ppa
+  REPOS_ADDED=1
+fi
 printf 'Package: thunderbird*\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001\n' \
   | sudo tee /etc/apt/preferences.d/mozillateam-ppa > /dev/null
 
 # ── Brave Browser ──────────────────────────────────────────────────────────
-info "Adding Brave Browser repo..."
-sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
-  https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
-  https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
+if ! has_repo /etc/apt/sources.list.d/brave-browser-release.sources; then
+  info "Adding Brave Browser repo..."
+  sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
+    https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+  sudo curl -fsSLo /etc/apt/sources.list.d/brave-browser-release.sources \
+    https://brave-browser-apt-release.s3.brave.com/brave-browser.sources
+  REPOS_ADDED=1
+fi
 
-# ── Google Chrome ─────────────────────────────────────────────────────
-info "Adding Google Chrome repo..."
-wget -q -O- https://dl.google.com/linux/linux_signing_key.pub \
-  | sudo gpg --dearmor --output /usr/share/keyrings/google-chrome.gpg --yes
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
-  | sudo tee /etc/apt/sources.list.d/google-chrome.list > /dev/null
+# ── Google Chrome ─────────────────────────────────────────────────────────
+if ! has_repo /etc/apt/sources.list.d/google-chrome.list; then
+  info "Adding Google Chrome repo..."
+  wget -q -O- https://dl.google.com/linux/linux_signing_key.pub \
+    | sudo gpg --dearmor --output /usr/share/keyrings/google-chrome.gpg --yes
+  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main" \
+    | sudo tee /etc/apt/sources.list.d/google-chrome.list > /dev/null
+  REPOS_ADDED=1
+fi
 
-# ── OpenRazer ─────────────────────────────────────────────────────────
-info "Adding OpenRazer PPA..."
-sudo add-apt-repository -y ppa:openrazer/stable
+# ── OpenRazer ─────────────────────────────────────────────────────────────
+if ! has_repo /etc/apt/sources.list.d/openrazer-ubuntu-stable-noble.sources; then
+  info "Adding OpenRazer PPA..."
+  sudo add-apt-repository -y ppa:openrazer/stable
+  REPOS_ADDED=1
+fi
 
 # ── Docker Engine ──────────────────────────────────────────────────────────
-if [ "$SKIP_DOCKER" != "1" ]; then
+if [ "$SKIP_DOCKER" != "1" ] && ! has_repo /etc/apt/sources.list.d/docker.sources; then
   info "Adding Docker repo..."
   sudo install -m 0755 -d /etc/apt/keyrings
   sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -146,14 +122,16 @@ if [ "$SKIP_DOCKER" != "1" ]; then
   sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null <<SRCS
 Types: deb
 URIs: https://download.docker.com/linux/ubuntu
-Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Suites: $(# shellcheck source=/dev/null
+. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
 Components: stable
 Signed-By: /etc/apt/keyrings/docker.asc
 SRCS
+  REPOS_ADDED=1
 fi
 
 # ── 1Password ──────────────────────────────────────────────────────────────
-if [ "$SKIP_1PASSWORD" != "1" ]; then
+if [ "$SKIP_1PASSWORD" != "1" ] && ! has_repo /etc/apt/sources.list.d/1password.list; then
   info "Adding 1Password repo..."
   curl -sS https://downloads.1password.com/linux/keys/1password.asc \
     | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg --yes
@@ -165,50 +143,143 @@ if [ "$SKIP_1PASSWORD" != "1" ]; then
   sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
   curl -sS https://downloads.1password.com/linux/keys/1password.asc \
     | sudo gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg --yes
+  REPOS_ADDED=1
 fi
 
 # ── Tailscale ──────────────────────────────────────────────────────────────
-info "Adding Tailscale repo..."
-curl -fsSL "https://pkgs.tailscale.com/stable/ubuntu/${VERSION_CODENAME}.noarmor.gpg" \
-  | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null
-curl -fsSL "https://pkgs.tailscale.com/stable/ubuntu/${VERSION_CODENAME}.tailscale-keyring.list" \
-  | sudo tee /etc/apt/sources.list.d/tailscale.list > /dev/null
+if ! has_repo /etc/apt/sources.list.d/tailscale.list; then
+  info "Adding Tailscale repo..."
+  curl -fsSL "https://pkgs.tailscale.com/stable/ubuntu/${VERSION_CODENAME}.noarmor.gpg" \
+    | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null
+  curl -fsSL "https://pkgs.tailscale.com/stable/ubuntu/${VERSION_CODENAME}.tailscale-keyring.list" \
+    | sudo tee /etc/apt/sources.list.d/tailscale.list > /dev/null
+  REPOS_ADDED=1
+fi
 
 # ── GitHub CLI ────────────────────────────────────────────────────────────
-info "Adding GitHub CLI repo..."
-sudo mkdir -p /etc/apt/keyrings
-wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-  | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
-sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-  | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+if ! has_repo /etc/apt/sources.list.d/github-cli.list; then
+  info "Adding GitHub CLI repo..."
+  sudo mkdir -p /etc/apt/keyrings
+  wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+  sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+    | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+  REPOS_ADDED=1
+fi
 
-# ── Install PPA packages ──────────────────────────────────────────────────
-info "Installing PPA packages..."
-sudo apt-get update
-PPA_PKGS=(thunderbird brave-browser google-chrome-stable openrazer-meta tailscale gh)
+# ── Pareto Security ──────────────────────────────────────────────────────
+if ! has_repo /etc/apt/sources.list.d/pareto.list; then
+  info "Adding Pareto Security repo..."
+  curl -fsSL https://pkg.paretosecurity.com/debian/pubkey.gpg \
+    | sudo gpg --dearmor --output /usr/share/keyrings/paretosecurity.gpg --yes
+  echo "deb [signed-by=/usr/share/keyrings/paretosecurity.gpg] https://pkg.paretosecurity.com/debian stable main" \
+    | sudo tee /etc/apt/sources.list.d/pareto.list > /dev/null
+  REPOS_ADDED=1
+fi
+
+# ══════════════════════════════════════════════════════════════════════════
+# Firefox snap removal (before apt install replaces it with the deb)
+# ══════════════════════════════════════════════════════════════════════════
+if [ "$SKIP_SNAP" != "1" ] && snap list firefox &>/dev/null; then
+  info "Removing Firefox snap..."
+  sudo systemctl stop var-snap-firefox-common-host-hunspell.mount 2>/dev/null || true
+  sudo systemctl disable var-snap-firefox-common-host-hunspell.mount 2>/dev/null || true
+  sudo snap remove --purge firefox
+  sudo apt-get purge -y firefox 2>/dev/null || true
+  sudo rm -f /var/lib/snapd/seed/snaps/firefox_*.snap
+  sudo rm -f /var/lib/snapd/seed/assertions/firefox_*.assert
+fi
+
+# ══════════════════════════════════════════════════════════════════════════
+# Package installation (single apt-get update + single apt-get install)
+# ══════════════════════════════════════════════════════════════════════════
+info "Installing system packages..."
+if [ "$REPOS_ADDED" = "1" ]; then
+  sudo apt-get update
+fi
+ALL_PKGS=(
+  ca-certificates curl gnupg lsb-release software-properties-common wget
+  zsh git git-lfs build-essential clang g++ cmake ninja-build gettext unzip pkg-config
+  python3-pip python3-venv python3-dev
+  rxvt-unicode
+  i3 i3lock i3status rofi redshift feh
+  pamixer pulseaudio-utils brightnessctl pavucontrol pulsemixer blueman playerctl
+  xss-lock policykit-1-gnome
+  scrot gnome-screenshot
+  network-manager-gnome pasystray gnome-keyring
+  x11-xserver-utils x11-xkb-utils lxrandr
+  zsh-syntax-highlighting keychain fzf fd-find shellcheck
+  xclip
+  jq git-delta hyperfine sd hexyl entr just
+  ffmpeg mitmproxy pandoc socat pv pigz 7zip ncdu
+  zoxide duf btop nmap wireguard
+  protobuf-compiler libsnappy-dev libboost-all-dev libzstd-dev
+  libssl-dev zlib1g-dev libbz2-dev libreadline-dev
+  libsqlite3-dev libncurses-dev libffi-dev liblzma-dev
+  libxml2-dev libxmlsec1-dev
+  libclang-dev libopenblas-dev libsasl2-dev liburing-dev libzzip-dev
+  libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev
+  google-perftools
+  tk-dev xz-utils
+  fonts-inconsolata fonts-powerline fonts-dejavu fontconfig
+  gimp evince libreoffice vlc
+  libfido2-1 libu2f-udev
+  virtualenvwrapper tree editorconfig xdg-utils
+  tldr rsync whois zstd apache2-utils
+  htop dfc earlyoom lm-sensors
+  screen tmux parallel
+  firefox
+  thunderbird brave-browser google-chrome-stable openrazer-meta tailscale gh
+  paretosecurity
+)
 if [ "$SKIP_DOCKER" != "1" ]; then
-  PPA_PKGS+=(docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
+  ALL_PKGS+=(docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
 fi
 if [ "$SKIP_1PASSWORD" != "1" ]; then
-  PPA_PKGS+=(1password)
+  ALL_PKGS+=(1password)
 fi
-sudo apt-get install "${APT_OPTS[@]}" "${PPA_PKGS[@]}"
+sudo apt-get install "${APT_OPTS[@]}" "${ALL_PKGS[@]}"
 if [ "$SKIP_DOCKER" != "1" ]; then
   sudo usermod -aG docker "$USER"
 fi
-ok "PPA packages"
+# video group: required for brightnessctl to write to /sys/class/backlight/*/brightness
+if ! id -nG "$USER" | grep -qw video; then
+  sudo usermod -aG video "$USER"
+fi
+ok "System packages"
+
+# ── Purge residual docker.io (triggers Pareto Security false positive) ──
+if dpkg-query -W docker.io &>/dev/null; then
+    sudo dpkg --purge docker.io 2>/dev/null || true
+    ok "Purged residual docker.io from dpkg database"
+fi
+
+# ── Pareto Security service ──────────────────────────────────────────────
+sudo systemctl enable paretosecurity.socket
+ok "Pareto Security"
+
+# ── UFW Firewall (Pareto compliance) ─────────────────────────────────────
+info "Configuring UFW firewall..."
+# UFW defaults: deny incoming, allow outgoing. Outgoing SSH to servers always works.
+# Only uncomment the next line if others need to SSH INTO this laptop:
+# sudo ufw allow OpenSSH
+sudo ufw --force enable
+ok "UFW firewall (deny incoming, allow outgoing)"
 
 # ── Claude Code ────────────────────────────────────────────────────────────
 if [ "$SKIP_AI_TOOLS" != "1" ]; then
-  info "Installing Claude Code..."
-  curl -fsSL https://claude.ai/install.sh | bash
-  ok "Claude Code"
+  if ! command -v claude &>/dev/null; then
+    info "Installing Claude Code..."
+    curl -fsSL https://claude.ai/install.sh | bash
+    ok "Claude Code"
+  fi
 
-  # ── opencode ───────────────────────────────────────────────────────────
-  info "Installing opencode..."
-  curl -fsSL https://opencode.ai/install | bash
-  ok "opencode"
+  if ! command -v opencode &>/dev/null; then
+    info "Installing opencode..."
+    curl -fsSL https://opencode.ai/install | bash
+    ok "opencode"
+  fi
 fi
 
 # ── Symlinks ───────────────────────────────────────────────────────────────
@@ -226,7 +297,11 @@ done
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
 ln -sf "${DOT_DIR}/ssh_config" ~/.ssh/config
 chmod 600 "${DOT_DIR}/ssh_config"
-ok "~/.ssh/config"
+ok "$HOME/.ssh/config"
+
+mkdir -p ~/.config/alacritty
+ln -sf "${DOT_DIR}/alacritty.toml" ~/.config/alacritty/alacritty.toml
+ok "$HOME/.config/alacritty/alacritty.toml"
 
 # ── Git LFS ────────────────────────────────────────────────────────────────
 git lfs install
@@ -234,10 +309,67 @@ ok "Git LFS"
 
 # ── Udev rules ────────────────────────────────────────────────────────────
 info "Installing udev rules..."
-sudo cp "${DOT_DIR}/udev/"*.rules /etc/udev/rules.d/
-sudo udevadm control --reload-rules 2>/dev/null || true
-sudo udevadm trigger --subsystem-match=hidraw 2>/dev/null || true
+UDEV_CHANGED=0
+for rule in "${DOT_DIR}/udev/"*.rules; do
+  dest="/etc/udev/rules.d/$(basename "$rule")"
+  if ! sudo diff -q "$rule" "$dest" &>/dev/null; then
+    sudo cp "$rule" "$dest"
+    UDEV_CHANGED=1
+  fi
+done
+if [ "$UDEV_CHANGED" = "1" ]; then
+  sudo udevadm control --reload-rules 2>/dev/null || true
+  sudo udevadm trigger --subsystem-match=hidraw 2>/dev/null || true
+fi
 ok "Udev rules (Titan key)"
+
+# ── Input device configuration (ZBook Ultra G1a) ─────────────────────────
+PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)
+if [[ "$PRODUCT_NAME" == *"ZBook Ultra G1a"* ]]; then
+    info "Configuring input devices (ZBook Ultra G1a)..."
+
+    # Touchpad: tap-to-click, clickfinger, natural scroll, drag lock
+    sudo tee /etc/X11/xorg.conf.d/30-touchpad.conf > /dev/null << 'XORG'
+Section "InputClass"
+    Identifier "touchpad"
+    MatchIsTouchpad "on"
+    Driver "libinput"
+    Option "Tapping" "on"
+    Option "TappingButtonMap" "lrm"
+    Option "TappingDragLock" "on"
+    Option "NaturalScrolling" "on"
+    Option "ClickMethod" "clickfinger"
+EndSection
+XORG
+    ok "Touchpad config (30-touchpad.conf)"
+
+    # Keyboard: Caps Lock as Ctrl, Right Alt as Compose, Ctrl+Alt+Bksp kills X
+    sudo sed -i 's/^XKBOPTIONS=.*/XKBOPTIONS="ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp"/' /etc/default/keyboard
+    sudo dpkg-reconfigure -f noninteractive keyboard-configuration
+    ok "Keyboard XKB options (ctrl:nocaps, compose:ralt, terminate:ctrl_alt_bksp)"
+
+    # Trackpad gestures: 3/4-finger swipes for i3 workspace navigation
+    sudo apt-get install "${APT_OPTS[@]}" libinput-gestures libinput-tools xdotool wmctrl
+    sudo gpasswd -a "$USER" input
+    mkdir -p "${HOME}/.config"
+    cat > "${HOME}/.config/libinput-gestures.conf" << 'GESTURES'
+# i3 workspace switching — 3-finger swipes
+gesture swipe left  3 i3-msg workspace next
+gesture swipe right 3 i3-msg workspace prev
+gesture swipe up    3 i3-msg fullscreen toggle
+gesture swipe down  3 i3-msg floating toggle
+
+# Move container to adjacent workspace — 4-finger swipes
+gesture swipe left  4 i3-msg move container to workspace next, workspace next
+gesture swipe right 4 i3-msg move container to workspace prev, workspace prev
+
+# Pinch to zoom (browsers, terminals, etc.)
+gesture pinch in    xdotool key ctrl+minus
+gesture pinch out   xdotool key ctrl+plus
+GESTURES
+    libinput-gestures-setup autostart 2>/dev/null || true
+    ok "Trackpad gestures (libinput-gestures)"
+fi
 
 # ── Shell setup ────────────────────────────────────────────────────────────
 info "Setting up zsh..."
@@ -254,25 +386,40 @@ ok "Zsh + Powerlevel10k"
 
 # ── Fonts ──────────────────────────────────────────────────────────────────
 info "Installing fonts..."
+FONTS_CHANGED=0
 mkdir -p ~/.local/share/fonts
-cp "${DOT_DIR}/fonts/"* ~/.local/share/fonts/
+
+for f in "${DOT_DIR}/fonts/"*; do
+  dest="${HOME}/.local/share/fonts/$(basename "$f")"
+  if [ ! -f "$dest" ] || ! diff -q "$f" "$dest" &>/dev/null; then
+    cp "$f" "$dest"
+    FONTS_CHANGED=1
+  fi
+done
 
 # Powerline-patched fonts (provides "Inconsolata for Powerline" etc.)
-POWERLINE_FONTS_DIR=$(mktemp -d)
-git clone --depth=1 https://github.com/powerline/fonts.git "$POWERLINE_FONTS_DIR"
-"$POWERLINE_FONTS_DIR/install.sh"
-rm -rf "$POWERLINE_FONTS_DIR"
+if [ ! -f "${HOME}/.local/share/fonts/Inconsolata for Powerline.otf" ]; then
+  POWERLINE_FONTS_DIR=$(mktemp -d)
+  git clone --depth=1 https://github.com/powerline/fonts.git "$POWERLINE_FONTS_DIR"
+  "$POWERLINE_FONTS_DIR/install.sh"
+  rm -rf "$POWERLINE_FONTS_DIR"
+  FONTS_CHANGED=1
+fi
 
 # MesloLGS NF – recommended font for Powerlevel10k
 MESLO_URL="https://github.com/romkatv/powerlevel10k-media/raw/master"
 for variant in Regular Bold Italic "Bold Italic"; do
   file="MesloLGS NF ${variant}.ttf"
-  [ -f "${HOME}/.local/share/fonts/${file}" ] || \
+  if [ ! -f "${HOME}/.local/share/fonts/${file}" ]; then
     curl -fsSL -o "${HOME}/.local/share/fonts/${file}" \
       "${MESLO_URL}/$(printf '%s' "$file" | sed 's/ /%20/g')"
+    FONTS_CHANGED=1
+  fi
 done
 
-fc-cache -f
+if [ "$FONTS_CHANGED" = "1" ]; then
+  fc-cache -f
+fi
 ok "Fonts"
 
 # ── Language toolchains ────────────────────────────────────────────────────
@@ -283,15 +430,19 @@ ok "Toolchains"
 
 # ── Neovim setup ───────────────────────────────────────────────────────────
 info "Setting up Neovim..."
-curl -fLo ~/.local/share/nvim/site/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+ln -sf "${DOT_DIR}/vimrc" "${HOME}/.config/nvim/init.vim"
+PLUG_VIM="${HOME}/.local/share/nvim/site/autoload/plug.vim"
+if [ ! -f "$PLUG_VIM" ]; then
+  curl -fLo "$PLUG_VIM" --create-dirs \
+      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+fi
 
 if [ ! -d ~/.virtualenvs/neovim3 ]; then
     python3 -m venv ~/.virtualenvs/neovim3
 fi
 ~/.virtualenvs/neovim3/bin/pip install --quiet --upgrade pynvim ruff black pyright
 
-nvim --headless +PlugInstall +qall 2>/dev/null || true
+nvim --headless +'PlugInstall --sync' +qa 2>/dev/null || true
 ok "Neovim"
 
 echo ""
