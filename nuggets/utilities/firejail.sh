@@ -21,26 +21,16 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
   )
 fi
 
-# Create sandbox directories
-mkdir -p ~/.sandboxes/{firefox,thunderbird}
+# Remove stale firefox/thunderbird wrappers (no longer sandboxed)
+sudo rm -f /usr/local/bin/{firefox,thunderbird}
 
 # Install/update wrapper scripts
-sudo tee /usr/local/bin/firefox > /dev/null <<WRAP
-#!/bin/bash
-firejail --profile=/etc/firejail/firefox.profile --private=${HOME}/.sandboxes/firefox/ /usr/bin/firefox --no-remote "\$@"
-WRAP
-
-sudo tee /usr/local/bin/thunderbird > /dev/null <<WRAP
-#!/bin/bash
-GTK_IM_MODULE=xim firejail --profile=/etc/firejail/thunderbird.profile --private=${HOME}/.sandboxes/thunderbird /usr/bin/thunderbird "\$@"
-WRAP
-
 sudo tee /usr/local/bin/chrome > /dev/null <<WRAP
 #!/bin/bash
 GTK_IM_MODULE=xim firejail --profile=/etc/firejail/google-chrome.profile --private /usr/bin/google-chrome "\$@"
 WRAP
 
-sudo chmod +x /usr/local/bin/{firefox,thunderbird,chrome}
+sudo chmod +x /usr/local/bin/chrome
 
 # Remove stale wrappers
-sudo rm -f /usr/local/bin/brave.bkp /usr/local/bin/dropdox /usr/local/bin/1password.bkp
+sudo rm -f /usr/local/bin/brave.bkp /usr/local/bin/dropdox /usr/local/bin/1password.bkp /usr/local/bin/firefox.bkp /usr/local/bin/thunderbird.bkp
