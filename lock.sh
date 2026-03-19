@@ -1,4 +1,4 @@
-# https://github.com/nodejs/node/releases/latest
+# https://nodejs.org/en/download
 export NODEJS="24.14.0"
 
 # https://github.com/neovim/neovim/releases/latest
@@ -7,10 +7,10 @@ export NEOVIM="v0.11.6"
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.13"
 
-# https://github.com/BurntSushi/ripgrep/releases/latest
+# crates.io: ripgrep
 export RIPGREP="15.1.0"
 
-# https://github.com/mozilla/sccache/releases/latest
+# crates.io: sccache
 export SCCACHE="0.14.0"
 
 # https://github.com/hadolint/hadolint/releases/latest
@@ -32,36 +32,36 @@ export OBSIDIAN="1.12.4"
 export AWS_VAULT="v7.2.0"
 
 # https://github.com/getsops/sops/releases/latest
-export SOPS="v3.9.4"
+export SOPS="v3.12.2"
 
-# https://github.com/rustsec/rustsec/releases/latest
+# crates.io: cargo-audit
 export CARGO_AUDIT="0.22.1"
 
-# https://github.com/rust-fuzz/cargo-fuzz/releases/latest
+# crates.io: cargo-fuzz
 export CARGO_FUZZ="0.13.1"
 
-# https://github.com/flamegraph-rs/flamegraph/releases/latest
+# crates.io: flamegraph
 export FLAMEGRAPH="0.6.11"
 
-# https://github.com/cgag/loc/releases/latest
+# crates.io: loc
 export LOC="0.5.0"
 
-# https://github.com/shssoichiro/oxipng/releases/latest
+# crates.io: oxipng
 export OXIPNG="10.1.0"
 
-# https://github.com/XAMPPRocky/tokei/releases/latest
+# crates.io: tokei
 export TOKEI="14.0.0"
 
-# https://github.com/tree-sitter/tree-sitter/releases/latest
-export TREE_SITTER_CLI="0.26.3"
+# crates.io: tree-sitter-cli
+export TREE_SITTER_CLI="0.26.7"
 
-# https://github.com/eza-community/eza/releases/latest
+# crates.io: eza
 export EZA="0.23.4"
 
-# https://github.com/bootandy/dust/releases/latest
+# crates.io: du-dust
 export DU_DUST="1.2.4"
 
-# https://github.com/Wilfred/difftastic/releases/latest
+# crates.io: difftastic
 export DIFFTASTIC="0.68.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
