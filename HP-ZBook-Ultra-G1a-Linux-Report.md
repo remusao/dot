@@ -25,6 +25,7 @@
 15. [HP Wolf Security — Linux Compatibility and Reinstall Safety](#15-hp-wolf-security--linux-compatibility-and-reinstall-safety)
 16. [Support Channels](#16-support-channels)
 17. [All Sources](#17-all-sources)
+18. [Open Bugs & Workaround Tracking](#18-open-bugs--workaround-tracking)
 
 ---
 
@@ -243,7 +244,8 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 - Affects a subset of hardware units — [3/8 in one reported batch](https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358) (128GB/8060S config)
 - Appears hardware-level — affects both Windows and Linux. Another user [returned 2 units for BSODs/restarts](https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/HP-ZBook-Ultra-14-G1a-BSOD-Reliability/td-p/9402236/page/2)
 - Some resolved by motherboard replacement; BIOS updates help others
-- `pcie_aspm=off` and `processor.max_cstate=1` may help
+- `pcie_aspm=off` may help (addresses PCIe-related instability)
+- `processor.max_cstate=1` is **not a reliable fix** — one user reported it appeared to work for 2 days then failed. Root cause was a hardware defect fixed by **motherboard replacement**. Additionally, `processor.max_cstate` may not be honored on AMD Zen 5 (the Arch Wiki notes the parameter is not always applied and C6 state may still be entered)
 
 ### 8.5 Audio Quality
 
@@ -265,7 +267,7 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 ### 8.8 linux-firmware Compatibility (CRITICAL for ROCm)
 
-- **`linux-firmware-20251125` is BROKEN** for Strix Halo — causes ROCm instability and GPU memory faults (`GCVM_L2_PROTECTION_FAULT_STATUS`). A partial fix shipped in `20251125-2` but did not cover all GPUs. ([Framework Community](https://community.frame.work/t/fyi-linux-firmware-amdgpu-20251125-breaks-rocm-on-ai-max-395-8060s/78554), [Arch Forums](https://bbs.archlinux.org/viewtopic.php?id=310497))
+- **`linux-firmware-20251125` is BROKEN** for Strix Halo — MES firmware 0x83 causes GPU memory faults (`GCVM_L2_PROTECTION_FAULT_STATUS:0x00800932`), tracked as [ROCm #5724](https://github.com/ROCm/ROCm/issues/5724). A partial fix shipped in `20251125-2` but did not cover all GPUs. ([Framework Community](https://community.frame.work/t/fyi-linux-firmware-amdgpu-20251125-breaks-rocm-on-ai-max-395-8060s/78554), [Arch Forums](https://bbs.archlinux.org/viewtopic.php?id=310497))
 - **Use `linux-firmware 20260110` or newer** for stable ROCm on Strix Halo.
 - MES firmware `0x83` introduced a new GPU hang regression. Workaround: `amdgpu.cwsr_enable=0` ([ROCm Issue #5590](https://github.com/ROCm/ROCm/issues/5590))
 
@@ -279,7 +281,20 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 **Action:** Run `sudo fwupdmgr update` to ensure you have the latest microcode and AGESA firmware.
 
-### 8.10 No HP Recovery Partition
+**MCE Monitoring:** Use `rasdaemon` for hardware error monitoring on AMD Zen — `mcelog` is non-functional on AMD processors. Install: `sudo apt install rasdaemon`.
+
+### 8.10 Kernel Panic — Fatal Exception in Interrupt
+
+- **What it means:** "Fatal exception in interrupt" is a kernel panic triggered when an oops (NULL pointer dereference, page fault, etc.) occurs inside a hardware interrupt handler. The kernel panics because there's no user process to kill — verified behavior from `arch/x86/kernel/dumpstack.c:oops_end()`.
+- **Most likely causes on this hardware:**
+  1. **PCIe ASPM interaction** — the ASPM regression (Bug #2115969) causes GUI freezes; on some kernel versions, the underlying fault may occur in interrupt context, escalating to a panic. External displays make this more frequent ([Ubuntu Bug #2033295](https://bugs.launchpad.net/bugs/2033295)). Fix: `pcie_aspm=off`
+  2. **amdgpu driver fault** — MES firmware hangs ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)) cause GPU resets; if the reset path faults in IRQ context, it becomes a panic. MES firmware 0x83 (linux-firmware-20251125) causes GPU page faults `GCVM_L2_PROTECTION_FAULT_STATUS` ([ROCm #5724](https://github.com/ROCm/ROCm/issues/5724)). Fix: linux-firmware ≥20260110; `amdgpu.cwsr_enable=0` for compute workloads
+  3. **Hardware defect** — affects subset of units (3/8 in one batch). `processor.max_cstate=1` is not a reliable fix. May require motherboard replacement.
+- **Diagnosis:** Run the diagnostic script: `bash ~/zbook-panic-diag.sh` — checks pstore (most reliable post-panic log source), previous boot journal, GPU firmware versions, PCIe state, and MCE errors
+- **Post-mortem tools:** pstore (`/sys/fs/pstore/`, `/var/lib/systemd/pstore/`) captures kernel log tail before panic. `linux-crashdump` provides full vmcore. `rasdaemon` monitors hardware errors on AMD Zen (mcelog is non-functional on AMD).
+- **Slow reboot after panic:** Consistent with amdgpu failing to cleanly shut down the GPU (known pattern — VRAM eviction delays, SMU quiesce failures)
+
+### 8.11 No HP Recovery Partition
 
 There is no Ubuntu-specific recovery partition. The HP OEM ISO serves as the recovery mechanism. **Download and keep a copy** before making any changes.
 
@@ -412,7 +427,7 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_as
 |---|---|
 | `resume=UUID=<swap-UUID>` | If using hibernate |
 | `ttm.pages_limit=32505856` | For GPU compute with large unified memory (replaces deprecated `amdgpu.gttsize`) |
-| `amdgpu.cwsr_enable=0` | Fix ROCm GPU hangs during AI/compute workloads ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)) |
+| `amdgpu.cwsr_enable=0` | Fix ROCm GPU hangs during AI/compute workloads ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)). Only affects compute (CWSR = Compute Wave Save/Restore) — no impact on display or 3D rendering. |
 | `amdgpu.dcdebugmask=0x600` | Fix Panel Self Refresh display issues on X11 |
 
 After editing `/etc/default/grub`:
@@ -973,6 +988,7 @@ These have **zero interaction with Linux**. If you see references to these in HP
 | **[Phoronix](https://www.phoronix.com/review/hp-zbook-ultra-g1a)** | Definitive Linux review, tested 7 distros |
 | **[Level1Techs](https://forum.level1techs.com/t/the-ultimate-arch-secureboot-guide-for-ryzen-ai-max-ft-hp-g1a-128gb-8060s-monster-laptop/230652)** | 11+ pages of active discussion, Arch+SecureBoot guide |
 | **[Gentoo Wiki](https://wiki.gentoo.org/wiki/User:Owenwastaken/HP_ZBook_Ultra_G1a)** | Detailed hardware documentation |
+| **[Framework Community](https://community.frame.work/)** | Same Strix Halo chip — shared bugs and stable configuration reports |
 
 ---
 
@@ -1030,6 +1046,15 @@ These have **zero interaction with Linux**. If you see references to these in HP
 - [Random Reboots](https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358)
 - [BSOD/Reliability](https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/HP-ZBook-Ultra-14-G1a-BSOD-Reliability/td-p/9402236/page/2)
 - [S3 Sleep Missing](https://h30434.www3.hp.com/t5/Business-PCs-Workstations-and-Point-of-Sale-Systems/S3-sleep-option-missing-in-HP-ZBook-Ultra-Z1a/td-p/9420909)
+
+### Kernel Panic Diagnosis
+
+- [ROCm #5724 — MES 0x83 GPU Page Faults](https://github.com/ROCm/ROCm/issues/5724)
+- [ROCm #5590 — CWSR MES Firmware Hang](https://github.com/ROCm/ROCm/issues/5590)
+- [Ubuntu Bug #2033295 — External Display Increases amdgpu Freezes](https://bugs.launchpad.net/bugs/2033295)
+- [Framework Community — Linux + ROCm Stable Configurations (January 2026)](https://community.frame.work/t/linux-rocm-january-2026-stable-configurations-update/79876)
+- [Arch Wiki — Ryzen (processor.max_cstate limitations)](https://wiki.archlinux.org/title/Ryzen)
+- [Linux Kernel dumpstack.c — oops_end() panic behavior](https://github.com/torvalds/linux/blob/master/arch/x86/kernel/dumpstack.c)
 
 ### Bug Trackers
 
@@ -1101,3 +1126,21 @@ These have **zero interaction with Linux**. If you see references to these in HP
 - [linux-oem-24.04c](https://launchpad.net/ubuntu/noble/amd64/linux-oem-24.04c)
 - [linux-oem-6.11 Source](https://launchpad.net/ubuntu/noble/+source/linux-oem-6.11)
 - [oem-stella-sensei-meta](https://launchpad.net/ubuntu/noble/+source/oem-stella-sensei-meta)
+
+---
+
+## 18. Open Bugs & Workaround Tracking
+
+Track these upstream bugs to know when workarounds can be removed.
+
+| Workaround | Bug/Issue | Status | Remove when |
+|---|---|---|---|
+| `pcie_aspm=off` | [Ubuntu #2115969](https://bugs.launchpad.net/ubuntu/+source/linux-oem-6.14/+bug/2115969) — PCIe ASPM GUI freeze | Open | Fix Released in OEM kernel; test by removing and monitoring 48h |
+| `amd_iommu=off` | [Kernel #220702](https://bugzilla.kernel.org/show_bug.cgi?id=220702) — ISP4 blocks s2idle | Open | ISP4 driver has proper suspend PM (kernel 7.1+ or OEM backport) |
+| `amd_iommu=off` | [Ubuntu #2141198](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2141198) — MT7925 resume timeout | Open | mt7925e handles suspend/resume natively |
+| `amdgpu.cwsr_enable=0` | [ROCm #5590](https://github.com/ROCm/ROCm/issues/5590) — MES CWSR hang | Open | New MES firmware without CWSR regression |
+| linux-firmware ≥20260110 | [ROCm #5724](https://github.com/ROCm/ROCm/issues/5724) — MES 0x83 page faults | Resolved | Already fixed; don't downgrade below 20260110 |
+| WiFi suspend services | [Ubuntu #2141198](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2141198) | Open | mt7925e handles suspend/resume natively |
+| Webcam (OEM kernel) | [AMD ISP4 v9 patches](https://lkml.org/lkml/2026/3/2/278) | Under review | ISP4 merged into mainline (targeting 7.1+) |
+| Random reboots | [HP #9549358](https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358) | Hardware | BIOS update or motherboard replacement |
+| Dock disconnect >90W | [HP #9521854](https://h30434.www3.hp.com/t5/Business-PCs-Workstations-and-Point-of-Sale-Systems/Ultrabook-G1a-constantly-disconnecting-from-docks-any-docks/td-p/9521854) | Open | PD firmware or BIOS fix |
