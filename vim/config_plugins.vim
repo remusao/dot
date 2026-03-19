@@ -168,7 +168,7 @@ let g:ycm_semantic_triggers = {
      \}
 
 let s:lsp = '/home/remi/.dot/vim/lsp'
-let s:node_bin = '/home/remi/.nvm/versions/node/v' . $NODEJS . '/bin'
+let s:node_bin = '/home/remi/.nvm/versions/node/v' . $NODEJS_VERSION . '/bin'
 let g:ycm_language_server = [
   \   {
   \     'name': 'bash',

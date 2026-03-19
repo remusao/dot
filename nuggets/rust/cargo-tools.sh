@@ -27,13 +27,13 @@ cargo_ensure() {
   fi
 }
 
-cargo_ensure cargo-audit   cargo-audit   "${CARGO_AUDIT}"
-cargo_ensure cargo-fuzz    cargo-fuzz    "${CARGO_FUZZ}"
-cargo_ensure flamegraph    flamegraph    "${FLAMEGRAPH}"
-cargo_ensure loc           loc           "${LOC}"
-cargo_ensure oxipng        oxipng        "${OXIPNG}"
-cargo_ensure tokei         tokei         "${TOKEI}"
-cargo_ensure tree-sitter-cli tree-sitter "${TREE_SITTER_CLI}"
-cargo_ensure eza           eza           "${EZA}"
-cargo_ensure du-dust       dust          "${DU_DUST}"
-cargo_ensure difftastic    difft         "${DIFFTASTIC}"
+cargo_ensure cargo-audit   cargo-audit   "${CARGO_AUDIT_VERSION}"
+cargo_ensure cargo-fuzz    cargo-fuzz    "${CARGO_FUZZ_VERSION}"
+cargo_ensure flamegraph    flamegraph    "${FLAMEGRAPH_VERSION}"
+cargo_ensure loc           loc           "${LOC_VERSION}"
+cargo_ensure oxipng        oxipng        "${OXIPNG_VERSION}"
+cargo_ensure tokei         tokei         "${TOKEI_VERSION}"
+cargo_ensure tree-sitter-cli tree-sitter "${TREE_SITTER_CLI_VERSION}"
+cargo_ensure eza           eza           "${EZA_VERSION}"
+cargo_ensure du-dust       dust          "${DU_DUST_VERSION}"
+cargo_ensure difftastic    difft         "${DIFFTASTIC_VERSION}"

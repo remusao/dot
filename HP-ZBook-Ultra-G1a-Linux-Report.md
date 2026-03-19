@@ -280,8 +280,10 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 | **[CVE-2025-29943 (StackWarp)](https://www.amd.com/en/resources/product-security.html)** | Medium | Allows privileged host to execute code inside SEV-SNP VMs. Affects Zen 1-5 (including Strix Halo). | Microcode update via BIOS/fwupd |
 | **[AMD-SB-7055 (RDSEED)](https://www.amd.com/en/resources/product-security.html)** | High | RDSEED instruction on Zen 5 returns "0" incorrectly signaling success — generates potentially predictable keys. | AGESA firmware update via BIOS |
 | **[AMD-SB-6024](https://www.amd.com/en/resources/product-security/bulletin/amd-sb-6024.html)** | Multiple | Graphics driver security bulletin (February 2026), multiple CVEs. | Update Mesa/amdgpu drivers |
+| **[AMD-SB-7033 (EntrySign)](https://www.amd.com/en/resources/product-security/bulletin/amd-sb-7033.html)** | High | Allows loading unsigned microcode on Zen 1–5 (including Strix Halo) via flawed signature verification. | AGESA ≥1.2.0.3C via BIOS/fwupd |
+| **[CrackArmor (USN-8095-1)](https://ubuntu.com/security/notices/USN-8095-1)** | High | 9 AppArmor privilege escalation CVEs (March 2026). Exploitation chain via su/sudo (USN-8091-1, USN-8092-1). | Kernel update + su/sudo patches |
 
-**Action:** Run `sudo fwupdmgr update` to ensure you have the latest microcode and AGESA firmware.
+**Action:** Run `sudo fwupdmgr update` to ensure you have the latest microcode and AGESA firmware. Run `sudo apt update && sudo apt upgrade` for CrackArmor kernel patches.
 
 **MCE Monitoring:** Use `rasdaemon` for hardware error monitoring on AMD Zen — `mcelog` is non-functional on AMD processors. Install: `sudo apt install rasdaemon`.
 
@@ -306,6 +308,7 @@ There is no Ubuntu-specific recovery partition. The HP OEM ISO serves as the rec
 - **Symptoms:** Identical to 8.1 — desktop unresponsive, mouse moves, TTY accessible. More frequent when connecting/disconnecting external displays.
 - **Wayland is not affected** — Wayland compositors (Mutter, KWin) have proper PSR integration.
 - **Fix:** Add `amdgpu.dcdebugmask=0x410` to kernel parameters.
+- **⚠️ Note:** This parameter was documented here but **was not applied to the live GRUB config** as of March 2026 audit. Ensure it is present in `/etc/default/grub` and run `sudo update-grub`.
 
 **Understanding `dcdebugmask` — the `DC_DEBUG_MASK` enum** (source: [`drivers/gpu/drm/amd/include/amd_shared.h`](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/amd/include/amd_shared.h)):
 
@@ -372,8 +375,9 @@ All settings accessible via **F10** at boot:
 
 **You currently cannot have both a working webcam AND proper s2idle.** The AMD ISP4 driver does not yet support proper suspend power management. When upstreamed (targeting kernel 7.1+), proper power state management should be included. Until then, you must choose:
 
-- **Webcam ON + sleep broken** (10-15% overnight drain)
-- **Webcam OFF (in BIOS) + sleep works** (0.14-0.20W)
+- **Option A: Webcam ON + sleep broken** (10-15% overnight drain)
+- **Option B: Webcam OFF (in BIOS) + sleep works** (0.14-0.20W)
+- **Option C: Unload ISP4 before suspend** — untested but plausible: create a systemd sleep hook to `modprobe -r amd_isp4` before suspend and `modprobe amd_isp4` after resume (similar to the MT7925 WiFi workaround in 9.6). This avoids the BIOS toggle but requires the camera to reinitialize after every wake.
 
 ### 9.6 WiFi After Suspend Fix
 
@@ -543,6 +547,8 @@ Forcing the iGPU to `low` and dropping the CPU frequency floor to 1GHz reduces i
 
 **Note:** `power-profiles-daemon` does not write to `power_dpm_force_performance_level` — no conflict. When power saver is ON, GPU-heavy tasks will be slower (force it OFF with `$mod+p` before GPU workloads).
 
+**Optional kernel parameter:** `workqueue.power_efficient=Y` routes deferred kernel work to power-efficient CPU cores. Minor additional power savings; slight cache locality cost. Not included in the default GRUB line — add manually if battery life is a priority.
+
 ---
 
 ## 11. Full Disk Encryption Setup — Deep Dive
@@ -632,7 +638,18 @@ Add to `/etc/crypttab` after the `none` field:
 cryptroot UUID=<uuid> none luks,discard,no-read-workqueue,no-write-workqueue
 ```
 
-The `--sector-size 4096` at format time is the single biggest performance win ([Fedora Wiki](https://fedoraproject.org/wiki/Changes/LUKSEncryptionSectorSize)).
+The `--sector-size 4096` at format time is the single biggest performance win — up to 76% higher sequential throughput ([Fedora Wiki](https://fedoraproject.org/wiki/Changes/LUKSEncryptionSectorSize)).
+
+**Sector size caveat:** The Ubuntu 24.04 GUI installer does not allow specifying `--sector-size`. cryptsetup ≥2.4.0 auto-detects from the NVMe's reported `physical_block_size`. If the drive reports 512-byte physical sectors (as the ZBook's 4TB NVMe does), you get 512. Post-install fix: `cryptsetup reencrypt --sector-size 4096` rewrites all encrypted data (slow and risky on 4TB — do a full backup first). For a fresh install, if the NVMe supports native 4K sectors, change the LBA format first with `nvme format --lbaf=1` (check `nvme id-ns` for supported formats).
+
+**Persistent performance flags:** The `no-read-workqueue` / `no-write-workqueue` flags in `/etc/crypttab` depend on initramfs parsing. For belt-and-suspenders, store them persistently in the LUKS2 header:
+
+```bash
+sudo cryptsetup refresh --persistent --allow-discards \
+  --perf-no_read_workqueue --perf-no_write_workqueue dm_crypt-0
+```
+
+Verify with: `sudo cryptsetup luksDump /dev/nvme0n1p3 | grep -A5 flags`
 
 ### 11.5 Clevis + TPM2: Automatic Unlock (Recommended for 24.04)
 
@@ -825,7 +842,7 @@ The [Level1Techs guide](https://forum.level1techs.com/t/the-ultimate-arch-secure
 | CPU (Ryzen AI Max+ PRO 395) | Works | 6.14+ | `amd_pstate=active` recommended |
 | GPU (Radeon 8050S/8060S) | Works | 6.14+ / Mesa 25.0+ | amdgpu; ROCm improving |
 | Display (2.8K OLED 120Hz) | Works | 6.14+ | Fractional scaling at 150-175% in GNOME/Wayland. 400 nits max, DCI-P3 100%. PWM dimming present. |
-| Webcam (5MP IR, AMD ISP4) | **OEM kernel only** | OEM 6.11+ | Not mainline until ~Linux 7.1+ |
+| Webcam (5MP IR, AMD ISP4) | **OEM kernel only** | OEM 6.11+ | Not mainline until ~Linux 7.1+. Requires libcamera with ISP4 pipeline handler from `ppa:amd-team/isp` (stock Noble libcamera 0.2.0 lacks it). Not a standard V4L2 device — uses media-controller API. |
 | WiFi (MediaTek MT7925) | Works (with caveats) | 6.14.3+ | `pcie_aspm=off` may be needed; dies after suspend |
 | Bluetooth (MT7925) | Works | 6.14+ | May need BIOS toggle to reset |
 | NVMe Storage | Works | any | Standard nvme driver |
@@ -955,6 +972,8 @@ Add to i3 config: `exec --no-startup-id libinput-gestures-setup start`
 
 GNOME's `gnome-settings-daemon` handles media keys (brightness, volume, mic mute, media player), screen locking, PolicyKit authentication, and DPI scaling automatically. In i3, each must be configured explicitly.
 
+**i3 parser limitation:** i3 treats `;` and `,` as command separators ([i3/i3#2460](https://github.com/i3/i3/issues/2460)). Compound shell commands (using `;`, `if/then`, etc.) inside `exec` will break. The workaround is double-quoting with `\\"` escapes, but for anything non-trivial, use a helper script instead. The dotfiles use `~/.i3/media-keys.sh` for volume/brightness with OSD notifications via dunstify.
+
 #### Brightness
 
 The backlight device (`/sys/class/backlight/amdgpu_bl1/brightness`) is owned by `root:video` with `664` permissions. The user must be in the `video` group for `brightnessctl` to work without root.
@@ -963,11 +982,14 @@ The backlight device (`/sys/class/backlight/amdgpu_bl1/brightness`) is owned by 
 sudo usermod -aG video $USER  # log out/in after
 ```
 
-In i3 config:
+In i3 config (via `~/.i3/media-keys.sh` which adds OSD notifications):
 ```
-bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl -c backlight set +5%
-bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl -c backlight --min-value=1 set 5%-
+bindsym XF86MonBrightnessUp exec --no-startup-id ~/.i3/media-keys.sh brightness-up
+bindsym XF86MonBrightnessDown exec --no-startup-id ~/.i3/media-keys.sh brightness-down
 ```
+
+Under the hood, the script runs `brightnessctl` then shows the current level via `dunstify`:
+- `brightnessctl -c backlight set +5%` / `brightnessctl -c backlight --min-value=1 set 5%-`
 
 | Flag | Purpose |
 |---|---|
@@ -979,12 +1001,15 @@ bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl -c backlight --
 
 #### Volume & Mic Mute
 
+In i3 config (via `~/.i3/media-keys.sh` which adds OSD notifications):
 ```
-bindsym XF86AudioRaiseVolume exec --no-startup-id pamixer -i 5
-bindsym XF86AudioLowerVolume exec --no-startup-id pamixer -d 5
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
-bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+bindsym XF86AudioRaiseVolume exec --no-startup-id ~/.i3/media-keys.sh volume-up
+bindsym XF86AudioLowerVolume exec --no-startup-id ~/.i3/media-keys.sh volume-down
+bindsym XF86AudioMute exec --no-startup-id ~/.i3/media-keys.sh volume-mute
+bindsym XF86AudioMicMute exec --no-startup-id ~/.i3/media-keys.sh mic-mute
 ```
+
+Under the hood: `pamixer -i 5` / `pamixer -d 5` for volume, `pactl set-sink-mute @DEFAULT_SINK@ toggle` for mute, `pactl set-source-mute @DEFAULT_SOURCE@ toggle` for mic mute.
 
 Ubuntu 24.04 uses PipeWire with PulseAudio compatibility. Both `pamixer` and `pactl` work via `pipewire-pulse`.
 
@@ -1119,7 +1144,18 @@ sudo dpkg-reconfigure -f noninteractive keyboard-configuration
 sudo apt install playerctl xss-lock policykit-1-gnome
 sudo usermod -aG video "$USER"  # required for brightnessctl backlight access
 
-# 7. Reboot
+# 7. Webcam (AMD ISP4 — requires libcamera with ISP4 pipeline handler)
+sudo add-apt-repository -y ppa:amd-team/isp
+sudo apt-get update
+sudo apt-get install -y v4l-utils libcamera-tools libspa-0.2-libcamera \
+  gstreamer1.0-libcamera gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+  gstreamer1.0-gl xdg-desktop-portal xdg-desktop-portal-gnome
+# Verify: cam -l (should list ISP4 camera)
+# Browser config:
+#   Firefox: about:config → media.webrtc.camera.allow-pipewire = true
+#   Brave:   brave://flags/#enable-webrtc-pipewire-camera → Enabled
+
+# 8. Reboot
 sudo reboot
 ```
 
@@ -1432,6 +1468,8 @@ Track these upstream bugs to know when workarounds can be removed.
 | Webcam (OEM kernel) | [AMD ISP4 v9 patches](https://lkml.org/lkml/2026/3/2/278) | Under review | ISP4 merged into mainline (targeting 7.1+) |
 | Random reboots | [HP #9549358](https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358) | Hardware | BIOS update or motherboard replacement |
 | Dock disconnect >90W | [HP #9521854](https://h30434.www3.hp.com/t5/Business-PCs-Workstations-and-Point-of-Sale-Systems/Ultrabook-G1a-constantly-disconnecting-from-docks-any-docks/td-p/9521854) | Open | PD firmware or BIOS fix |
+| CrackArmor | [USN-8095-1](https://ubuntu.com/security/notices/USN-8095-1) — 9 AppArmor CVEs | Patching | Kernel update + USN-8091-1/8092-1 su/sudo patches |
+| EntrySign | [AMD-SB-7033](https://www.amd.com/en/resources/product-security/bulletin/amd-sb-7033.html) — unsigned microcode on Zen 1-5 | Patching | AGESA ≥1.2.0.3C via fwupd BIOS update |
 
 ---
 

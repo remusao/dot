@@ -1,0 +1,7 @@
+configuration {
+    combi-modes: "window,drun,run";
+    modes: "combi";
+    show-icons: true;
+    font: "DejaVu Sans Mono 13";
+    terminal: "alacritty";
+}

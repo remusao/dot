@@ -1,77 +1,86 @@
 # https://nodejs.org/en/download
-export NODEJS="24.14.0"
+export NODEJS_VERSION="24.14.0"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM="v0.11.6"
+export NEOVIM_VERSION="v0.11.6"
 
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.13"
 
 # crates.io: ripgrep
-export RIPGREP="15.1.0"
+export RIPGREP_VERSION="15.1.0"
 
 # crates.io: sccache
-export SCCACHE="0.14.0"
+export SCCACHE_VERSION="0.14.0"
 
 # https://github.com/hadolint/hadolint/releases/latest
-export HADOLINT="v2.14.0"
+export HADOLINT_VERSION="v2.14.0"
 
 # https://github.com/nvm-sh/nvm/releases/latest
 export NVM_VERSION="v0.40.4"
 
 # https://github.com/restic/restic/releases/latest
-export RESTIC="0.18.1"
+export RESTIC_VERSION="0.18.1"
 
 # https://github.com/netblue30/firejail/releases/latest
-export FIREJAIL="0.9.80"
+export FIREJAIL_VERSION="0.9.80"
 
 # https://github.com/obsidianmd/obsidian-releases/releases/latest
-export OBSIDIAN="1.12.4"
+export OBSIDIAN_VERSION="1.12.4"
 
 # https://github.com/99designs/aws-vault/releases/latest
-export AWS_VAULT="v7.2.0"
+export AWS_VAULT_VERSION="v7.2.0"
 
 # https://github.com/getsops/sops/releases/latest
-export SOPS="v3.12.2"
+export SOPS_VERSION="v3.12.2"
 
 # crates.io: cargo-audit
-export CARGO_AUDIT="0.22.1"
+export CARGO_AUDIT_VERSION="0.22.1"
 
 # crates.io: cargo-fuzz
-export CARGO_FUZZ="0.13.1"
+export CARGO_FUZZ_VERSION="0.13.1"
 
 # crates.io: flamegraph
-export FLAMEGRAPH="0.6.11"
+export FLAMEGRAPH_VERSION="0.6.11"
 
 # crates.io: loc
-export LOC="0.5.0"
+export LOC_VERSION="0.5.0"
 
 # crates.io: oxipng
-export OXIPNG="10.1.0"
+export OXIPNG_VERSION="10.1.0"
 
 # crates.io: tokei
-export TOKEI="14.0.0"
+export TOKEI_VERSION="14.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI="0.26.7"
+export TREE_SITTER_CLI_VERSION="0.26.7"
 
 # crates.io: eza
-export EZA="0.23.4"
+export EZA_VERSION="0.23.4"
 
 # crates.io: du-dust
-export DU_DUST="1.2.4"
+export DU_DUST_VERSION="1.2.4"
 
 # crates.io: difftastic
-export DIFFTASTIC="0.68.0"
+export DIFFTASTIC_VERSION="0.68.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT="0.60.0"
+export LAZYGIT_VERSION="0.60.0"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN="2026.03.16.00"
+export WATCHMAN_VERSION="2026.03.16.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
-export ALACRITTY="0.16.1"
+export ALACRITTY_VERSION="0.16.1"
 
 # https://github.com/bulletmark/libinput-gestures/tags
-export LIBINPUT_GESTURES="2.81"
+export LIBINPUT_GESTURES_VERSION="2.81"
+
+# crates.io: i3status-rs
+export I3STATUS_RUST_VERSION="0.36.0"
+
+# https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
+export FONT_AWESOME_VERSION="6.7.2"
+
+# https://github.com/erebe/greenclip/releases/latest
+export GREENCLIP_VERSION="4.2"
