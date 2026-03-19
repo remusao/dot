@@ -34,5 +34,8 @@ fi
 # Docker tools
 . ./nuggets/docker/hadolint.sh
 
+# AWS
+. ./nuggets/utilities/aws-vault.sh
+
 # Backup
 . ./nuggets/utilities/restic.sh
