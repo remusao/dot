@@ -7,7 +7,7 @@ theme = "plain"
 [theme.overrides]
 idle_bg = "#222222"
 idle_fg = "#c0c5ce"
-separator = " | "
+separator = "| "
 separator_bg = "#222222"
 separator_fg = "#333333"
 info_bg = "#285577"
@@ -48,6 +48,8 @@ interval = 5
 [[block]]
 block = "sound"
 format = " $icon {$volume|}"
+[block.icons_overrides]
+volume_muted = ""
 [[block.click]]
 button = "left"
 cmd = "pavucontrol"
@@ -57,7 +59,7 @@ cmd = "pavucontrol"
 block = "backlight"
 format = " $icon $brightness"
 [block.icons_overrides]
-backlight = "\uf185"
+backlight = [""]
 
 # Battery
 [[block]]
