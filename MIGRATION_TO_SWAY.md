@@ -123,12 +123,12 @@ input type:keyboard {
 
 # Gestures (replaces libinput-gestures)
 # Syntax: bindgesture <type>:<fingers>:<direction> <command>
-bindgesture swipe:3:left workspace next
-bindgesture swipe:3:right workspace prev
+bindgesture swipe:3:left workspace prev
+bindgesture swipe:3:right workspace next
 bindgesture swipe:3:up fullscreen toggle
 bindgesture swipe:3:down floating toggle
-bindgesture swipe:4:left move container to workspace next, workspace next
-bindgesture swipe:4:right move container to workspace prev, workspace prev
+bindgesture swipe:4:left move container to workspace prev, workspace prev
+bindgesture swipe:4:right move container to workspace next, workspace next
 # Pinch-to-zoom: Firefox/Chromium handle this natively on Wayland — no need for wtype simulation.
 
 # Output (replaces xrandr + feh)

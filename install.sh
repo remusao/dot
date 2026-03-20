@@ -382,18 +382,18 @@ XORG
 swipe:
   3:
     left:
-      command: 'i3-msg workspace next'
-    right:
       command: 'i3-msg workspace prev'
+    right:
+      command: 'i3-msg workspace next'
     up:
       command: 'i3-msg fullscreen enable'
     down:
       command: 'i3-msg fullscreen disable'
   4:
     left:
-      command: 'i3-msg move container to workspace next, workspace next'
-    right:
       command: 'i3-msg move container to workspace prev, workspace prev'
+    right:
+      command: 'i3-msg move container to workspace next, workspace next'
 
 pinch:
   in:
