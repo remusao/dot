@@ -850,7 +850,7 @@ The [Level1Techs guide](https://forum.level1techs.com/t/the-ultimate-arch-secure
 | CPU (Ryzen AI Max+ PRO 395) | Works | 6.14+ | `amd_pstate=active` recommended |
 | GPU (Radeon 8050S/8060S) | Works | 6.14+ / Mesa 25.0+ | amdgpu; ROCm improving |
 | Display (2.8K OLED 120Hz) | Works | 6.14+ | Fractional scaling at 150-175% in GNOME/Wayland. 400 nits max, DCI-P3 100%. PWM dimming present. |
-| Webcam (5MP IR, AMD ISP4) | **OEM kernel only** | OEM 6.11+ | Not mainline until ~Linux 7.1+. Requires libcamera with ISP4 pipeline handler from `ppa:amd-team/isp` (stock Noble libcamera 0.2.0 lacks it). Not a standard V4L2 device — uses media-controller API. |
+| Webcam (5MP IR, AMD ISP4) | **OEM kernel only** | OEM 6.11+ | Not mainline until ~Linux 7.1+. Requires `libcamera` via `ppa:amd-team/isp` + `libspa-0.2-libcamera` — AMD ISP uses media-controller pipeline, not raw V4L2. Per-device WirePlumber routing needed: ISP→libcamera, USB cameras→V4L2 (PipeWire 1.0.5 V4L2 probe crashes on ISP; libcamera duplicates USB cameras). **Known issue:** PipeWire's SPA plugin links against libcamera 0.2 but the ISP4 handler only matches kernel 6.17's driver in libcamera 0.3 — built-in camera detected by `cam -l` but not visible in PipeWire until the SPA plugin is rebuilt against 0.3. |
 | WiFi (MediaTek MT7925) | Works (with caveats) | 6.14.3+ | `pcie_aspm=off` may be needed; dies after suspend |
 | Bluetooth (MT7925) | Works | 6.14+ | May need BIOS toggle to reset |
 | NVMe Storage | Works | any | Standard nvme driver |
@@ -1152,14 +1152,12 @@ sudo dpkg-reconfigure -f noninteractive keyboard-configuration
 sudo apt install playerctl xss-lock policykit-1-gnome
 sudo usermod -aG video "$USER"  # required for brightnessctl backlight access
 
-# 7. Webcam (AMD ISP4 — requires libcamera with ISP4 pipeline handler)
+# 7. Webcam (AMD ISP4 — requires libcamera, not raw V4L2)
 sudo add-apt-repository -y ppa:amd-team/isp
-sudo apt-get update
-sudo apt-get install -y v4l-utils libcamera-tools libspa-0.2-libcamera \
-  gstreamer1.0-libcamera gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
-  gstreamer1.0-gl xdg-desktop-portal xdg-desktop-portal-gnome
-# Verify: cam -l (should list ISP4 camera)
-# Browser config:
+sudo apt-get install -y libspa-0.2-libcamera libcamera-tools
+# Verify: cam -l (should show AMD ISP device)
+# Per-device WirePlumber routing handled by install.sh (51-camera-routing.lua)
+# Browser config (PipeWire camera portal):
 #   Firefox: about:config → media.webrtc.camera.allow-pipewire = true
 #   Brave:   brave://flags/#enable-webrtc-pipewire-camera → Enabled
 
