@@ -64,6 +64,7 @@ backlight = [""]
 # Battery
 [[block]]
 block = "battery"
+driver = "upower"
 format = " $icon $percentage {$time_remaining|}"
 full_format = " $icon $percentage"
 charging_format = " $icon $percentage {$time_remaining|}"
