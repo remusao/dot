@@ -19,6 +19,20 @@ warn()  { echo "${YELLOW}${BOLD}  ⚠${RESET} $*"; }
 err()   { echo "${RED}${BOLD}  ✗${RESET} $*" >&2; }
 skip()  { echo "  - $*"; }
 
+# Load read-only GitHub token from keyring (overrides gh auth).
+if command -v secret-tool &>/dev/null; then
+  _gh_token=$(secret-tool lookup service github attribute bump 2>/dev/null) || true
+  if [[ -n "${_gh_token:-}" ]]; then
+    export GH_TOKEN="$_gh_token"
+  else
+    warn "No GitHub token in keyring — using unauthenticated API (60 req/hr)"
+    warn "To set up: create a Fine-Grained PAT at https://github.com/settings/personal-access-tokens/new"
+    warn "  → 'Public Repositories (read-only)', no extra permissions"
+    warn "  → Then run: echo 'YOUR_TOKEN' | secret-tool store --label 'bump.sh GitHub token' service github attribute bump"
+  fi
+  unset _gh_token
+fi
+
 # Query GitHub API — uses `gh` if available (authenticated, 5000 req/hr),
 # falls back to unauthenticated curl (60 req/hr).
 gh_api() {
