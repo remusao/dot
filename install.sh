@@ -494,11 +494,12 @@ table.insert(alsa_monitor.rules, {
 WPCONF
     ok "Mic priorities (headphone jack > USB mic > built-in)"
 
-    # Kernel parameters: amd_pstate=active pcie_aspm=off amd_iommu=off
+    # Kernel parameters: amd_pstate pcie_aspm amd_iommu dcdebugmask + unified memory (TTM)
     # Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525
+    # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
     info "Configuring kernel parameters (ZBook Ultra G1a)..."
     GRUB_CHANGED=0
-    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410"; do
+    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856"; do
         param_name="${kp%%=*}"
         normalized="${param_name//-/_}"
         if ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${normalized}[= \"]" /etc/default/grub 2>/dev/null &&
@@ -511,7 +512,7 @@ WPCONF
     if [[ "$GRUB_CHANGED" == "1" ]]; then
         sudo update-grub
     fi
-    ok "Kernel parameters (amd_pstate=active pcie_aspm=off amd_iommu=off amdgpu.dcdebugmask=0x410)"
+    ok "Kernel parameters (amd_pstate pcie_aspm amd_iommu dcdebugmask ttm.pages_limit ttm.page_pool_size)"
 
     # WiFi suspend/resume: MT7925 driver timeout -110 after suspend (Ubuntu #2141198)
     info "Installing WiFi suspend services (MT7925)..."

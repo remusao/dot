@@ -367,6 +367,50 @@ check_kernel_params() {
         ok "GRUB defaults consistent with running cmdline — parameters will persist across reboots"
     fi
 
+    # TTM unified memory (benefits all GPU workloads, not just ROCm)
+    # ttm.pages_limit + ttm.page_pool_size (only needed on kernel < 6.18.4)
+    local kver_major kver_minor kver_patch
+    kver_major=$(uname -r | cut -d. -f1)
+    kver_minor=$(uname -r | cut -d. -f2)
+    kver_patch=$(uname -r | cut -d. -f3 | cut -d- -f1)
+    local needs_ttm=false
+    if [[ "$kver_major" =~ ^[0-9]+$ ]] && [[ "$kver_minor" =~ ^[0-9]+$ ]] && [[ "$kver_patch" =~ ^[0-9]+$ ]]; then
+        if [[ "$kver_major" -lt 6 ]]; then
+            needs_ttm=true
+        elif [[ "$kver_major" -eq 6 && "$kver_minor" -lt 18 ]]; then
+            needs_ttm=true
+        elif [[ "$kver_major" -eq 6 && "$kver_minor" -eq 18 && "$kver_patch" -lt 4 ]]; then
+            needs_ttm=true
+        fi
+    fi
+
+    if $needs_ttm; then
+        local ttm_val
+        ttm_val=$(kparam_value "ttm.pages_limit") || ttm_val=""
+        if [[ -n "$ttm_val" ]]; then
+            ok "ttm.pages_limit=$ttm_val — GPU can access full unified memory. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html"
+            local pool_val
+            pool_val=$(kparam_value "ttm.page_pool_size") || pool_val=""
+            if [[ "$pool_val" == "$ttm_val" ]]; then
+                ok "ttm.page_pool_size=$pool_val — matches pages_limit. Ref: https://github.com/ROCm/ROCm/issues/5562"
+            elif [[ -n "$pool_val" ]]; then
+                warn "ttm.page_pool_size=$pool_val differs from pages_limit=$ttm_val" "should match pages_limit for optimal page allocation speed. Ref: https://github.com/ROCm/ROCm/issues/5562"
+            else
+                warn "ttm.page_pool_size not set" "should match pages_limit ($ttm_val) for optimal page allocation speed. Ref: https://github.com/ROCm/ROCm/issues/5562"
+            fi
+        else
+            local ram_gb_total
+            ram_gb_total=$(awk '/MemTotal/{printf "%d", $2/1048576}' /proc/meminfo 2>/dev/null) || ram_gb_total=0
+            warn "ttm.pages_limit not set" "on kernel <6.18.4, GPU sees only ~62.5GB of ${ram_gb_total}GB unified memory. Calculate: (desired_GiB * 1024 * 256). For ${ram_gb_total}GB system, use ~$(( (ram_gb_total - 4) * 1024 * 256 )). Set ttm.page_pool_size to the same value. If using amdgpu-dkms, the module is named amdttm — use amdttm.pages_limit instead (check: lsmod | grep -E '^(ttm|amdttm)'). Note: amdgpu.gttsize is deprecated since kernel 6.15. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html https://github.com/ROCm/ROCm/issues/5562"
+        fi
+    else
+        info "Kernel $(uname -r) >= 6.18.4: unified memory auto-managed. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html"
+    fi
+    # Check for deprecated amdgpu.gttsize
+    if kparam_present "amdgpu.gttsize"; then
+        warn "amdgpu.gttsize is deprecated (since kernel 6.15)" "use ttm.pages_limit instead. Kernel prints: 'Configuring gttsize via module parameter is deprecated'. Ref: https://www.mail-archive.com/amd-gfx@lists.freedesktop.org/msg117333.html"
+    fi
+
     # ROCm-conditional checks (GPU compute / AI workloads)
     local has_rocm=false
     if cmd_exists rocminfo || [[ -d /opt/rocm ]]; then
@@ -382,42 +426,8 @@ check_kernel_params() {
         else
             warn "amdgpu.cwsr_enable=0 not set" "MES firmware CWSR (Compute Wave Save/Restore) hang regression. Only affects ROCm compute workloads — no impact on display or 3D rendering. Fix: sudo sed -i -E 's/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 amdgpu.cwsr_enable=0\"/' /etc/default/grub && sudo update-grub. Ref: https://github.com/ROCm/ROCm/issues/5590"
         fi
-
-        # ttm.pages_limit (only needed on kernel < 6.18.4)
-        local kver_major kver_minor kver_patch
-        kver_major=$(uname -r | cut -d. -f1)
-        kver_minor=$(uname -r | cut -d. -f2)
-        kver_patch=$(uname -r | cut -d. -f3 | cut -d- -f1)
-        local needs_ttm=false
-        if [[ "$kver_major" =~ ^[0-9]+$ ]] && [[ "$kver_minor" =~ ^[0-9]+$ ]] && [[ "$kver_patch" =~ ^[0-9]+$ ]]; then
-            if [[ "$kver_major" -lt 6 ]]; then
-                needs_ttm=true
-            elif [[ "$kver_major" -eq 6 && "$kver_minor" -lt 18 ]]; then
-                needs_ttm=true
-            elif [[ "$kver_major" -eq 6 && "$kver_minor" -eq 18 && "$kver_patch" -lt 4 ]]; then
-                needs_ttm=true
-            fi
-        fi
-
-        if $needs_ttm; then
-            local ttm_val
-            ttm_val=$(kparam_value "ttm.pages_limit") || ttm_val=""
-            if [[ -n "$ttm_val" ]]; then
-                ok "ttm.pages_limit=$ttm_val — ROCm can access full unified memory. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html"
-            else
-                local ram_gb_total
-                ram_gb_total=$(awk '/MemTotal/{printf "%d", $2/1048576}' /proc/meminfo 2>/dev/null) || ram_gb_total=0
-                warn "ttm.pages_limit not set" "on kernel <6.18.4, ROCm sees only ~15.5GB of ${ram_gb_total}GB unified memory. Calculate: (desired_GiB * 1024 * 256). For ${ram_gb_total}GB system, use ~$(( (ram_gb_total - 4) * 1024 * 256 )). If using amdgpu-dkms, the module is named amdttm — use amdttm.pages_limit instead (check: lsmod | grep -E '^(ttm|amdttm)'). Note: amdgpu.gttsize is deprecated. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html https://github.com/ROCm/ROCm/issues/5562"
-            fi
-        else
-            info "Kernel $(uname -r) >= 6.18.4: unified memory auto-managed. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html"
-        fi
-        # Check for deprecated amdgpu.gttsize
-        if kparam_present "amdgpu.gttsize"; then
-            warn "amdgpu.gttsize is deprecated" "use ttm.pages_limit instead. Kernel prints: 'Configuring gttsize via module parameter is deprecated'. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html"
-        fi
     else
-        skip "ROCm kernel parameter checks" "ROCm not installed (/opt/rocm not found, rocminfo not in PATH)"
+        skip "ROCm kernel parameter checks (cwsr_enable)" "ROCm not installed (/opt/rocm not found, rocminfo not in PATH)"
     fi
 
     # PSR + Panel Replay check (X11 only — causes GUI freezes, especially with external displays)

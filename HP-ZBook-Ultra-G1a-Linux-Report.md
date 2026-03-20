@@ -263,7 +263,7 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 - **Kernel driver (`amdxdna`)** exists since Linux 6.14 ([AMD NPU kernel docs](https://docs.kernel.org/accel/amdxdna/amdnpu.html))
 - **Userspace stack is NOT ready** — the XRT runtime, ONNX Runtime with Vitis AI execution provider, and IREE+MLIR-AIE compiler toolchain are fragmented, not in distro repos, and require building from source
-- **The GPU (Radeon 8060S) is the practical AI accelerator on Linux** — up to 96GB unified memory via ROCm
+- **The GPU (Radeon 8060S) is the practical AI accelerator on Linux** — up to 124GB unified memory via ROCm (set `ttm.pages_limit=32505856 ttm.page_pool_size=32505856` kernel params; see §9.9)
 - **NPU regression:** `amdxdna` does NOT work on kernels 6.18–6.18.7 due to an IOMMU/SVA regression ([Phoronix](https://www.phoronix.com/news/Linux-Dropping-AMD-NPU2))
 - **Bottom line:** The NPU's 50 TOPS is essentially unusable on Linux today. Use ROCm on the iGPU instead.
 
@@ -448,7 +448,7 @@ HibernateDelaySec=30min
 ### 9.9 Complete Recommended Kernel Parameters
 
 ```
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"
 ```
 
 | Parameter | Purpose |
@@ -457,13 +457,14 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_as
 | `amd_iommu=off` | Fixes suspend (security tradeoff — see 9.4; also disables NPU) |
 | `pcie_aspm=off` | Fixes GUI freezes (may lose Ethernet) |
 | `amdgpu.dcdebugmask=0x410` | Fixes PSR/Panel Replay display freezes on X11 (see 8.12). Trade-off: higher idle power |
+| `ttm.pages_limit=32505856` | Raises GPU unified memory ceiling from default ~62.5 GiB to 124 GiB (32505856 × 4 KiB). Allocation is fully dynamic — GPU only pins what it needs. Replaces deprecated `amdgpu.gttsize` ([patch](https://www.mail-archive.com/amd-gfx@lists.freedesktop.org/msg117333.html)). Not needed on kernel ≥ 6.18.4. Ref: [ROCm docs](https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html) |
+| `ttm.page_pool_size=32505856` | TTM page cache size — should match `pages_limit` for optimal allocation speed. Ref: [ROCm #5562](https://github.com/ROCm/ROCm/issues/5562), [AMD MI300A docs](https://instinct.docs.amd.com/projects/amdgpu-docs/en/latest/system-optimization/mi300a.html) |
 
 **Additional parameters for specific use cases:**
 
 | Parameter | When to add |
 |---|---|
 | `resume=UUID=<swap-UUID>` | If using hibernate |
-| `ttm.pages_limit=32505856` | For GPU compute with large unified memory (replaces deprecated `amdgpu.gttsize`) |
 | `amdgpu.cwsr_enable=0` | Fix ROCm GPU hangs during AI/compute workloads ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)). Only affects compute (CWSR = Compute Wave Save/Restore) — no impact on display or 3D rendering. |
 
 After editing `/etc/default/grub`:
@@ -1114,7 +1115,7 @@ Verify with `xrandr --query`. Update workspace assignments in i3 config accordin
 sudo apt install linux-oem-24.04
 
 # 2. Apply kernel parameters
-sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410"/' /etc/default/grub
+sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"/' /etc/default/grub
 sudo update-grub
 
 # 3. Update firmware
