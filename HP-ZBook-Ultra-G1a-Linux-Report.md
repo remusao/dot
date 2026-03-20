@@ -526,17 +526,22 @@ powerprofilesctl set balanced    # balanced / performance / power-saver
 
 **Note:** [Framework recommends PPD over TLP for AMD systems](https://community.frame.work/t/tracking-ppd-v-tlp-for-amd-ryzen-7040/39423). TLP and auto-cpufreq are alternatives but may conflict with PPD — **do not run more than one simultaneously**. PPD integrates with the ZBook's ACPI `platform_profile` (balanced/performance/low-power), which [Phoronix benchmarked](https://www.phoronix.com/review/amd-strix-halo-platform-profile) showing the low-power profile reduces average power to ~32W (67% of default) while retaining 76% of performance.
 
+**PPD version-specific behavior:**
+- **PPD 0.21** (Ubuntu 24.04): Controls EPP (`energy_performance_preference`) + `platform_profile`. Does **not** write to `scaling_min_freq` or `power_dpm_force_performance_level`. [Within the balanced profile, adjusts EPP based on AC/battery](https://www.phoronix.com/news/Power-Profiles-Daemon-0.21): AC → `balance_performance`, battery → `balance_power`. Does **not** auto-switch profiles (balanced ↔ power-saver).
+- **PPD 0.22+** (Ubuntu 24.10+): Also [controls GPU DPM](https://www.phoronix.com/news/Power-Profiles-Daemon-0.22) — sets `power_dpm_force_performance_level=low` in power-saver. Overlaps with cool-ryzen but targets the same state — no functional conflict.
+
 ### 10.5 Keyboard Backlight
 
 [geohot measured the keyboard backlight draws **~2W**](https://geohot.github.io/blog/jekyll/update/2025/11/28/replacing-my-macbook.html) — a significant portion of the ~7W lid-open idle power. Disable or reduce it when on battery for meaningful power savings.
 
 ### 10.6 iGPU Low-Power Mode
 
-Forcing the iGPU to `low` and dropping the CPU frequency floor to 1GHz reduces idle PPT from 7-11W to 3-4W.
+Forcing the iGPU to `low`, dropping the CPU frequency floor, and switching PPD to power-saver reduces idle PPT from 7-11W to 3-4W.
 
 **What it does:**
 - `/sys/class/drm/card*/device/power_dpm_force_performance_level` → `low` (from `auto`)
-- `/sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq` → `1000000` (from `2000000`)
+- `/sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq` → `cpuinfo_min_freq` (625 MHz on this hardware; from `lowest_nonlinear_freq` 2.0 GHz default). Writing below `lowest_nonlinear_freq` is explicitly allowed — [kernel 6.13+ only changed the default, not the writable range](https://forum.manjaro.org/t/udev-rule-to-lower-amd-cpu-scaling-min-freq-value-for-kernel-6-13-up/176276).
+- `powerprofilesctl set power-saver` → EPP=`power`, `platform_profile`=`low-power`
 
 **GNOME:** Install the [Cool My Ryzen AI Max](https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max) extension.
 
@@ -545,9 +550,22 @@ Forcing the iGPU to `low` and dropping the CPU frequency floor to 1GHz reduces i
 - **Automatic:** A [udev rule](udev/85-cool-ryzen-ac.rules) enables power saver on battery and disables it on AC
 - **Boot:** i3 config checks AC state at login and applies accordingly
 
-**Note:** `power-profiles-daemon` does not write to `power_dpm_force_performance_level` — no conflict. When power saver is ON, GPU-heavy tasks will be slower (force it OFF with `$mod+p` before GPU workloads).
+**Note:** PPD ≤0.21 does not write to `power_dpm_force_performance_level` — no conflict. PPD 0.22+ sets DPM to `low` in power-saver (same target state — no functional conflict). When power saver is ON, GPU-heavy tasks will be slower (force it OFF with `$mod+p` before GPU workloads).
 
-**Optional kernel parameter:** `workqueue.power_efficient=Y` routes deferred kernel work to power-efficient CPU cores. Minor additional power savings; slight cache locality cost. Not included in the default GRUB line — add manually if battery life is a priority.
+**Optional kernel parameter:** `workqueue.power_efficient=Y` routes deferred kernel work to power-efficient CPU cores. [Benchmarked at ~15% savings on ARM big.LITTLE](https://lwn.net/Articles/731052/), but benefit on x86 AMD is uncertain. Known trade-off: increased cache misses and potentially higher disk I/O. Not included in the default GRUB line — add manually if battery life is a priority.
+
+### 10.7 Battery Cost of X11 Workarounds
+
+Two kernel workarounds required for X11 stability carry a measurable battery cost:
+
+| Workaround | Est. idle cost | Evidence | Unlock path |
+|---|---|---|---|
+| `pcie_aspm=off` | ~1.5-3W | [Linux PCI ML: ~2W](https://www.spinics.net/lists/linux-pci/msg71787.html); [ArchWiki: ~2-3W](https://wiki.archlinux.org/title/Power_management) | Wayland (Sway) or upstream fix ([Bug #2115969](https://bugs.launchpad.net/ubuntu/+source/linux-oem-6.14/+bug/2115969) persists through 6.17.4) |
+| `amdgpu.dcdebugmask=0x410` | ~0.5-1.5W | Qualitative: ["significantly increases power draw"](https://discuss.cachyos.org/t/tutorial-mitigate-gfx-crash-lockup-apparent-freeze-with-amdgpu/10842) | Wayland; or try `0x400` only (keep PSR v1, disable Panel Replay) |
+
+**Combined:** ~2-4.5W of idle power could be recovered by migrating to Wayland (Sway). These wattage estimates are from other AMD laptops, not measured on this specific hardware.
+
+**Keyboard backlight:** [~2W](https://geohot.github.io/blog/jekyll/update/2025/11/28/replacing-my-macbook.html), firmware-only (F5 key), no sysfs LED exposed — cannot be automated.
 
 ---
 

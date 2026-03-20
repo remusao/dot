@@ -91,7 +91,7 @@ bindsym XF86AudioMicMute exec --no-startup-id ~/.i3/media-keys.sh mic-mute
 bindsym XF86MonBrightnessUp exec --no-startup-id ~/.i3/media-keys.sh brightness-up
 bindsym XF86MonBrightnessDown exec --no-startup-id ~/.i3/media-keys.sh brightness-down
 
-# Power saver toggle (GPU DPM low + CPU min 1GHz — drops idle from 7-11W to 3-4W)
+# Power saver toggle (GPU DPM low + CPU floor + PPD power-saver — drops idle from 7-11W to 3-4W)
 bindsym $mod+p exec --no-startup-id /home/remi/.dot/nuggets/utilities/cool-ryzen.sh
 
 # Media player controls (playerctl works with any MPRIS player)

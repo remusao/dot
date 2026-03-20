@@ -1,12 +1,18 @@
 #!/bin/sh
-# cool-ryzen-apply — Toggle iGPU low-power mode + CPU min frequency
+# cool-ryzen-apply — Toggle iGPU low-power mode + CPU min frequency + power profile
 # Runs as root. Called by udev (AC plug/unplug) and i3 toggle (via sudo).
 # Usage: cool-ryzen-apply on|off [--notify]
 set -eu
 
+POLICY=/sys/devices/system/cpu/cpufreq/policy0
+
 case "${1:-}" in
-    on)  dpm=low;  min_khz=1000000; label="ON"  ;;
-    off) dpm=auto; min_khz=2000000; label="OFF" ;;
+    on)  dpm=low;  ppd=power-saver
+         min_khz=$(cat "$POLICY/cpuinfo_min_freq" 2>/dev/null) || min_khz=1000000
+         label="ON"  ;;
+    off) dpm=auto; ppd=balanced
+         min_khz=$(cat "$POLICY/amd_pstate_lowest_nonlinear_freq" 2>/dev/null) || min_khz=2000000
+         label="OFF" ;;
     *)   echo "Usage: cool-ryzen-apply on|off [--notify]" >&2; exit 1 ;;
 esac
 
@@ -19,6 +25,11 @@ done
 for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq; do
     [ -w "$f" ] && echo "$min_khz" > "$f" || true
 done
+
+# Power profile (PPD: EPP + platform_profile; no conflict with DPM on PPD ≤0.21)
+if command -v powerprofilesctl >/dev/null 2>&1; then
+    timeout 3 powerprofilesctl set "$ppd" 2>/dev/null || true
+fi
 
 # Optional OSD notification
 if [ "${2:-}" = "--notify" ]; then

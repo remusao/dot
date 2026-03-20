@@ -318,7 +318,7 @@ check_kernel_params() {
     local aspm_val
     aspm_val=$(kparam_value "pcie_aspm") || aspm_val=""
     if [[ "$aspm_val" == "off" ]]; then
-        ok "pcie_aspm=off — prevents PCIe ASPM GUI freeze regression. Ref: https://bugs.launchpad.net/ubuntu/+source/linux-oem-6.14/+bug/2115969"
+        ok "pcie_aspm=off — prevents PCIe ASPM GUI freeze regression (est. ~1.5-3W battery cost; Wayland would remove this need). Ref: https://bugs.launchpad.net/ubuntu/+source/linux-oem-6.14/+bug/2115969"
         # Check for known side effect: Intel Ethernet (IGC) loss
         local igc_pci
         igc_pci=$(lspci -nn 2>/dev/null | grep "8086:5502") || igc_pci=""
@@ -426,7 +426,7 @@ check_kernel_params() {
         local dc_val
         dc_val=$(kparam_value "amdgpu.dcdebugmask") || dc_val=""
         if [[ -n "$dc_val" ]]; then
-            ok "amdgpu.dcdebugmask=$dc_val — PSR/Panel Replay control active for X11 stability"
+            ok "amdgpu.dcdebugmask=$dc_val — PSR/Panel Replay disabled for X11 stability (est. ~0.5-1.5W battery cost; Wayland would remove this need)"
         else
             warn "amdgpu.dcdebugmask not set (X11 session)" \
                 "PSR + Panel Replay enabled — known cause of GUI freezes on X11 with external displays (desktop unresponsive, mouse moves). Try amdgpu.dcdebugmask=0x10 first (DC_DISABLE_PSR — disables PSR v1+SU, keeps Panel Replay, lower battery impact). If freezes persist, escalate to 0x410 (also disables Panel Replay). Trade-off: ~0.5W higher idle (Intel measurement; no AMD data) plus IPS cannot activate (depends on PSR). Ref: https://wiki.archlinux.org/title/AMDGPU"
@@ -479,6 +479,13 @@ check_power() {
         fi
     fi
 
+    # EPP (Energy Performance Preference) — set by PPD per profile
+    local epp
+    epp=$(cat /sys/devices/system/cpu/cpufreq/policy0/energy_performance_preference 2>/dev/null) || epp=""
+    if [[ -n "$epp" ]]; then
+        info "EPP: $epp — PPD 0.21 sets this per profile (power-saver→power, balanced→balance_performance on AC / balance_power on battery). Ref: https://www.phoronix.com/news/Power-Profiles-Daemon-0.21"
+    fi
+
     # iGPU low-power mode (cool-ryzen-apply, GNOME extension, or manual)
     local gpu_perf_level=""
     gpu_perf_level=$(cat /sys/class/drm/card0/device/power_dpm_force_performance_level 2>/dev/null ||
@@ -505,6 +512,15 @@ check_power() {
         if ! $found_tooling; then
             info "iGPU power: $gpu_perf_level — to drop idle from 7-11W to 3-4W, run install.sh (deploys cool-ryzen-apply + udev auto-switch) or: echo low | sudo tee /sys/class/drm/card*/device/power_dpm_force_performance_level. Ref: https://github.com/AnnoyingTechnology/gnome-extension-cool-my-ryzen-ai-max"
         fi
+    fi
+
+    # CPU frequency floor
+    local hw_min cur_min nl_freq
+    hw_min=$(cat /sys/devices/system/cpu/cpufreq/policy0/cpuinfo_min_freq 2>/dev/null) || hw_min=""
+    cur_min=$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq 2>/dev/null) || cur_min=""
+    nl_freq=$(cat /sys/devices/system/cpu/cpufreq/policy0/amd_pstate_lowest_nonlinear_freq 2>/dev/null) || nl_freq=""
+    if [[ -n "$hw_min" && -n "$cur_min" ]]; then
+        info "CPU freq floor: ${cur_min}kHz (hardware min: ${hw_min}kHz, efficiency sweet spot: ${nl_freq}kHz)"
     fi
 }
 
