@@ -45,6 +45,12 @@ if has('nvim-0.10')
   hi! link Changed              Statement
   hi! link Removed              Constant
 
+  " Search: jellybeans default is magenta fg (#f0a0c0) on dark brown (#302028).
+  " Override to subtle grey bg, preserving text colors.
+  hi Search                     guibg=#404040 guifg=NONE gui=underline
+  hi CurSearch                  guibg=#556779 guifg=NONE gui=underline
+  hi! link IncSearch            CurSearch
+
   " Diagnostics (jellybeans defines none; ALE uses these via vim.diagnostic).
   hi DiagnosticError            guifg=#d44141
   hi DiagnosticWarn             guifg=#ffb964

@@ -221,7 +221,7 @@ ALL_PKGS=(
   zsh-syntax-highlighting keychain shellcheck
   xclip
   jq sd hexyl entr just
-  ffmpeg mitmproxy pandoc socat pv pigz 7zip ncdu
+  ffmpeg v4l-utils mitmproxy pandoc socat pv pigz 7zip ncdu
   zoxide duf btop nmap wireguard
   protobuf-compiler libsnappy-dev libboost-all-dev libzstd-dev
   libssl-dev zlib1g-dev libbz2-dev libreadline-dev
@@ -421,17 +421,78 @@ GESTURES
     rm -f /tmp/cool-ryzen-sudoers
     ok "Power saver toggle (cool-ryzen)"
 
-    # Webcam: AMD ISP4 requires libcamera with ISP4 pipeline handler (not in stock Noble)
+    # Webcam: AMD ISP4 requires libcamera (media-controller pipeline, not raw V4L2).
+    # USB cameras use V4L2. Per-device WirePlumber routing prevents:
+    #   - V4L2 device probe crash with AMD ISP on PipeWire 1.0.5
+    #   - libcamera duplicate of USB cameras
+    # NOTE: PipeWire's SPA plugin links against libcamera 0.2, but the ISP4 handler
+    # only matches kernel 6.17's driver in libcamera 0.3. Built-in camera won't appear
+    # in PipeWire until HP OEM repo or AMD PPA ships a SPA plugin linked against 0.3.
     if ! has_repo /etc/apt/sources.list.d/amd-team-ubuntu-isp-noble.sources; then
-        info "Adding AMD ISP PPA (libcamera with ISP4 pipeline handler)..."
+        info "Adding AMD ISP PPA..."
         sudo add-apt-repository -y ppa:amd-team/isp
-        sudo apt-get update
     fi
-    sudo apt-get install "${APT_OPTS[@]}" v4l-utils libcamera-tools \
-        libspa-0.2-libcamera gstreamer1.0-libcamera \
-        gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-gl \
-        xdg-desktop-portal xdg-desktop-portal-gnome
-    ok "Webcam (AMD ISP4 via libcamera + PipeWire)"
+    sudo apt-get install "${APT_OPTS[@]}" libspa-0.2-libcamera libcamera-tools
+    ok "Webcam (AMD ISP4 via libcamera + USB via V4L2)"
+
+    # WirePlumber: per-device camera routing + mic priorities
+    mkdir -p ~/.config/wireplumber/main.lua.d
+    rm -f ~/.config/wireplumber/main.lua.d/51-disable-libcamera.lua
+    cat > ~/.config/wireplumber/main.lua.d/51-camera-routing.lua << 'WPCONF'
+-- Per-device camera routing for PipeWire 1.0.5 + WirePlumber 0.4.17
+-- AMD ISP (built-in): libcamera only — V4L2 probe crashes PipeWire 1.0.5
+-- USB cameras:        V4L2 only    — libcamera creates duplicates
+-- TODO: revisit when PipeWire is updated past 1.0.5
+
+table.insert(v4l2_monitor.rules, {
+  matches = {
+    {
+      { "device.name", "matches", "v4l2_device.*amd_isp*" },
+    },
+  },
+  apply_properties = {
+    ["device.disabled"] = true,
+  },
+})
+
+table.insert(libcamera_monitor.rules, {
+  matches = {
+    {
+      { "node.name", "matches", "libcamera_input.*1532*" },
+    },
+  },
+  apply_properties = {
+    ["node.disabled"] = true,
+  },
+})
+WPCONF
+    ok "Camera routing (AMD ISP→libcamera, USB→V4L2)"
+    cat > ~/.config/wireplumber/main.lua.d/52-mic-priorities.lua << 'WPCONF'
+table.insert(alsa_monitor.rules, {
+  matches = {
+    {
+      { "node.name", "equals", "alsa_input.pci-0000_c3_00.6.HiFi__Mic2__source" },
+    },
+  },
+  apply_properties = {
+    ["priority.driver"] = 3000,
+    ["priority.session"] = 3000,
+  },
+})
+
+table.insert(alsa_monitor.rules, {
+  matches = {
+    {
+      { "node.name", "equals", "alsa_input.usb-Alpha_Imaging_Tech._Corp._Razer_Kiyo-02.analog-stereo" },
+    },
+  },
+  apply_properties = {
+    ["priority.driver"] = 2500,
+    ["priority.session"] = 2500,
+  },
+})
+WPCONF
+    ok "Mic priorities (headphone jack > USB mic > built-in)"
 
     # Kernel parameters: amd_pstate=active pcie_aspm=off amd_iommu=off
     # Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525
