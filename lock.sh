@@ -83,7 +83,7 @@ export I3STATUS_RUST_VERSION="0.36.0"
 export NERD_FONTS_VERSION="v3.4.0"
 
 # https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
-export FONT_AWESOME_VERSION="6.7.2"
+export FONT_AWESOME_VERSION="7.2.0"
 
 # https://github.com/erebe/greenclip/releases/latest
 export GREENCLIP_VERSION="4.2"
@@ -95,7 +95,7 @@ export FZF_VERSION="0.70.0"
 export FD_VERSION="10.4.2"
 
 # crates.io: git-delta
-export DELTA_VERSION="0.18.2"
+export DELTA_VERSION="0.19.0"
 
 # crates.io: hyperfine
 export HYPERFINE_VERSION="1.20.0"
