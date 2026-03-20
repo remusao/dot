@@ -43,6 +43,8 @@ warning = 90
 block = "net"
 format = " $icon {$signal_strength |$ip}"
 interval = 5
+[block.icons_overrides]
+net_wired = "󰈀"
 
 # Sound (replaces pasystray)
 [[block]]
