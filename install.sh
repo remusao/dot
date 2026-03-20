@@ -413,7 +413,7 @@ GESTURES
 
     # Power saver: GPU low-power + CPU min freq toggle (AC/battery auto-switch)
     sudo install -m 755 "${DOT_DIR}/nuggets/utilities/cool-ryzen-apply.sh" /usr/local/bin/cool-ryzen-apply
-    printf '%s ALL=(root) NOPASSWD: /usr/local/bin/cool-ryzen-apply on, /usr/local/bin/cool-ryzen-apply off\n' "$USER" \
+    printf '%s ALL=(root) NOPASSWD: /usr/local/bin/cool-ryzen-apply *\n' "$USER" \
         > /tmp/cool-ryzen-sudoers
     if sudo visudo -cf /tmp/cool-ryzen-sudoers &>/dev/null; then
         sudo install -m 440 /tmp/cool-ryzen-sudoers /etc/sudoers.d/cool-ryzen
