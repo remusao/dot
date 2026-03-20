@@ -1183,22 +1183,27 @@ check_peripherals() {
         info "NVMe TRIM granularity: $trim_gran"
     fi
 
-    # Webcam (AMD ISP4) — requires libcamera with ISP4 pipeline handler
+    # Webcam (AMD ISP4) — requires libcamera (ppa:amd-team/isp)
     if lsmod 2>/dev/null | grep -q amd_isp4; then
         if cmd_exists cam; then
             local cam_list
             cam_list=$(cam -l 2>/dev/null) || cam_list=""
-            if [[ -n "$cam_list" ]] && [[ "$cam_list" != *"No cameras"* ]]; then
-                ok "AMD ISP4 webcam detected via libcamera: $cam_list"
+            if echo "$cam_list" | grep -q '^[[:space:]]*[0-9]'; then
+                ok "AMD ISP4 webcam detected via libcamera"
             else
-                fail "AMD ISP4 module loaded but libcamera sees no camera" \
-                    "install libcamera with ISP4 pipeline handler from ppa:amd-team/isp. Stock Noble libcamera 0.2.0 lacks the ISP4 handler." \
-                    "sudo add-apt-repository -y ppa:amd-team/isp && sudo apt-get update && sudo apt-get install -y v4l-utils libcamera-tools libspa-0.2-libcamera gstreamer1.0-libcamera"
+                fail "AMD ISP4 module loaded but libcamera detects no cameras" \
+                    "ensure ppa:amd-team/isp and libspa-0.2-libcamera are installed" \
+                    "sudo add-apt-repository -y ppa:amd-team/isp && sudo apt-get install -y libspa-0.2-libcamera libcamera-tools"
             fi
         else
             fail "libcamera-tools not installed" \
-                "needed to verify ISP4 webcam. Install from ppa:amd-team/isp" \
-                "sudo add-apt-repository -y ppa:amd-team/isp && sudo apt-get update && sudo apt-get install -y libcamera-tools"
+                "needed to verify ISP4 webcam" \
+                "sudo apt-get install -y libcamera-tools"
+        fi
+        if ! dpkg -l libspa-0.2-libcamera 2>/dev/null | grep -q '^ii'; then
+            fail "libspa-0.2-libcamera not installed" \
+                "PipeWire cannot access libcamera cameras without this package" \
+                "sudo apt-get install -y libspa-0.2-libcamera"
         fi
     fi
 }
