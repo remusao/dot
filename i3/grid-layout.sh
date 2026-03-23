@@ -55,8 +55,11 @@ if [[ -f "$state_file" ]]; then
                     if .children | not then []
                     else
                         (if (.children | length) > 1 then
-                            [if .layout == "splith" then "split h" else "split v" end] +
-                            [.children[1:][] | "show \(first_leaf.id)"]
+                            [if .layout == "splith" or .layout == "tabbed" then "split h" else "split v" end] +
+                            [.children[1:][] | "show \(first_leaf.id)"] +
+                            (if .layout == "tabbed" then ["layout tabbed"]
+                             elif .layout == "stacked" then ["layout stacking"]
+                             else [] end)
                         else [] end) +
                         ([.children[] | select(.children) |
                             ["focus \(first_leaf.id)"] + restore
@@ -69,8 +72,9 @@ if [[ -f "$state_file" ]]; then
         for cmd in "${cmds[@]}"; do
             case "$cmd" in
                 show\ *)  i3-msg -q "[con_id=${cmd#show }] scratchpad show, floating disable" ;;
-                split\ *) i3-msg -q "$cmd" ;;
-                focus\ *) i3-msg -q "[con_id=${cmd#focus }] focus" ;;
+                split\ *)  i3-msg -q "$cmd" ;;
+                layout\ *) i3-msg -q "$cmd" ;;
+                focus\ *)  i3-msg -q "[con_id=${cmd#focus }] focus" ;;
             esac
         done
 
