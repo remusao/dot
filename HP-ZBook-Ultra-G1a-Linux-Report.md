@@ -287,16 +287,44 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 **MCE Monitoring:** Use `rasdaemon` for hardware error monitoring on AMD Zen — `mcelog` is non-functional on AMD processors. Install: `sudo apt install rasdaemon`.
 
-### 8.10 Kernel Panic — Fatal Exception in Interrupt
+### 8.10 Kernel Panic — ISP Power Gating + PMF Workqueue Lockup
 
-- **What it means:** "Fatal exception in interrupt" is a kernel panic triggered when an oops (NULL pointer dereference, page fault, etc.) occurs inside a hardware interrupt handler. The kernel panics because there's no user process to kill — verified behavior from `arch/x86/kernel/dumpstack.c:oops_end()`.
-- **Most likely causes on this hardware:**
-  1. **PCIe ASPM interaction** — the ASPM regression (Bug #2115969) causes GUI freezes; on some kernel versions, the underlying fault may occur in interrupt context, escalating to a panic. External displays make this more frequent ([Ubuntu Bug #2033295](https://bugs.launchpad.net/bugs/2033295)). Fix: `pcie_aspm=off`
-  2. **amdgpu driver fault** — MES firmware hangs ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)) cause GPU resets; if the reset path faults in IRQ context, it becomes a panic. MES firmware 0x83 (linux-firmware-20251125) causes GPU page faults `GCVM_L2_PROTECTION_FAULT_STATUS` ([ROCm #5724](https://github.com/ROCm/ROCm/issues/5724)). Fix: linux-firmware ≥20260110; `amdgpu.cwsr_enable=0` for compute workloads
-  3. **Hardware defect** — affects subset of units (3/8 in one batch). `processor.max_cstate=1` is not a reliable fix. May require motherboard replacement.
-- **Diagnosis:** Run the diagnostic script: `bash ~/zbook-panic-diag.sh` — checks pstore (most reliable post-panic log source), previous boot journal, GPU firmware versions, PCIe state, and MCE errors
-- **Post-mortem tools:** pstore (`/sys/fs/pstore/`, `/var/lib/systemd/pstore/`) captures kernel log tail before panic. `linux-crashdump` provides full vmcore. `rasdaemon` monitors hardware errors on AMD Zen (mcelog is non-functional on AMD).
-- **Slow reboot after panic:** Consistent with amdgpu failing to cleanly shut down the GPU (known pattern — VRAM eviction delays, SMU quiesce failures)
+**Observed crash (March 23, 2026, kernel 6.17.0-1012-oem):** System hard-locked ~14 minutes after resume from suspend. No clean shutdown recorded. Journal abruptly ends.
+
+**Two contributing issues identified:**
+
+**Issue 1 — ISP power gating WARN on every resume (non-fatal):**
+
+Every suspend/resume cycle triggers a kernel WARN at `smu_dpm_set_power_gate+0x36b/0x380 [amdgpu]`. The call trace:
+
+```
+smu_dpm_set_power_gate+0x36b/0x380 [amdgpu]    ← WARN_ON (0f 0b = ud2)
+amdgpu_dpm_set_powergating_by_smu+0x159/0x1f0 [amdgpu]
+isp_poweron+0x1b/0x30 [amdgpu]
+_genpd_power_on → genpd_sync_power_on → genpd_finish_resume
+genpd_resume_noirq → device_resume_noirq → async_resume_noirq
+```
+
+This fires because the ISP (Image Signal Processor / webcam) IP block is registered as an amdgpu power domain via the generic power domain (`genpd`) framework. During resume, genpd calls `isp_poweron` which asks the SMU to ungate the ISP — but the SMU returns an error, triggering the WARN. The system continues operating, but SMU stability degrades. Accompanied by `amd_isp_i2c_designware: timeout while trying to abort current transfer`.
+
+- **Fix:** Disable webcam in BIOS (F10). This prevents ISP hardware initialization entirely — amdgpu does not register the ISP power domain. External USB webcams are unaffected.
+- **Note:** `isp_poweron` is inside the amdgpu module (not in `amd_isp4`). Blacklisting `amd_isp4` alone does not prevent the genpd callback. See [Section 9.5](#95-webcam-vs-sleep-tradeoff) for details.
+- **Reference:** [Kernel Bug #220702](https://bugzilla.kernel.org/show_bug.cgi?id=220702), [amd-gfx mailing list — VPE/ISP SMU power gating hang on Strix Halo](https://www.mail-archive.com/amd-gfx@lists.freedesktop.org/msg127697.html)
+
+**Issue 2 — amd_pmf workqueue hogging → hard lockup (fatal):**
+
+The AMD Platform Management Framework driver (`amd_pmf`) monopolized the CPU for extended periods:
+- `amd_pmf_invoke_cmd hogged CPU for >10000us 67 times` (before crash)
+- Last journal entry before crash: `power_supply_changed_work hogged CPU for >10000us 4 times`
+
+The accumulated workqueue congestion (67× >10ms each = ~670ms of stolen CPU time) likely caused a soft lockup that escalated to a hard lockup. See [Section 8.13](#813-amd-pmf-cpu-hogging) for details.
+
+**Other possible kernel panic causes on this hardware:**
+1. **PCIe ASPM interaction** — the ASPM regression (Bug #2115969) causes GUI freezes; if the underlying fault occurs in interrupt context, it escalates to a panic. Fix: `pcie_aspm=off`
+2. **amdgpu MES firmware fault** — MES firmware hangs ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)) cause GPU resets; MES firmware 0x83 (linux-firmware-20251125) causes GPU page faults ([ROCm #5724](https://github.com/ROCm/ROCm/issues/5724)). Fix: linux-firmware ≥20260110
+3. **Hardware defect** — affects subset of units (3/8 in one batch). May require motherboard replacement.
+
+**Post-mortem tools:** pstore (`/sys/fs/pstore/`, `/var/lib/systemd/pstore/`) captures kernel log tail before panic. `linux-crashdump` provides full vmcore. `rasdaemon` monitors hardware errors on AMD Zen (mcelog is non-functional on AMD). Persistent journal (`/var/log/journal/`) provides previous boot logs via `journalctl -b -1`.
 
 ### 8.11 No HP Recovery Partition
 
@@ -332,6 +360,15 @@ How it works: in `amdgpu_dm.c`, `DC_DISABLE_PSR` (0x10) prevents `psr_feature_en
 - **Battery trade-off:** Disabling PSR forces the GPU scanout engine to remain active at the panel's refresh rate (120Hz) even when content is static. PSR power savings are ~0.5W (measured on Intel i915 — [Hans de Goede, Red Hat](https://hansdegoede.livejournal.com/18653.html); no public AMD-specific measurements exist). Additionally, IPS (Idle Power States) depends on PSR — `amdgpu_dm_psr_enable()` calls `dc_allow_idle_optimizations(true)` when `caps.ips_support` is set, so with PSR disabled, the DCN block cannot enter deep idle. The compounding IPS cost is unquantified but likely larger than PSR alone. Other power mechanisms (DPMS, clock gating, GFXOFF, `amd_pstate=active`) still function normally. Measure your own impact with `powertop` on battery.
 - **Graduated approach:** Try `0x10` alone first (disables PSR, keeps Panel Replay). Escalate to `0x410` if freezes persist. On Wayland, this parameter is unnecessary.
 - **References:** [Arch Wiki AMDGPU](https://wiki.archlinux.org/title/AMDGPU), [kernel DC debug docs](https://docs.kernel.org/gpu/amdgpu/display/dc-debug.html), [Ubuntu PSR-SU bug #2024774](https://bugs.launchpad.net/bugs/2024774), [Ubuntu PSR-SU disable #2046131](https://bugs.launchpad.net/bugs/2046131)
+
+### 8.13 AMD PMF CPU Hogging
+
+- **Cause:** The AMD Platform Management Framework driver (`amd_pmf`) invokes SMU commands via `amd_pmf_invoke_cmd` that block the CPU for >10ms each. The kernel's workqueue watchdog reports: `workqueue: amd_pmf_invoke_cmd [amd_pmf] hogged CPU for >10000us N times, consider switching to WQ_UNBOUND`. On the ZBook Ultra G1a, this can accumulate to 67+ events within minutes of resume.
+- **Symptoms:** May cause soft lockups that escalate to hard lockups/kernel panics. Related `power_supply_changed_work` hogging (from the power supply subsystem, triggered by `amd_pmf`'s power source notify handler) compounds the issue. Both workqueues may saturate the same CPU core, starving other kernel operations.
+- **Impact:** This was the direct cause of the March 23, 2026 kernel panic — the journal abruptly ends after `power_supply_changed_work hogged CPU for >10000us 4 times` with no clean shutdown recorded. The issue is **ongoing on the current boot** (already accumulating events after each resume).
+- **Cannot blacklist `amd_pmf`:** The module provides thermal management, CPU frequency scaling, and power state handling on Strix Halo. Removing it risks overheating and loss of power management.
+- **No user-space fix:** Awaiting kernel update. The `amd_pmf` driver received new ACPI ID support (`AMDI0108`) in kernel 6.17 for Strix Halo ([Phoronix](https://www.phoronix.com/news/Linux-6.17-AMD-AMDI0108)), and race condition fixes have been submitted ([lore.kernel.org](https://lore.kernel.org/lkml/20240217015642.113806-1-mario.limonciello@amd.com/T/)), but the workqueue hogging persists on 6.17.0-1012-oem.
+- **References:** [Ubuntu #2112307](https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.8/+bug/2112307), [Ubuntu #2025670](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2025670), [Kernel Bugzilla #218863](https://bugzilla.kernel.org/show_bug.cgi?id=218863), [HP Support — amd_pmf init failure](https://h30434.www3.hp.com/t5/Notebook-Operating-System-and-Recovery/BAD-FIRMWARE-amd-pmf-AMDI0102-00-ta-invoke-cmd-init-failed/td-p/9213382)
 
 ---
 
@@ -375,9 +412,9 @@ All settings accessible via **F10** at boot:
 
 **You currently cannot have both a working webcam AND proper s2idle.** The AMD ISP4 driver does not yet support proper suspend power management. When upstreamed (targeting kernel 7.1+), proper power state management should be included. Until then, you must choose:
 
-- **Option A: Webcam ON + sleep broken** (10-15% overnight drain)
-- **Option B: Webcam OFF (in BIOS) + sleep works** (0.14-0.20W)
-- **Option C: Unload ISP4 before suspend** — untested but plausible: create a systemd sleep hook to `modprobe -r amd_isp4` before suspend and `modprobe amd_isp4` after resume (similar to the MT7925 WiFi workaround in 9.6). This avoids the BIOS toggle but requires the camera to reinitialize after every wake.
+- **Option A: Webcam ON + sleep broken** (10-15% overnight drain, plus `smu_dpm_set_power_gate` WARN on every resume — see [8.10](#810-kernel-panic--isp-power-gating--pmf-workqueue-lockup))
+- **Option B: Webcam OFF (in BIOS) + sleep works** (0.14-0.20W). **Recommended.** External USB webcams are unaffected — the BIOS toggle only controls the built-in AMD ISP4 camera. This eliminates both the sleep drain AND the ISP power gating WARN on resume.
+- **Option C: Unload ISP modules before suspend** — untested partial mitigation. The three ISP consumer modules (`amd_isp4`, `pinctrl_amdisp`, `i2c_designware_amdisp`) can be unloaded before suspend and reloaded after resume (similar to the MT7925 WiFi workaround in 9.6). However, `isp_poweron` is a genpd callback registered by the amdgpu module itself — removing consumer modules may not prevent the genpd framework from calling the power domain callback on resume. The BIOS toggle (Option B) is the definitive fix.
 
 ### 9.6 WiFi After Suspend Fix
 
@@ -1493,6 +1530,8 @@ Track these upstream bugs to know when workarounds can be removed.
 | Webcam (OEM kernel) | [AMD ISP4 v9 patches](https://lkml.org/lkml/2026/3/2/278) | Under review | ISP4 merged into mainline (targeting 7.1+) |
 | Random reboots | [HP #9549358](https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-14-G1a-randomly-reboots/td-p/9549358) | Hardware | BIOS update or motherboard replacement |
 | Dock disconnect >90W | [HP #9521854](https://h30434.www3.hp.com/t5/Business-PCs-Workstations-and-Point-of-Sale-Systems/Ultrabook-G1a-constantly-disconnecting-from-docks-any-docks/td-p/9521854) | Open | PD firmware or BIOS fix |
+| BIOS webcam disable | [Kernel #220702](https://bugzilla.kernel.org/show_bug.cgi?id=220702) — ISP `smu_dpm_set_power_gate` WARN on every resume | Open | ISP4 driver has proper power management in amdgpu (kernel 7.1+ or OEM backport) |
+| `amd_pmf` CPU hogging | [Ubuntu #2112307](https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.8/+bug/2112307), [Kernel #218863](https://bugzilla.kernel.org/show_bug.cgi?id=218863) — workqueue lockup | Open | amd_pmf driver fix for Strix Halo in OEM kernel update |
 | CrackArmor | [USN-8095-1](https://ubuntu.com/security/notices/USN-8095-1) — 9 AppArmor CVEs | Patching | Kernel update + USN-8091-1/8092-1 su/sudo patches |
 | EntrySign | [AMD-SB-7033](https://www.amd.com/en/resources/product-security/bulletin/amd-sb-7033.html) — unsigned microcode on Zen 1-5 | Patching | AGESA ≥1.2.0.3C via fwupd BIOS update |
 
