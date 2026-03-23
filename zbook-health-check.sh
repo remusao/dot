@@ -207,6 +207,19 @@ check_hardware() {
         warn "journald not using persistent storage" "previous boot logs are lost on reboot. Fix: sudo mkdir -p /var/log/journal && sudo systemd-tmpfiles --create --prefix /var/log/journal && sudo systemctl restart systemd-journald"
     fi
 
+    # AMD PMF CPU hogging (workqueue lockup risk — can cause hard lockup/panic)
+    # dmesg requires root; fall back to journalctl -k which works for users in systemd-journal group
+    local pmf_hog_line
+    pmf_hog_line=$(dmesg 2>/dev/null | grep -o "amd_pmf_invoke_cmd.*hogged CPU for >10000us [0-9]* times" | tail -1) || pmf_hog_line=""
+    if [[ -z "$pmf_hog_line" ]]; then
+        pmf_hog_line=$(journalctl -b 0 -k --no-pager 2>/dev/null | grep -o "amd_pmf_invoke_cmd.*hogged CPU for >10000us [0-9]* times" | tail -1) || pmf_hog_line=""
+    fi
+    if [[ -n "$pmf_hog_line" ]]; then
+        local pmf_count
+        pmf_count=$(echo "$pmf_hog_line" | grep -oP '\d+ times' | grep -oP '\d+') || pmf_count="?"
+        warn "amd_pmf CPU hogging detected (${pmf_count} times this boot)" "amd_pmf_invoke_cmd blocks CPU for >10ms per call. Accumulated hogging can cause hard lockups (caused a kernel panic on 2026-03-23). Cannot blacklist — handles thermal/power management. Awaiting kernel fix. Ref: https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.8/+bug/2112307"
+    fi
+
     # BIOS version — SAFE: only reads bios_version (never serial numbers)
     local bios_ver bios_date
     bios_ver=$(cat /sys/class/dmi/id/bios_version 2>/dev/null) || bios_ver="unknown"
@@ -623,6 +636,19 @@ sudo systemctl enable wifi-suspend-fix.service"
         info "AMD ISP4 webcam driver loaded — ISP firmware blocks SMU GPU power-down during s2idle. Expected: ~10-15% overnight drain. Ref: https://bugzilla.kernel.org/show_bug.cgi?id=220702"
     else
         info "AMD ISP4 webcam driver not loaded — optimal sleep power (0.14-0.20W, ~15 days standby on 74.5Wh). Ref: https://github.com/geohot/ztop"
+    fi
+
+    # ISP power gating WARN on resume (smu_dpm_set_power_gate + isp_poweron in amdgpu)
+    if lsmod 2>/dev/null | grep -q amd_isp; then
+        local isp_warn_found=false
+        if dmesg 2>/dev/null | grep -q "smu_dpm_set_power_gate.*amdgpu"; then
+            isp_warn_found=true
+        elif journalctl -b 0 -k --no-pager 2>/dev/null | grep -q "smu_dpm_set_power_gate.*amdgpu"; then
+            isp_warn_found=true
+        fi
+        if $isp_warn_found; then
+            warn "ISP power gating WARN detected in dmesg" "smu_dpm_set_power_gate fires via isp_poweron on every resume — destabilizes SMU, contributes to lockups. Fix: disable webcam in BIOS (F10). External USB webcams are unaffected. Ref: https://bugzilla.kernel.org/show_bug.cgi?id=220702"
+        fi
     fi
 
     # Webcam + sleep summary
@@ -1526,9 +1552,11 @@ print_summary() {
   [ ] Security > BIOS Sure Start > Save/Restore GPT of System Hard Drive: DISABLED
       Same as above — prevents partition table restoration. Source: https://h20195.www2.hp.com/v2/getpdf.aspx/4AA5-4453ENW.pdf
 
-  [ ] Webcam: your choice
-      DISABLED = better sleep (0.14-0.20W, ~15 days standby). ENABLED = webcam works but ~10-15% overnight drain.
-      ISP firmware blocks GPU s2idle. Source: https://bugzilla.kernel.org/show_bug.cgi?id=220702
+  [ ] Webcam: DISABLED recommended (if using external USB webcam)
+      DISABLED = better sleep (0.14-0.20W) + eliminates smu_dpm_set_power_gate WARN on every resume.
+      ENABLED = built-in webcam works but ~10-15% overnight drain + ISP power gating WARN destabilizes SMU.
+      External USB webcams (e.g. Razer Kiyo) are unaffected by this toggle.
+      Source: https://bugzilla.kernel.org/show_bug.cgi?id=220702
 BIOS
 
     # Important reminders
