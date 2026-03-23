@@ -291,3 +291,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 # opencode
 export PATH=/home/remi/.opencode/bin:$PATH
+
+# Claude Code
+export CLAUDE_CODE_SUBAGENT_MODEL=claude-opus-4-6
