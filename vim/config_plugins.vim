@@ -8,14 +8,30 @@ augroup mydelimitMate
 augroup END
 " }}}
 
-" ctrlp {{{
-let g:ctrlp_custom_ignore = '\v[\/]\.(git|hg|svn)$'
+" grep & fuzzy find {{{
 set grepprg=rg\ --color\ never\ --no-heading
-let g:ctrlp_user_command = 'rg %s --files --color=never --glob ""'
-" rg is faster
-" let g:ctrlp_user_command = 'fd --type f --color=never "" %s'
-let g:ctrlp_match_func = {'match': 'cpsm#CtrlPMatch'}
-let g:ctrlp_use_caching = 0
+let g:fzf_layout = { 'window': { 'width': 1.0, 'height': 0.4, 'yoffset': 1.0, 'border': 'top' } }
+let g:fzf_history_dir = '~/.local/share/fzf-history'
+autocmd FileType fzf silent! tunmap <buffer> <C-z>
+autocmd FileType fzf tnoremap <buffer> <Esc> <Esc>
+
+function! s:project_files()
+  let root = systemlist('git rev-parse --show-toplevel')[0]
+  let spec = fzf#vim#with_preview({'options': ['--bind', 'ctrl-z:toggle+down']})
+  if v:shell_error
+    call fzf#vim#files('', spec, 0)
+  else
+    call fzf#vim#files(root, spec, 0)
+  endif
+endfunction
+
+command! ProjectFiles call s:project_files()
+nnoremap <silent> <C-p> :ProjectFiles<CR>
+nnoremap <silent> <Leader>f :RG<CR>
+nnoremap <silent> <Leader>b :Buffers<CR>
+nnoremap <silent> <Leader>/ :BLines<CR>
+nnoremap <silent> <Leader>h :History<CR>
+nnoremap <silent> <Leader>g :GFiles?<CR>
 " }}}
 
 " vim-airline {{{

@@ -18,9 +18,7 @@ Plug 'airblade/vim-gitgutter'
 Plug 'tpope/vim-fugitive' " Git integration in Vim
 Plug 'junegunn/gv.vim' " Git commit viewer
 
-" Fuzzy search
-Plug 'ctrlpvim/ctrlp.vim' " Fuzzy file searching from Vim
-Plug 'nixprime/cpsm', { 'do': 'env PY3=ON ./install.sh' }
+" Fuzzy search (fzf + fzf.vim, configured in config_plugins.vim)
 
 " Utilities
 Plug 'ntpeters/vim-better-whitespace' " Highlight and strip trailing whitespaces
