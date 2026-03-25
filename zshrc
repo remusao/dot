@@ -234,12 +234,17 @@ then
 fi
 
 # fzf
-[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS='--height=40% --layout=reverse --border --bind ctrl-z:toggle+down'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
+export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --level=2 {}'"
+source <(fzf --zsh)
 
 # Run vim with ctrl-p when ctrl-p is pressed in zsh
 ctrlp() {
-  </dev/tty vim -c CtrlP
+  </dev/tty vim -c ProjectFiles
 }
 zle -N ctrlp
 

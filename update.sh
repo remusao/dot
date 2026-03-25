@@ -64,5 +64,6 @@ fi
 # CLI tools (binary downloads)
 . ./nuggets/utilities/fzf.sh
 . ./nuggets/utilities/fd.sh
+. ./nuggets/utilities/bat.sh
 . ./nuggets/utilities/delta.sh
 . ./nuggets/utilities/hyperfine.sh
