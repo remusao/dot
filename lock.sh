@@ -94,6 +94,9 @@ export FZF_VERSION="0.70.0"
 # crates.io: fd-find
 export FD_VERSION="10.4.2"
 
+# https://github.com/sharkdp/bat/releases/latest
+export BAT_VERSION="0.26.1"
+
 # crates.io: git-delta
 export DELTA_VERSION="0.19.0"
 
