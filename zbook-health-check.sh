@@ -431,16 +431,46 @@ check_kernel_params() {
     fi
 
     if $has_rocm; then
+        # ROCm version check
+        local rocm_ver
+        rocm_ver=$(dpkg-query -W -f='${Version}' rocm-core 2>/dev/null) || rocm_ver=""
+        if [[ -n "$rocm_ver" ]]; then
+            local rocm_major rocm_minor
+            rocm_major=$(echo "$rocm_ver" | cut -d. -f1)
+            rocm_minor=$(echo "$rocm_ver" | cut -d. -f2)
+            if [[ "$rocm_major" -ge 7 ]] && [[ "$rocm_minor" -ge 2 ]]; then
+                ok "ROCm $rocm_ver installed — gfx1151 (Strix Halo) supported. Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/"
+            elif [[ "$rocm_major" -ge 7 ]]; then
+                warn "ROCm $rocm_ver installed" "upgrade to 7.2+ recommended for full gfx1151 support and Ubuntu 24.04.4 compatibility"
+            else
+                warn "ROCm $rocm_ver installed" "upgrade to 7.2+ recommended — older versions have limited Strix Halo support"
+            fi
+        else
+            info "ROCm installed (/opt/rocm found) but rocm-core package version not detected"
+        fi
+
+        # Check if DKMS amdgpu was installed (wrong path for Ryzen APUs)
+        if dpkg-query -W amdgpu-dkms &>/dev/null 2>&1; then
+            warn "amdgpu-dkms package installed" "Ryzen APUs should use inbox kernel driver (--no-dkms). DKMS driver may conflict with OEM kernel. Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html"
+        fi
+
         # amdgpu.cwsr_enable=0 — workaround for MES firmware GPU hangs
         local cwsr_val
         cwsr_val=$(kparam_value "amdgpu.cwsr_enable") || cwsr_val=""
         if [[ "$cwsr_val" == "0" ]]; then
             ok "amdgpu.cwsr_enable=0 — prevents GPU hangs during ROCm compute. Ref: https://github.com/ROCm/ROCm/issues/5590"
         else
-            warn "amdgpu.cwsr_enable=0 not set" "MES firmware CWSR (Compute Wave Save/Restore) hang regression. Only affects ROCm compute workloads — no impact on display or 3D rendering. Fix: sudo sed -i -E 's/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 amdgpu.cwsr_enable=0\"/' /etc/default/grub && sudo update-grub. Ref: https://github.com/ROCm/ROCm/issues/5590"
+            warn "amdgpu.cwsr_enable=0 not set" "MES firmware CWSR (Compute Wave Save/Restore) hang regression (still open as of March 2026). Only affects ROCm compute workloads — no impact on display or 3D rendering. Fix: sudo sed -i -E 's/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 amdgpu.cwsr_enable=0\"/' /etc/default/grub && sudo update-grub. Ref: https://github.com/ROCm/ROCm/issues/5590"
+        fi
+
+        # amd-debug-tools (amd-ttm) availability
+        if command -v amd-ttm &>/dev/null; then
+            ok "amd-ttm available — use 'amd-ttm' to query/set shared GPU memory. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html"
+        else
+            info "amd-ttm not installed — optional tool for shared memory config. Install: pipx install amd-debug-tools"
         fi
     else
-        skip "ROCm kernel parameter checks (cwsr_enable)" "ROCm not installed (/opt/rocm not found, rocminfo not in PATH)"
+        skip "ROCm checks (version, cwsr_enable, amd-ttm)" "ROCm not installed (/opt/rocm not found, rocminfo not in PATH)"
     fi
 
     # PSR + Panel Replay check (X11 only — causes GUI freezes, especially with external displays)
@@ -1344,6 +1374,13 @@ check_display() {
             else
                 fail "User not in 'video' group" "brightnessctl will fail with 'Permission denied'" \
                     "sudo usermod -aG video \$USER && logout/login"
+            fi
+
+            # render group (required for GPU compute / ROCm)
+            if id -nG 2>/dev/null | grep -qw render; then
+                ok "User in 'render' group — GPU compute access (/dev/dri/renderD*)"
+            else
+                warn "User not in 'render' group" "GPU compute (ROCm, Vulkan compute) requires render group. Fix: sudo usermod -aG render \$USER && logout/login"
             fi
 
             # Backlight writable

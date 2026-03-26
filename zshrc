@@ -240,6 +240,7 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
 export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
 export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --level=2 {}'"
+export FZF_CTRL_R_OPTS="--layout=default"
 source <(fzf --zsh)
 
 # Run vim with ctrl-p when ctrl-p is pressed in zsh
