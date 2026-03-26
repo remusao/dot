@@ -186,7 +186,7 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 ### Will it work on the ZBook Ultra G1a?
 
-**General hardware: YES** — Strix Halo CPU/GPU, WiFi, NVMe, Thunderbolt are all well-supported in kernel 7.0. ROCm will be installable directly via `sudo apt install rocm` ([AMD Strix Halo ROCm docs](https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html)).
+**General hardware: YES** — Strix Halo CPU/GPU, WiFi, NVMe, Thunderbolt are all well-supported in kernel 7.0. ROCm is already installable on Ubuntu 24.04 via the [Radeon/Ryzen path](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html) (`amdgpu-install --usecase=rocm --no-dkms`); Ubuntu 26.04 should also work once AMD releases updated packages.
 
 **Webcam: NO — not out of the box.** The AMD ISP4 driver has missed every merge window (6.18, 6.19, AND 7.0). It's now on its **[v9 patch revision](https://lkml.org/lkml/2026/3/2/278)** (posted March 2, 2026) targeting Linux 7.1. The media subsystem maintainers are [overloaded and can't guarantee review timelines](https://www.phoronix.com/news/AMD-ISP4-Driver-Pending-Review). This means:
 
@@ -263,7 +263,7 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 - **Kernel driver (`amdxdna`)** exists since Linux 6.14 ([AMD NPU kernel docs](https://docs.kernel.org/accel/amdxdna/amdnpu.html))
 - **Userspace stack is NOT ready** — the XRT runtime, ONNX Runtime with Vitis AI execution provider, and IREE+MLIR-AIE compiler toolchain are fragmented, not in distro repos, and require building from source
-- **The GPU (Radeon 8060S) is the practical AI accelerator on Linux** — up to 124GB unified memory via ROCm (set `ttm.pages_limit=32505856 ttm.page_pool_size=32505856` kernel params; see §9.9)
+- **The GPU (Radeon 8060S) is the practical AI accelerator on Linux** — up to 124GB unified memory via ROCm (set `ttm.pages_limit=32505856 ttm.page_pool_size=32505856` kernel params; see §9.9). **ROCm 7.2.1** (March 2026) officially supports gfx1151 (Strix Halo) on Ubuntu 24.04.4 + kernel 6.17 via the [Radeon/Ryzen install path](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html): `amdgpu-install -y --usecase=rocm --no-dkms`. AMD-validated [llama.cpp prebuilt binaries](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/advanced/advancedryz/linux/llm/llamacpp.html) for gfx1150/gfx1151 are also available. PyTorch 2.9.1, TensorFlow 2.20.0, and JAX 0.8.2 are supported.
 - **NPU regression:** `amdxdna` does NOT work on kernels 6.18–6.18.7 due to an IOMMU/SVA regression ([Phoronix](https://www.phoronix.com/news/Linux-Dropping-AMD-NPU2))
 - **Bottom line:** The NPU's 50 TOPS is essentially unusable on Linux today. Use ROCm on the iGPU instead.
 
@@ -271,7 +271,37 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 
 - **`linux-firmware-20251125` is BROKEN** for Strix Halo — MES firmware 0x83 causes GPU memory faults (`GCVM_L2_PROTECTION_FAULT_STATUS:0x00800932`), tracked as [ROCm #5724](https://github.com/ROCm/ROCm/issues/5724). A partial fix shipped in `20251125-2` but did not cover all GPUs. ([Framework Community](https://community.frame.work/t/fyi-linux-firmware-amdgpu-20251125-breaks-rocm-on-ai-max-395-8060s/78554), [Arch Forums](https://bbs.archlinux.org/viewtopic.php?id=310497))
 - **Use `linux-firmware 20260110` or newer** for stable ROCm on Strix Halo.
-- MES firmware `0x83` introduced a new GPU hang regression. Workaround: `amdgpu.cwsr_enable=0` ([ROCm Issue #5590](https://github.com/ROCm/ROCm/issues/5590))
+- MES firmware `0x83` introduced a new GPU hang regression. Workaround: `amdgpu.cwsr_enable=0` ([ROCm Issue #5590](https://github.com/ROCm/ROCm/issues/5590)) — still required as of ROCm 7.2.1
+
+### 8.8a ROCm Installation (Strix Halo / Ryzen AI APU)
+
+**ROCm 7.2.1** (released March 25, 2026) officially supports the Ryzen AI Max+ PRO 395 (gfx1151) on Ubuntu 24.04.4 with kernel 6.17. Ryzen APUs use a **separate install path** from discrete Radeon GPUs ([Ryzen install docs](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html)):
+
+```bash
+# 1. Install the amdgpu-install script (7.2.1)
+wget https://repo.radeon.com/amdgpu-install/7.2.1/ubuntu/noble/amdgpu-install_7.2.1.70201-1_all.deb
+sudo apt install ./amdgpu-install_7.2.1.70201-1_all.deb
+
+# 2. Install ROCm (--no-dkms = use inbox/OEM kernel driver, not DKMS)
+amdgpu-install -y --usecase=rocm --no-dkms
+
+# 3. Add user to render + video groups
+sudo usermod -a -G render,video $LOGNAME
+
+# 4. Reboot and verify
+sudo reboot
+rocminfo          # should list gfx1151
+amd-smi monitor   # GPU temp/utilization
+```
+
+**Key differences from discrete GPU (Radeon) path:**
+- `--no-dkms` is required — the OEM kernel's inbox amdgpu driver already supports gfx1151
+- `--usecase=rocm` (not `graphics,rocm`) — Ryzen APUs don't need the separate graphics driver component
+- Requires OEM/HWE kernel ≥6.14 (inbox amdgpu driver must have gfx1151 support)
+
+**Memory configuration:** AMD recommends the [`amd-ttm`](https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html) tool for TTM shared memory config (`pipx install amd-debug-tools && amd-ttm --set <GB>`). The kernel boot parameter approach (`ttm.pages_limit=32505856`) also works (see §9.9).
+
+**Supported frameworks** (ROCm 7.2.1): PyTorch 2.9.1, TensorFlow 2.20.0, JAX 0.8.2, ONNX Runtime 1.23.2. AMD provides [prebuilt llama.cpp binaries](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/advanced/advancedryz/linux/llm/llamacpp.html) for gfx1150/gfx1151.
 
 ### 8.9 Security Advisories (AMD Zen 5)
 
@@ -485,7 +515,7 @@ HibernateDelaySec=30min
 ### 9.9 Complete Recommended Kernel Parameters
 
 ```
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 amdgpu.cwsr_enable=0 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"
 ```
 
 | Parameter | Purpose |
@@ -494,6 +524,7 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_as
 | `amd_iommu=off` | Fixes suspend (security tradeoff — see 9.4; also disables NPU) |
 | `pcie_aspm=off` | Fixes GUI freezes (may lose Ethernet) |
 | `amdgpu.dcdebugmask=0x410` | Fixes PSR/Panel Replay display freezes on X11 (see 8.12). Trade-off: higher idle power |
+| `amdgpu.cwsr_enable=0` | Prevents ROCm GPU hangs during AI/compute workloads ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590), still open as of March 2026). Only affects compute (CWSR = Compute Wave Save/Restore) — no impact on display or 3D rendering. |
 | `ttm.pages_limit=32505856` | Raises GPU unified memory ceiling from default ~62.5 GiB to 124 GiB (32505856 × 4 KiB). Allocation is fully dynamic — GPU only pins what it needs. Replaces deprecated `amdgpu.gttsize` ([patch](https://www.mail-archive.com/amd-gfx@lists.freedesktop.org/msg117333.html)). Not needed on kernel ≥ 6.18.4. Ref: [ROCm docs](https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html) |
 | `ttm.page_pool_size=32505856` | TTM page cache size — should match `pages_limit` for optimal allocation speed. Ref: [ROCm #5562](https://github.com/ROCm/ROCm/issues/5562), [AMD MI300A docs](https://instinct.docs.amd.com/projects/amdgpu-docs/en/latest/system-optimization/mi300a.html) |
 
@@ -502,7 +533,6 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_as
 | Parameter | When to add |
 |---|---|
 | `resume=UUID=<swap-UUID>` | If using hibernate |
-| `amdgpu.cwsr_enable=0` | Fix ROCm GPU hangs during AI/compute workloads ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590)). Only affects compute (CWSR = Compute Wave Save/Restore) — no impact on display or 3D rendering. |
 
 After editing `/etc/default/grub`:
 ```bash
@@ -904,7 +934,7 @@ The [Level1Techs guide](https://forum.level1techs.com/t/the-ultimate-arch-secure
 | Component | Status | Kernel Req. | Notes |
 |---|---|---|---|
 | CPU (Ryzen AI Max+ PRO 395) | Works | 6.14+ | `amd_pstate=active` recommended |
-| GPU (Radeon 8050S/8060S) | Works | 6.14+ / Mesa 25.0+ | amdgpu; ROCm improving |
+| GPU (Radeon 8050S/8060S) | Works | 6.14+ / Mesa 25.0+ | amdgpu; ROCm 7.2.1+ via [Radeon/Ryzen path](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/) (`amdgpu-install --usecase=rocm --no-dkms`). See §8.8a |
 | Display (2.8K OLED 120Hz) | Works | 6.14+ | Fractional scaling at 150-175% in GNOME/Wayland. 400 nits max, DCI-P3 100%. PWM dimming present. |
 | Webcam (5MP IR, AMD ISP4) | **OEM kernel only** | OEM 6.11+ | Not mainline until ~Linux 7.1+. Requires `libcamera` via `ppa:amd-team/isp` + `libspa-0.2-libcamera` — AMD ISP uses media-controller pipeline, not raw V4L2. Per-device WirePlumber routing needed: ISP→libcamera, USB cameras→V4L2 (PipeWire 1.0.5 V4L2 probe crashes on ISP; libcamera duplicates USB cameras). **Known issue:** PipeWire's SPA plugin links against libcamera 0.2 but the ISP4 handler only matches kernel 6.17's driver in libcamera 0.3 — built-in camera detected by `cam -l` but not visible in PipeWire until the SPA plugin is rebuilt against 0.3. |
 | WiFi (MediaTek MT7925) | Works (with caveats) | 6.14.3+ | `pcie_aspm=off` may be needed; dies after suspend |
@@ -1152,7 +1182,7 @@ Verify with `xrandr --query`. Update workspace assignments in i3 config accordin
 sudo apt install linux-oem-24.04
 
 # 2. Apply kernel parameters
-sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"/' /etc/default/grub
+sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 amdgpu.cwsr_enable=0 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"/' /etc/default/grub
 sudo update-grub
 
 # 3. Update firmware
@@ -1217,7 +1247,15 @@ sudo apt-get install -y libspa-0.2-libcamera libcamera-tools
 #   Firefox: about:config → media.webrtc.camera.allow-pipewire = true
 #   Brave:   brave://flags/#enable-webrtc-pipewire-camera → Enabled
 
-# 8. Reboot
+# 8. ROCm (Ryzen APU path — see §8.8a for details)
+wget https://repo.radeon.com/amdgpu-install/7.2.1/ubuntu/noble/amdgpu-install_7.2.1.70201-1_all.deb
+sudo apt install ./amdgpu-install_7.2.1.70201-1_all.deb
+amdgpu-install -y --usecase=rocm --no-dkms
+sudo usermod -a -G render,video $LOGNAME
+# Verify: rocminfo (should list gfx1151)
+# Optional: pipx install amd-debug-tools && amd-ttm --set 100  # set shared memory to 100GB
+
+# 9. Reboot
 sudo reboot
 ```
 
@@ -1385,6 +1423,10 @@ These have **zero interaction with Linux**. If you see references to these in HP
 - [Canonical OEM Kernel Documentation](https://canonical-kernel-docs.readthedocs-hosted.com/latest/reference/oem-kernels/)
 - [Canonical HWE Team PC OEM DKMS PPA](https://launchpad.net/~canonical-hwe-team/+archive/ubuntu/pc-oem-dkms)
 - [AMD ROCm — Strix Halo Optimization](https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html)
+- [AMD ROCm — Ryzen Install (Linux)](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html)
+- [AMD ROCm — Ryzen Compatibility Matrix (Linux)](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/compatibility/compatibilityryz/native_linux/native_linux_compatibility.html)
+- [AMD ROCm — llama.cpp Prebuilt Binaries (Strix Halo)](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/advanced/advancedryz/linux/llm/llamacpp.html)
+- [AMD ROCm 7.2.1 Compatibility Matrix](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html)
 - [AMD Memory Encryption — Linux Kernel Docs](https://docs.kernel.org/arch/x86/amd-memory-encryption.html)
 - [AMD NPU Kernel Documentation](https://docs.kernel.org/accel/amdxdna/amdnpu.html)
 - [HP Sure Start Technical Whitepaper (PDF)](https://h10032.www1.hp.com/ctg/Manual/c06216928.pdf)

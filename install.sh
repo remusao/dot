@@ -40,6 +40,7 @@ SKIP_SNAP=${DOTFILES_SKIP_SNAP:-0}
 SKIP_DOCKER=${DOTFILES_SKIP_DOCKER:-0}
 SKIP_1PASSWORD=${DOTFILES_SKIP_1PASSWORD:-0}
 SKIP_AI_TOOLS=${DOTFILES_SKIP_AI_TOOLS:-0}
+SKIP_ROCM=${DOTFILES_SKIP_ROCM:-0}
 
 has_repo() { [ -f "$1" ]; }
 REPOS_ADDED=0
@@ -253,9 +254,12 @@ if [ "$SKIP_DOCKER" != "1" ]; then
   sudo usermod -aG docker "$USER"
 fi
 # video group: required for brightnessctl to write to /sys/class/backlight/*/brightness
-if ! id -nG "$USER" | grep -qw video; then
-  sudo usermod -aG video "$USER"
-fi
+# render group: required for GPU compute access (/dev/dri/renderD*)
+for grp in video render; do
+  if ! id -nG "$USER" | grep -qw "$grp"; then
+    sudo usermod -aG "$grp" "$USER"
+  fi
+done
 ok "System packages"
 
 # ── Purge residual docker.io (triggers Pareto Security false positive) ──
@@ -499,7 +503,7 @@ WPCONF
     # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
     info "Configuring kernel parameters (ZBook Ultra G1a)..."
     GRUB_CHANGED=0
-    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856"; do
+    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "amdgpu.cwsr_enable=0" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856"; do
         param_name="${kp%%=*}"
         normalized="${param_name//-/_}"
         if ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${normalized}[= \"]" /etc/default/grub 2>/dev/null &&
@@ -512,7 +516,29 @@ WPCONF
     if [[ "$GRUB_CHANGED" == "1" ]]; then
         sudo update-grub
     fi
-    ok "Kernel parameters (amd_pstate pcie_aspm amd_iommu dcdebugmask ttm.pages_limit ttm.page_pool_size)"
+    ok "Kernel parameters (amd_pstate pcie_aspm amd_iommu dcdebugmask cwsr_enable ttm.pages_limit ttm.page_pool_size)"
+
+    # ROCm (Ryzen APU path — uses inbox kernel driver, no DKMS)
+    # Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html
+    if [ "$SKIP_ROCM" != "1" ]; then
+        info "Installing ROCm (Ryzen APU path)..."
+        wget -q "https://repo.radeon.com/amdgpu-install/7.2.1/ubuntu/noble/amdgpu-install_7.2.1.70201-1_all.deb" \
+            -O /tmp/amdgpu-install.deb
+        sudo apt-get install "${APT_OPTS[@]}" /tmp/amdgpu-install.deb
+        rm -f /tmp/amdgpu-install.deb
+        sudo apt-get update
+        amdgpu-install -y --usecase=rocm --no-dkms
+        ok "ROCm (Ryzen APU)"
+
+        # amd-debug-tools: provides amd-ttm for shared memory config
+        # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
+        if ! command -v pipx &>/dev/null; then
+            sudo apt-get install "${APT_OPTS[@]}" pipx
+        fi
+        pipx install amd-debug-tools 2>/dev/null || pipx upgrade amd-debug-tools 2>/dev/null || true
+        pipx ensurepath
+        ok "amd-debug-tools (amd-ttm)"
+    fi
 
     # WiFi suspend/resume: MT7925 driver timeout -110 after suspend (Ubuntu #2141198)
     info "Installing WiFi suspend services (MT7925)..."
