@@ -26,7 +26,7 @@ export RESTIC_VERSION="0.18.1"
 export FIREJAIL_VERSION="0.9.80"
 
 # https://github.com/obsidianmd/obsidian-releases/releases/latest
-export OBSIDIAN_VERSION="1.12.4"
+export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/99designs/aws-vault/releases/latest
 export AWS_VAULT_VERSION="v7.2.0"
@@ -68,7 +68,7 @@ export DIFFTASTIC_VERSION="0.68.0"
 export LAZYGIT_VERSION="0.60.0"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.03.16.00"
+export WATCHMAN_VERSION="2026.03.23.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.16.1"
@@ -77,7 +77,7 @@ export ALACRITTY_VERSION="0.16.1"
 export FUSUMA_VERSION="3.12.0"
 
 # crates.io: i3status-rs
-export I3STATUS_RUST_VERSION="0.36.0"
+export I3STATUS_RUST_VERSION="0.36.1"
 
 # https://github.com/ryanoasis/nerd-fonts/releases/latest
 export NERD_FONTS_VERSION="v3.4.0"
@@ -98,7 +98,7 @@ export FD_VERSION="10.4.2"
 export BAT_VERSION="0.26.1"
 
 # crates.io: git-delta
-export DELTA_VERSION="0.19.0"
+export DELTA_VERSION="0.19.1"
 
 # crates.io: hyperfine
 export HYPERFINE_VERSION="1.20.0"
