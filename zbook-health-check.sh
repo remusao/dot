@@ -1326,12 +1326,44 @@ check_display() {
         local has_picom=false
         cmd_exists picom && has_picom=true
 
+        # Detect if running on AMDGPU (page flip kernel bug affects GLX/EGL backends)
+        local has_amdgpu=false
+        if lspci -nn 2>/dev/null | grep -q "1002:"; then
+            has_amdgpu=true
+        fi
+
         if $tearfree_set; then
             ok "amdgpu TearFree enabled in Xorg config — prevents tearing without a compositor"
         elif $has_picom; then
-            ok "picom compositor available — use 'backend = \"glx\"; vsync = true;' for tear-free. Do NOT combine with TearFree. Ref: https://wiki.archlinux.org/title/Picom"
+            # Check picom backend — GLX triggers page flip kernel bug on AMDGPU (EINVAL since ~kernel 6.12)
+            local picom_conf="${HOME}/.config/picom/picom.conf"
+            local picom_backend=""
+            if [[ -f "$picom_conf" ]]; then
+                picom_backend=$(grep -oP '^\s*backend\s*=\s*"\K[^"]+' "$picom_conf" 2>/dev/null) || picom_backend=""
+            fi
+            if $has_amdgpu && [[ "$picom_backend" == "glx" || "$picom_backend" == "egl" ]]; then
+                warn "picom uses '$picom_backend' backend on AMDGPU — known page flip kernel bug" \
+                    "GLX/EGL backends trigger 'flip queue failed: Invalid argument' via the Present extension flip path (kernel bug since ~6.12, fix expected in 6.18+). Sustained failures freeze the display. Fix: set 'backend = \"xrender\"' in $picom_conf — all features (shadows, fading, dim, vsync) work identically. Do NOT combine picom with TearFree. Ref: https://lwn.net/Articles/1064694/ , https://github.com/yshui/picom/issues/1328"
+            elif [[ "$picom_backend" == "xrender" ]]; then
+                ok "picom compositor with xrender backend — tear-free, avoids AMDGPU page flip kernel bug. Ref: https://wiki.archlinux.org/title/Picom"
+            else
+                ok "picom compositor available — use 'backend = \"xrender\"; vsync = true;' for tear-free on AMDGPU. Do NOT combine with TearFree. Ref: https://wiki.archlinux.org/title/Picom"
+            fi
         else
-            warn "No X11 tearing fix detected" "i3 has no built-in compositor — fix: sudo mkdir -p /etc/X11/xorg.conf.d && printf 'Section \"Device\"\\n  Identifier \"AMD\"\\n  Driver \"amdgpu\"\\n  Option \"TearFree\" \"true\"\\nEndSection\\n' | sudo tee /etc/X11/xorg.conf.d/10-amdgpu.conf, OR: sudo apt install picom. Ref: https://wiki.archlinux.org/title/AMDGPU"
+            warn "No X11 tearing fix detected" "i3 has no built-in compositor — fix: sudo apt install picom (use 'backend = \"xrender\"; vsync = true;' on AMDGPU), OR: sudo mkdir -p /etc/X11/xorg.conf.d && printf 'Section \"Device\"\\n  Identifier \"AMD\"\\n  Driver \"amdgpu\"\\n  Option \"TearFree\" \"true\"\\nEndSection\\n' | sudo tee /etc/X11/xorg.conf.d/10-amdgpu.conf. Ref: https://wiki.archlinux.org/title/AMDGPU"
+        fi
+
+        # AMDGPU page flip errors in current Xorg log
+        if $has_amdgpu; then
+            local xorg_log="${HOME}/.local/share/xorg/Xorg.0.log"
+            if [[ -f "$xorg_log" ]]; then
+                local flip_errors
+                flip_errors=$(grep -c "present flip failed\|flip queue failed" "$xorg_log" 2>/dev/null) || flip_errors=0
+                if [[ "$flip_errors" -gt 0 ]]; then
+                    warn "Xorg log has $flip_errors page flip errors" \
+                        "AMDGPU page flip kernel bug is active in this session ('flip queue failed: Invalid argument'). If picom uses GLX/EGL backend, switch to xrender. Expected kernel fix: 6.18+. Ref: https://lwn.net/Articles/1064694/"
+                fi
+            fi
         fi
 
         # HiDPI scaling guidance (only relevant for high-res panels like 2880x1800 OLED)
