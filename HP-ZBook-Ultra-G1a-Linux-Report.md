@@ -400,6 +400,18 @@ How it works: in `amdgpu_dm.c`, `DC_DISABLE_PSR` (0x10) prevents `psr_feature_en
 - **No user-space fix:** Awaiting kernel update. The `amd_pmf` driver received new ACPI ID support (`AMDI0108`) in kernel 6.17 for Strix Halo ([Phoronix](https://www.phoronix.com/news/Linux-6.17-AMD-AMDI0108)), and race condition fixes have been submitted ([lore.kernel.org](https://lore.kernel.org/lkml/20240217015642.113806-1-mario.limonciello@amd.com/T/)), but the workqueue hogging persists on 6.17.0-1012-oem.
 - **References:** [Ubuntu #2112307](https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.8/+bug/2112307), [Ubuntu #2025670](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2025670), [Kernel Bugzilla #218863](https://bugzilla.kernel.org/show_bug.cgi?id=218863), [HP Support — amd_pmf init failure](https://h30434.www3.hp.com/t5/Notebook-Operating-System-and-Recovery/BAD-FIRMWARE-amd-pmf-AMDI0102-00-ta-invoke-cmd-init-failed/td-p/9213382)
 
+### 8.14 AMDGPU Page Flip Kernel Bug — X11 Session Crash
+
+- **Cause:** A kernel bug in `amdgpu_dm_crtc_atomic_check()` (present since ~kernel 6.12) returns `-EINVAL` for certain page flip conditions. On X11, compositors using GLX or EGL backends trigger this via the Present extension flip path: `glXSwapBuffers` → X Present → `amdgpu_present_flip()` → `drmModePageFlipTarget()` → kernel returns EINVAL. The DDX driver (`xf86-video-amdgpu`) logs `flip queue failed: Invalid argument` / `Page flip failed: Invalid argument` / `present flip failed` as warnings. These errors are non-fatal — the DDX falls back to copy-based presentation — but sustained bursts prevent any frames from being displayed, freezing the screen. **This is independent of PSR (8.12) and PCIe ASPM (8.1).**
+- **Symptoms:** Display freezes (no frames presented) while the system remains alive (SSH works, TTY accessible). The freeze can last seconds to minutes. If the user presses Ctrl+Alt+Backspace, Xorg prints `Server zapped. Shutting down.` and the session terminates back to GDM. The Xorg log (`~/.local/share/xorg/Xorg.0.log`) shows hundreds of `present flip failed` entries. Note: "Server zapped" means Ctrl+Alt+Backspace was pressed — it does **not** mean the X server crashed on its own.
+- **Affected:** All AMDGPU hardware on X11 with compositors that use GLX/EGL Present flips. Not AMDGPU-specific in the kernel — the bug is in the DRM atomic modesetting path — but AMDGPU is the primary driver affected. Wayland compositors use `DRM_IOCTL_MODE_ATOMIC` (not the legacy page flip ioctl) and are not affected.
+- **Trigger:** Any GPU-accelerated application launch (Electron apps like Obsidian, browsers) can trigger a sustained burst of flip failures. The compositor (picom) attempts to composite the new window and its Present flips fail repeatedly.
+- **Fix:** Switch picom to the `xrender` backend (`backend = "xrender"` in `picom.conf`). The xrender backend uses X11 copy operations (`xcb_render_composite`) that never touch the `DRM_IOCTL_MODE_PAGE_FLIP` ioctl, completely avoiding the kernel bug. All features used in the dotfiles picom config (shadows, fading, inactive-dim, vsync) work identically on xrender. The xrender backend also uses less power (GPU can fully idle) and less memory (~8MB vs ~35MB).
+- **Alternative fix:** Migrate to Wayland/Sway — uses a fundamentally different display submission path (`DRM_IOCTL_MODE_ATOMIC`).
+- **What does NOT fix this:** `TearFree "true"` (has its own flip path that can also fail), switching to modesetting DDX (same kernel ioctl), `--disable-gpu` on Electron apps (wrong layer — the failing flips are from the compositor, not individual apps).
+- **Expected resolution:** Kernel 6.18+ (patches in development on amd-gfx mailing list).
+- **References:** [LWN — AMD GPU page flip bug](https://lwn.net/Articles/1064694/), [picom #1328 — flip queue failed with GLX/EGL](https://github.com/yshui/picom/issues/1328), [xf86-video-amdgpu source — amdgpu_present.c](https://gitlab.freedesktop.org/xorg/driver/xf86-video-amdgpu/-/blob/master/src/amdgpu_present.c), [Xorg server source — xf86Events.c ACTION_TERMINATE](https://gitlab.freedesktop.org/xorg/xserver/-/blob/master/hw/xfree86/common/xf86Events.c)
+
 ---
 
 ## 9. Suspend, Sleep, and Hibernate — Deep Dive
@@ -632,6 +644,8 @@ Two kernel workarounds required for X11 stability carry a measurable battery cos
 | `amdgpu.dcdebugmask=0x410` | ~0.5-1.5W | Qualitative: ["significantly increases power draw"](https://discuss.cachyos.org/t/tutorial-mitigate-gfx-crash-lockup-apparent-freeze-with-amdgpu/10842) | Wayland; or try `0x400` only (keep PSR v1, disable Panel Replay) |
 
 **Combined:** ~2-4.5W of idle power could be recovered by migrating to Wayland (Sway). These wattage estimates are from other AMD laptops, not measured on this specific hardware.
+
+**Compositor backend:** picom with `backend = "xrender"` allows the GPU to fully idle between frames (no persistent GL context), reducing idle power vs the GLX backend. This is already the recommended backend for AMDGPU stability (see Section 8.14).
 
 **Keyboard backlight:** [~2W](https://geohot.github.io/blog/jekyll/update/2025/11/28/replacing-my-macbook.html), firmware-only (F5 key), no sysfs LED exposed — cannot be automated.
 
@@ -1567,6 +1581,7 @@ Track these upstream bugs to know when workarounds can be removed.
 | `amd_iommu=off` | [Ubuntu #2141198](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2141198) — MT7925 resume timeout | Open | mt7925e handles suspend/resume natively |
 | `amdgpu.cwsr_enable=0` | [ROCm #5590](https://github.com/ROCm/ROCm/issues/5590) — MES CWSR hang | Open | New MES firmware without CWSR regression |
 | `amdgpu.dcdebugmask=0x410` | [Ubuntu #2024774](https://bugs.launchpad.net/bugs/2024774) — PSR/Panel Replay GUI freeze on X11 | Open | amdgpu driver properly coordinates PSR with X11 damage tracking; or migrate to Wayland |
+| `picom backend = "xrender"` | [LWN](https://lwn.net/Articles/1064694/) — AMDGPU page flip EINVAL since kernel ~6.12 | Open | Kernel 6.18+ with page flip fix; then can switch back to GLX |
 | linux-firmware ≥20260110 | [ROCm #5724](https://github.com/ROCm/ROCm/issues/5724) — MES 0x83 page faults | Resolved | Already fixed; don't downgrade below 20260110 |
 | WiFi suspend services | [Ubuntu #2141198](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2141198) | Open | mt7925e handles suspend/resume natively |
 | Webcam (OEM kernel) | [AMD ISP4 v9 patches](https://lkml.org/lkml/2026/3/2/278) | Under review | ISP4 merged into mainline (targeting 7.1+) |
