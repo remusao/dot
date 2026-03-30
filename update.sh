@@ -45,6 +45,9 @@ fi
 # Backup
 . ./nuggets/utilities/restic.sh
 
+# Cloud sync
+. ./nuggets/utilities/rclone.sh
+
 # Git TUI
 . ./nuggets/utilities/lazygit.sh
 

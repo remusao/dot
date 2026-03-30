@@ -22,6 +22,9 @@ export NVM_VERSION="v0.40.4"
 # https://github.com/restic/restic/releases/latest
 export RESTIC_VERSION="0.18.1"
 
+# https://github.com/rclone/rclone/releases/latest
+export DOTFILES_RCLONE_VERSION="v1.73.3"
+
 # https://github.com/netblue30/firejail/releases/latest
 export FIREJAIL_VERSION="0.9.80"
 
