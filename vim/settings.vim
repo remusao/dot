@@ -42,6 +42,11 @@ set splitright
 set splitbelow
 
 set ttimeoutlen=10
+
+" Disable modifyOtherKeys for urxvt which doesn't support it
+if $TERM =~# 'rxvt' || $COLORTERM =~# 'rxvt'
+  autocmd VimEnter * ++once call chansend(v:stderr, "\x1b[>4;0m")
+endif
 set breakindent
 
 set wildignore=*.swp,*.bak,*.pyc,*.class,*.so,*.zip,.git,.cabal-sandbox
