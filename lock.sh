@@ -2,7 +2,7 @@
 export NODEJS_VERSION="24.14.0"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM_VERSION="v0.11.6"
+export NEOVIM_VERSION="v0.12.0"
 
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.13"
@@ -56,7 +56,7 @@ export OXIPNG_VERSION="10.1.0"
 export TOKEI_VERSION="14.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI_VERSION="0.26.7"
+export TREE_SITTER_CLI_VERSION="0.26.8"
 
 # crates.io: eza
 export EZA_VERSION="0.23.4"
@@ -71,7 +71,7 @@ export DIFFTASTIC_VERSION="0.68.0"
 export LAZYGIT_VERSION="0.60.0"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.03.23.00"
+export WATCHMAN_VERSION="2026.03.30.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.16.1"
@@ -92,7 +92,7 @@ export FONT_AWESOME_VERSION="7.2.0"
 export GREENCLIP_VERSION="4.2"
 
 # https://github.com/junegunn/fzf/releases/latest
-export FZF_VERSION="0.70.0"
+export FZF_VERSION="0.71.0"
 
 # crates.io: fd-find
 export FD_VERSION="10.4.2"
@@ -101,7 +101,7 @@ export FD_VERSION="10.4.2"
 export BAT_VERSION="0.26.1"
 
 # crates.io: git-delta
-export DELTA_VERSION="0.19.1"
+export DELTA_VERSION="0.19.2"
 
 # crates.io: hyperfine
 export HYPERFINE_VERSION="1.20.0"
