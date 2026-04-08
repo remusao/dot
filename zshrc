@@ -188,6 +188,12 @@ PR_TITLEBAR=''
 set-window-title
 add-zsh-hook precmd set-window-title
 
+# Reset cursor to steady block after each command (urxvt ignores cursorBlink on nvim exit)
+if [[ $TERM == *rxvt* || $COLORTERM == *rxvt* ]]; then
+  reset-cursor() { printf '\e[2 q' }
+  add-zsh-hook precmd reset-cursor
+fi
+
 # Syntax coloring
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern root)
