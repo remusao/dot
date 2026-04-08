@@ -1,8 +1,8 @@
 # https://nodejs.org/en/download
-export NODEJS_VERSION="24.14.0"
+export NODEJS_VERSION="24.14.1"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM_VERSION="v0.12.0"
+export NEOVIM_VERSION="v0.12.1"
 
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.13"
@@ -23,7 +23,7 @@ export NVM_VERSION="v0.40.4"
 export RESTIC_VERSION="0.18.1"
 
 # https://github.com/rclone/rclone/releases/latest
-export DOTFILES_RCLONE_VERSION="v1.73.3"
+export DOTFILES_RCLONE_VERSION="v1.73.4"
 
 # https://github.com/netblue30/firejail/releases/latest
 export FIREJAIL_VERSION="0.9.80"
@@ -44,7 +44,7 @@ export CARGO_AUDIT_VERSION="0.22.1"
 export CARGO_FUZZ_VERSION="0.13.1"
 
 # crates.io: flamegraph
-export FLAMEGRAPH_VERSION="0.6.11"
+export FLAMEGRAPH_VERSION="0.6.12"
 
 # crates.io: loc
 export LOC_VERSION="0.5.0"
@@ -68,13 +68,13 @@ export DU_DUST_VERSION="1.2.4"
 export DIFFTASTIC_VERSION="0.68.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT_VERSION="0.60.0"
+export LAZYGIT_VERSION="0.61.0"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.03.30.00"
+export WATCHMAN_VERSION="2026.04.06.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
-export ALACRITTY_VERSION="0.16.1"
+export ALACRITTY_VERSION="0.17.0"
 
 # https://rubygems.org/gems/fusuma
 export FUSUMA_VERSION="3.12.0"
