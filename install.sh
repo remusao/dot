@@ -425,6 +425,10 @@ GESTURES
     rm -f /tmp/cool-ryzen-sudoers
     ok "Power saver toggle (cool-ryzen)"
 
+    # PD cycling diagnostic (real-time power supply state monitor)
+    ln -sf "${DOT_DIR}/power-monitor.py" "${HOME}/.local/bin/power-monitor"
+    chmod +x "${DOT_DIR}/power-monitor.py"
+
     # Webcam: AMD ISP4 requires libcamera (media-controller pipeline, not raw V4L2).
     # USB cameras use V4L2. Per-device WirePlumber routing prevents:
     #   - V4L2 device probe crash with AMD ISP on PipeWire 1.0.5
