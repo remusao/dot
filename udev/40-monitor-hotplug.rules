@@ -1,0 +1,6 @@
+# Override autorandr's system rule (/usr/lib/udev/rules.d/40-monitor-hotplug.rules)
+# to require ENV{HOTPLUG}=="1" — only set by the kernel for real connector hotplug
+# events (drm_sysfs_hotplug_event), not DRM sysfs attribute writes or xrandr probes.
+# Without this filter, writing to DRM sysfs (e.g. power_dpm_force_performance_level)
+# triggers autorandr → xrandr → AMDGPU EDID re-read → new DRM uevent → feedback loop.
+ACTION=="change", SUBSYSTEM=="drm", ENV{HOTPLUG}=="1", RUN+="/bin/systemctl start --no-block autorandr.service"

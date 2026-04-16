@@ -94,6 +94,9 @@ bindsym XF86MonBrightnessDown exec --no-startup-id ~/.i3/media-keys.sh brightnes
 # Power saver toggle (GPU DPM low + CPU floor + PPD power-saver — drops idle from 7-11W to 3-4W)
 bindsym $mod+p exec --no-startup-id /home/remi/.dot/nuggets/utilities/cool-ryzen.sh
 
+# Disable/enable auto power switching on AC plug/unplug (tames PD cycling)
+bindsym $mod+Shift+p exec --no-startup-id /home/remi/.dot/nuggets/utilities/cool-ryzen-auto-toggle.sh
+
 # Media player controls (playerctl works with any MPRIS player)
 bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
 bindsym XF86AudioStop exec --no-startup-id playerctl stop
