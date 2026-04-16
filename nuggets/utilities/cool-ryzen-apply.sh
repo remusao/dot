@@ -1,8 +1,20 @@
 #!/bin/sh
 # cool-ryzen-apply — Toggle iGPU low-power mode + CPU min frequency + power profile
 # Runs as root. Called by udev (AC plug/unplug) and i3 toggle (via sudo).
-# Usage: cool-ryzen-apply on|off [--notify]
+# Usage: cool-ryzen-apply on|off [--notify] [--auto]
 set -eu
+
+# Parse flags
+auto=false notify=false
+for arg in "$@"; do
+    case "$arg" in
+        --auto)   auto=true ;;
+        --notify) notify=true ;;
+    esac
+done
+
+# In auto mode, bail if auto-switch is disabled (toggled via mod+Shift+p)
+if $auto && [ -f /tmp/cool-ryzen-no-auto ]; then exit 0; fi
 
 POLICY=/sys/devices/system/cpu/cpufreq/policy0
 
@@ -31,8 +43,13 @@ if command -v powerprofilesctl >/dev/null 2>&1; then
     timeout 3 powerprofilesctl set "$ppd" 2>/dev/null || true
 fi
 
+# Disable ABM (PPD enables it on power-saver; causes color shift on eDP)
+for f in /sys/class/drm/card*-eDP-*/amdgpu/panel_power_savings; do
+    [ -w "$f" ] && echo 0 > "$f"
+done
+
 # Optional OSD notification
-if [ "${2:-}" = "--notify" ]; then
+if $notify; then
     XUSER=$(who | awk '/\(:/{print $1; exit}')
     if [ -n "$XUSER" ]; then
         XUID=$(id -u "$XUSER")

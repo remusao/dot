@@ -575,6 +575,36 @@ check_power() {
     if [[ -n "$hw_min" && -n "$cur_min" ]]; then
         info "CPU freq floor: ${cur_min}kHz (hardware min: ${hw_min}kHz, efficiency sweet spot: ${nl_freq}kHz)"
     fi
+
+    # power_supply_changed_work hogging (PD cycling indicator — compounds amd_pmf hogging)
+    # Same dmesg-then-journalctl fallback pattern as the amd_pmf check in check_hardware()
+    local psc_hog_line
+    psc_hog_line=$(dmesg 2>/dev/null | grep -o "power_supply_changed_work hogged CPU for >10000us [0-9]* times" | tail -1) || psc_hog_line=""
+    if [[ -z "$psc_hog_line" ]]; then
+        psc_hog_line=$(journalctl -b 0 -k --no-pager 2>/dev/null | grep -o "power_supply_changed_work hogged CPU for >10000us [0-9]* times" | tail -1) || psc_hog_line=""
+    fi
+    if [[ -n "$psc_hog_line" ]]; then
+        local psc_count
+        psc_count=$(echo "$psc_hog_line" | grep -oP '\d+ times' | grep -oP '\d+') || psc_count="?"
+        warn "power_supply_changed_work CPU hogging detected (${psc_count} times this boot)" "indicates USB-C PD cycling (charger connect/disconnect). Compounds amd_pmf hogging and can trigger kernel panics. Third-party USB-C chargers are the typical trigger — try the HP 140W charger or check TI PD firmware. Run: power-monitor for real-time diagnostics. Ref: https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/Zbook-Ultra-g1a-Ubuntu-not-charging-redux/td-p/9437876"
+    fi
+
+    # Current charging state snapshot
+    local ac_online bat_status bat_pwr
+    ac_online=$(cat /sys/class/power_supply/AC/online 2>/dev/null) || ac_online=""
+    bat_status=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null) || bat_status=""
+    bat_pwr=$(cat /sys/class/power_supply/BAT0/power_now 2>/dev/null) || bat_pwr=""
+    if [[ -n "$ac_online" && -n "$bat_status" ]]; then
+        local pwr_w=""
+        if [[ -n "$bat_pwr" ]]; then
+            pwr_w=" ($(awk "BEGIN {printf \"%.1f\", $bat_pwr/1000000}")W)"
+        fi
+        if [[ "$ac_online" == "1" ]]; then
+            info "Charging state: AC online — battery: ${bat_status}${pwr_w}"
+        else
+            info "Charging state: AC offline — battery: ${bat_status}${pwr_w}"
+        fi
+    fi
 }
 
 # ── Section 5: Suspend, Sleep & NPU ──────────────────────────────────────────
@@ -1093,10 +1123,20 @@ check_firmware() {
 
     # TI PD firmware version (fixes USB-C charging connect/disconnect bug)
     if cmd_exists fwupdmgr; then
-        local pd_info
-        pd_info=$(fwupdmgr get-devices 2>/dev/null | grep -A2 -i "TI.*PD\|USB.*PD\|Power Delivery" | head -5) || pd_info=""
-        if [[ -n "$pd_info" ]]; then
-            info "USB-C PD controller detected. TI PD firmware v6.9.0 (dual) / v5.9.0 (single) fixes third-party charger disconnect bug. Note: some charging instability may persist after firmware update due to PD 3.1 voltage-switching sensitivity. Ref: https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/hp-zbook-ultra-g1a-needs-more-stable-pd-3-1-charging/td-p/9465799"
+        local pd_block pd_ver
+        pd_block=$(fwupdmgr get-devices 2>/dev/null | grep -A8 -iE "TI.*PD|USB.*PD|Power Delivery" | head -12) || pd_block=""
+        if [[ -n "$pd_block" ]]; then
+            pd_ver=$(echo "$pd_block" | grep -iP "version|firmware" | grep -oP '\d+\.\d+\.\d+' | head -1) || pd_ver=""
+            if [[ -n "$pd_ver" ]]; then
+                # Known-good: v6.9.0 (dual port), v5.9.0 (single port)
+                if [[ "$pd_ver" == "6.9.0" || "$pd_ver" == "5.9.0" ]]; then
+                    ok "TI PD firmware: v${pd_ver} — up to date. Note: some PD 3.1 voltage-switching sensitivity may persist with third-party chargers. Ref: https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/hp-zbook-ultra-g1a-needs-more-stable-pd-3-1-charging/td-p/9465799"
+                else
+                    warn "TI PD firmware: v${pd_ver} — outdated" "v6.9.0 (dual port) / v5.9.0 (single port) fixes third-party charger connect/disconnect cycling. Update: sudo fwupdmgr update. Ref: https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/hp-zbook-ultra-g1a-needs-more-stable-pd-3-1-charging/td-p/9465799"
+                fi
+            else
+                info "USB-C PD controller found but version unreadable. Check manually: fwupdmgr get-devices | grep -A8 -i 'PD'. Target: v6.9.0 (dual) / v5.9.0 (single). Ref: https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/hp-zbook-ultra-g1a-needs-more-stable-pd-3-1-charging/td-p/9465799"
+            fi
         fi
     fi
 
@@ -1460,6 +1500,21 @@ check_display() {
             else
                 fail "media-keys.sh missing" "volume/brightness keys will not work" \
                     "Re-run install.sh or check that ~/.i3 symlink points to the dotfiles i3/ directory"
+            fi
+
+            # autorandr udev rule override (prevents DRM uevent feedback loop — Section 8.15)
+            if cmd_exists autorandr; then
+                local sys_rule="/usr/lib/udev/rules.d/40-monitor-hotplug.rules"
+                local override_rule="/etc/udev/rules.d/40-monitor-hotplug.rules"
+                if [[ -f "$override_rule" ]] && grep -q 'ENV{HOTPLUG}' "$override_rule" 2>/dev/null; then
+                    ok "autorandr udev rule override installed — HOTPLUG filter prevents DRM uevent feedback loop"
+                elif [[ -f "$sys_rule" ]] && ! grep -q 'ENV{HOTPLUG}' "$sys_rule" 2>/dev/null; then
+                    local rate_hits
+                    rate_hits=$(journalctl -b -u autorandr --no-pager 2>/dev/null | grep -c "start-limit-hit") || rate_hits=0
+                    fail "autorandr udev rule lacks HOTPLUG filter — DRM uevent feedback loop ($rate_hits rate-limit hits this boot)" \
+                        "autorandr fires on ALL DRM changes, not just real hotplug. Writing to DRM sysfs (cool-ryzen-apply, PPD) triggers autorandr → xrandr → AMDGPU EDID re-read → loop. Fix: install the override rule from dotfiles udev/40-monitor-hotplug.rules" \
+                        "sudo cp \"\$(dirname \"\$0\")/udev/40-monitor-hotplug.rules\" /etc/udev/rules.d/ && sudo udevadm control --reload-rules"
+                fi
             fi
         fi
     elif [[ -n "$session_type" ]]; then

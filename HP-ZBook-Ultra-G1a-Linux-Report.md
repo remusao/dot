@@ -234,6 +234,23 @@ Ubuntu 26.04 LTS **"Resolute Raccoon"** is releasing **[April 23, 2026](https://
 - **65W chargers do NOT work** — firmware-enforced minimum wattage ([HP Support — 65W Charging](https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/Charging-HP-Zbook-Ultra-G1A-with-65w/td-p/9538308))
 - **Fix:** Apply TI PD firmware update (v6.9.0 dual port / v5.9.0 single port) via fwupd or HP Support
 - Laptop may cap third-party chargers at 96-97% with a warning recommending HP chargers
+- **Diagnosing PD cycling:**
+  ```bash
+  # Quick check — is PD cycling happening this boot?
+  journalctl -b -k --no-pager --grep "power_supply_changed_work hogged CPU"
+
+  # Real-time sysfs snapshot
+  cat /sys/class/power_supply/AC/online        # 1=AC, 0=battery
+  cat /sys/class/power_supply/BAT0/status       # Charging/Discharging/Not charging/Full
+  cat /sys/class/power_supply/BAT0/power_now    # microwatts
+
+  # Real-time event stream
+  upower --monitor-detail
+
+  # All-in-one diagnostic (polls sysfs, detects transitions, shows time-window stats)
+  power-monitor                  # from dotfiles — see power-monitor.py
+  power-monitor --log /tmp/pd.log  # also write transitions to file
+  ```
 
 ### 8.3 Thunderbolt Dock Disconnection
 
@@ -399,6 +416,11 @@ How it works: in `amdgpu_dm.c`, `DC_DISABLE_PSR` (0x10) prevents `psr_feature_en
 - **Cannot blacklist `amd_pmf`:** The module provides thermal management, CPU frequency scaling, and power state handling on Strix Halo. Removing it risks overheating and loss of power management.
 - **No user-space fix:** Awaiting kernel update. The `amd_pmf` driver received new ACPI ID support (`AMDI0108`) in kernel 6.17 for Strix Halo ([Phoronix](https://www.phoronix.com/news/Linux-6.17-AMD-AMDI0108)), and race condition fixes have been submitted ([lore.kernel.org](https://lore.kernel.org/lkml/20240217015642.113806-1-mario.limonciello@amd.com/T/)), but the workqueue hogging persists on 6.17.0-1012-oem.
 - **References:** [Ubuntu #2112307](https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.8/+bug/2112307), [Ubuntu #2025670](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2025670), [Kernel Bugzilla #218863](https://bugzilla.kernel.org/show_bug.cgi?id=218863), [HP Support — amd_pmf init failure](https://h30434.www3.hp.com/t5/Notebook-Operating-System-and-Recovery/BAD-FIRMWARE-amd-pmf-AMDI0102-00-ta-invoke-cmd-init-failed/td-p/9213382)
+- **Monitoring:**
+  ```bash
+  # Check both amd_pmf and power_supply_changed_work hogging counts
+  journalctl -b -k --no-pager --grep "hogged CPU"
+  ```
 
 ### 8.14 AMDGPU Page Flip Kernel Bug — X11 Session Crash
 
@@ -411,6 +433,15 @@ How it works: in `amdgpu_dm.c`, `DC_DISABLE_PSR` (0x10) prevents `psr_feature_en
 - **What does NOT fix this:** `TearFree "true"` (has its own flip path that can also fail), switching to modesetting DDX (same kernel ioctl), `--disable-gpu` on Electron apps (wrong layer — the failing flips are from the compositor, not individual apps).
 - **Expected resolution:** Kernel 6.18+ (patches in development on amd-gfx mailing list).
 - **References:** [LWN — AMD GPU page flip bug](https://lwn.net/Articles/1064694/), [picom #1328 — flip queue failed with GLX/EGL](https://github.com/yshui/picom/issues/1328), [xf86-video-amdgpu source — amdgpu_present.c](https://gitlab.freedesktop.org/xorg/driver/xf86-video-amdgpu/-/blob/master/src/amdgpu_present.c), [Xorg server source — xf86Events.c ACTION_TERMINATE](https://gitlab.freedesktop.org/xorg/xserver/-/blob/master/hw/xfree86/common/xf86Events.c)
+
+### 8.15 autorandr DRM Uevent Feedback Loop — Display Instability
+
+- **Cause:** autorandr's udev rule (`/usr/lib/udev/rules.d/40-monitor-hotplug.rules`) fires on **all** DRM `change` events: `ACTION=="change", SUBSYSTEM=="drm"` — with no further filtering. When anything writes to DRM sysfs (e.g. `cool-ryzen-apply` writing to `power_dpm_force_performance_level` or `panel_power_savings`), the kernel emits a DRM `change` uevent, autorandr starts, runs `xrandr`, which causes AMDGPU to re-probe the eDP panel (EDID re-read), which emits another DRM `change` uevent — **self-sustaining feedback loop**. The loop runs indefinitely (~1 cycle per 8-19 seconds, throttled by autorandr's `StartLimitBurst=1` / `StartLimitIntervalSec=5`). Power-profiles-daemon (PPD 0.22+) writing to DPM can also trigger it.
+- **Symptoms:** Constant EDID re-reads in `journalctl` (`AMDGPU(0): EDID vendor "LGD"`), autorandr `start-limit-hit` failures every few seconds, potential display flickering or instability over extended periods. Does **not** crash the X server on its own, but sustained loops degrade the display stack.
+- **Affected:** Any system with autorandr + AMDGPU that writes to DRM sysfs attributes. Not ZBook-specific but triggered by `cool-ryzen-apply` and PPD power profile changes.
+- **Fix:** Override the system udev rule with `/etc/udev/rules.d/40-monitor-hotplug.rules` adding `ENV{HOTPLUG}=="1"`. The kernel only sets `HOTPLUG=1` in the uevent environment for real connector hotplug events ([`drm_sysfs_hotplug_event()`](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/drm_sysfs.c) in `drm_sysfs.c`), not DRM sysfs attribute writes or routine xrandr probes. The dotfiles include this override at [`udev/40-monitor-hotplug.rules`](udev/40-monitor-hotplug.rules), deployed automatically by `install.sh`.
+- **Upstream status:** autorandr tried switching from `ACTION=="change"` to `ACTION=="add|remove"` in v1.13.2 ([#321](https://github.com/phillipberndt/autorandr/issues/321)) but reverted in v1.13.3 ([#324](https://github.com/phillipberndt/autorandr/issues/324)) since add/remove events are not emitted on monitor hotplug. The upstream rule remains overly broad with no `HOTPLUG` filter.
+- **Verify fix:** `sudo udevadm control --reload-rules`, then run `cool-ryzen-apply on` — no EDID spam in `journalctl -f -u autorandr`. Plug/unplug a monitor to confirm autorandr still triggers.
 
 ---
 
@@ -604,6 +635,13 @@ sudo systemctl status power-profiles-daemon
 powerprofilesctl set balanced    # balanced / performance / power-saver
 ```
 
+**Diagnostic scripts** (included in dotfiles, deployed by `install.sh`):
+```bash
+power-monitor              # real-time PD cycling detection (power-monitor.py)
+bash zbook-health-check.sh # full system validation against this report
+bash zbook-panic-diag.sh   # post-incident diagnostic collector
+```
+
 **Note:** [Framework recommends PPD over TLP for AMD systems](https://community.frame.work/t/tracking-ppd-v-tlp-for-amd-ryzen-7040/39423). TLP and auto-cpufreq are alternatives but may conflict with PPD — **do not run more than one simultaneously**. PPD integrates with the ZBook's ACPI `platform_profile` (balanced/performance/low-power), which [Phoronix benchmarked](https://www.phoronix.com/review/amd-strix-halo-platform-profile) showing the low-power profile reduces average power to ~32W (67% of default) while retaining 76% of performance.
 
 **PPD version-specific behavior:**
@@ -631,6 +669,8 @@ Forcing the iGPU to `low`, dropping the CPU frequency floor, and switching PPD t
 - **Boot:** i3 config checks AC state at login and applies accordingly
 
 **Note:** PPD ≤0.21 does not write to `power_dpm_force_performance_level` — no conflict. PPD 0.22+ sets DPM to `low` in power-saver (same target state — no functional conflict). When power saver is ON, GPU-heavy tasks will be slower (force it OFF with `$mod+p` before GPU workloads).
+
+**⚠️ autorandr interaction:** Writing to DRM sysfs triggers a DRM uevent feedback loop with autorandr's default udev rule (see [Section 8.15](#815-autorandr-drm-uevent-feedback-loop--display-instability)). The dotfiles include a udev override (`udev/40-monitor-hotplug.rules`) that adds `ENV{HOTPLUG}=="1"` to break the loop.
 
 **Optional kernel parameter:** `workqueue.power_efficient=Y` routes deferred kernel work to power-efficient CPU cores. [Benchmarked at ~15% savings on ARM big.LITTLE](https://lwn.net/Articles/731052/), but benefit on x86 AMD is uncertain. Known trade-off: increased cache misses and potentially higher disk I/O. Not included in the default GRUB line — add manually if battery life is a priority.
 
@@ -1582,6 +1622,7 @@ Track these upstream bugs to know when workarounds can be removed.
 | `amdgpu.cwsr_enable=0` | [ROCm #5590](https://github.com/ROCm/ROCm/issues/5590) — MES CWSR hang | Open | New MES firmware without CWSR regression |
 | `amdgpu.dcdebugmask=0x410` | [Ubuntu #2024774](https://bugs.launchpad.net/bugs/2024774) — PSR/Panel Replay GUI freeze on X11 | Open | amdgpu driver properly coordinates PSR with X11 damage tracking; or migrate to Wayland |
 | `picom backend = "xrender"` | [LWN](https://lwn.net/Articles/1064694/) — AMDGPU page flip EINVAL since kernel ~6.12 | Open | Kernel 6.18+ with page flip fix; then can switch back to GLX |
+| autorandr udev HOTPLUG filter | [autorandr #321](https://github.com/phillipberndt/autorandr/issues/321), [#324](https://github.com/phillipberndt/autorandr/issues/324) — DRM uevent feedback loop | Workaround | Upstream adds `ENV{HOTPLUG}=="1"` to `40-monitor-hotplug.rules`; then remove local override |
 | linux-firmware ≥20260110 | [ROCm #5724](https://github.com/ROCm/ROCm/issues/5724) — MES 0x83 page faults | Resolved | Already fixed; don't downgrade below 20260110 |
 | WiFi suspend services | [Ubuntu #2141198](https://bugs.launchpad.net/ubuntu/+source/linux/+bug/2141198) | Open | mt7925e handles suspend/resume natively |
 | Webcam (OEM kernel) | [AMD ISP4 v9 patches](https://lkml.org/lkml/2026/3/2/278) | Under review | ISP4 merged into mainline (targeting 7.1+) |
