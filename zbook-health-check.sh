@@ -1276,9 +1276,7 @@ check_peripherals() {
             info "XKB: compose:ralt not set (optional — enables accented character input)"
         fi
         if [[ "$xkb_opts" == *"terminate:ctrl_alt_bksp"* ]]; then
-            ok "XKB: Ctrl+Alt+Backspace kills X (terminate:ctrl_alt_bksp)"
-        else
-            info "XKB: terminate:ctrl_alt_bksp not set (optional — emergency X11 kill)"
+            warn "XKB: terminate:ctrl_alt_bksp is enabled" "Ctrl+Alt+Bksp kills X — Ubuntu disables this by default; keyboard ghosting can trigger it accidentally. Remove from /etc/default/keyboard."
         fi
     fi
 
