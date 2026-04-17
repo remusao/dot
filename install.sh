@@ -372,10 +372,10 @@ EndSection
 XORG
     ok "Touchpad config (30-touchpad.conf)"
 
-    # Keyboard: Caps Lock as Ctrl, Right Alt as Compose, Ctrl+Alt+Bksp kills X
-    sudo sed -i 's/^XKBOPTIONS=.*/XKBOPTIONS="ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp"/' /etc/default/keyboard
+    # Keyboard: Caps Lock as Ctrl, Right Alt as Compose
+    sudo sed -i 's/^XKBOPTIONS=.*/XKBOPTIONS="ctrl:nocaps,compose:ralt"/' /etc/default/keyboard
     sudo dpkg-reconfigure -f noninteractive keyboard-configuration
-    ok "Keyboard XKB options (ctrl:nocaps, compose:ralt, terminate:ctrl_alt_bksp)"
+    ok "Keyboard XKB options (ctrl:nocaps, compose:ralt)"
 
     # Trackpad gestures: fusuma (fires mid-gesture, snappier than libinput-gestures)
     sudo apt-get install "${APT_OPTS[@]}" libinput-tools ruby xdotool

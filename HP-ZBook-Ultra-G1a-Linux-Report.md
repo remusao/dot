@@ -1050,21 +1050,22 @@ The ZBook Ultra G1a's physical keyboard layout has the bottom-left row ordered C
 
 Update `/etc/default/keyboard`:
 ```
-XKBOPTIONS="ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp"
+XKBOPTIONS="ctrl:nocaps,compose:ralt"
 ```
 
 Then apply: `sudo dpkg-reconfigure -f noninteractive keyboard-configuration`
 
 Also update the `setxkbmap` line in the i3 config to match:
 ```
-exec --no-startup-id setxkbmap -layout us -option ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp
+exec --no-startup-id setxkbmap -layout us -option ctrl:nocaps,compose:ralt
 ```
 
 | Option | Effect |
 |---|---|
 | `ctrl:nocaps` | Caps Lock becomes Ctrl — home-row Ctrl for all shortcuts |
 | `compose:ralt` | Right Alt becomes Compose key — type accented chars (Compose → ' → e = é) |
-| `terminate:ctrl_alt_bksp` | Ctrl+Alt+Backspace kills X server — emergency escape hatch |
+
+> Do **not** add `terminate:ctrl_alt_bksp`. Ubuntu disables it by default for a reason: keyboard matrix ghosting on the ZBook has been observed to fire it unintentionally (Ctrl+Alt+any-key combinations can emit a phantom Backspace), zapping the X server and losing all open work.
 
 **Sources:** [ArchWiki — Xorg/Keyboard](https://wiki.archlinux.org/title/Xorg/Keyboard_configuration), [xkeyboard-config(7)](https://manpages.ubuntu.com/manpages/noble/man7/xkeyboard-config.7.html)
 
@@ -1077,7 +1078,7 @@ xinput list-props "SYNA3133:00 06CB:CFE2 Touchpad" | grep -E "Tapping Enabled|Cl
 
 # Keyboard
 setxkbmap -query | grep options
-# Expected: ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp
+# Expected: ctrl:nocaps,compose:ralt
 ```
 
 ### Trackpad Gestures (libinput-gestures)
@@ -1284,7 +1285,7 @@ Section "InputClass"
 EndSection
 EOF
 
-sudo sed -i 's/^XKBOPTIONS=.*/XKBOPTIONS="ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp"/' /etc/default/keyboard
+sudo sed -i 's/^XKBOPTIONS=.*/XKBOPTIONS="ctrl:nocaps,compose:ralt"/' /etc/default/keyboard
 sudo dpkg-reconfigure -f noninteractive keyboard-configuration
 
 # 6. i3 desktop services (i3/X11 only — skip if using GNOME)

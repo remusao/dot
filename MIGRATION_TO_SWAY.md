@@ -88,7 +88,7 @@ Copy `i3/config` and apply the following changes. ~70% of lines transfer verbati
 | 211 | `xrandr --dpi 96` | Replaced by `output` scale directive |
 | 214 | `xset b off` | Replaced by input keyboard block |
 | 215 | `xset r rate 300 100` | Replaced by input keyboard block |
-| 216 | `setxkbmap -layout us -option ctrl:nocaps,compose:ralt,terminate:ctrl_alt_bksp` | Replaced by input keyboard block. Note: `terminate:ctrl_alt_bksp` is meaningless on Wayland (no X server to kill). |
+| 235 | `setxkbmap -layout us -option ctrl:nocaps,compose:ralt` | Replaced by input keyboard block. |
 | 218 | `libinput-gestures-setup start` | Replaced by `bindgesture` |
 | 221 | `pasystray` | Crashes on Wayland |
 | 222 | `/home/remi/.fehbg` | Replaced by `output * bg` directive |
