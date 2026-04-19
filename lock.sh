@@ -1,5 +1,5 @@
 # https://nodejs.org/en/download
-export NODEJS_VERSION="24.14.1"
+export NODEJS_VERSION="24.15.0"
 
 # https://github.com/neovim/neovim/releases/latest
 export NEOVIM_VERSION="v0.12.1"
@@ -68,10 +68,10 @@ export DU_DUST_VERSION="1.2.4"
 export DIFFTASTIC_VERSION="0.68.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT_VERSION="0.61.0"
+export LAZYGIT_VERSION="0.61.1"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.04.06.00"
+export WATCHMAN_VERSION="2026.04.13.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
