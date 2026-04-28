@@ -220,7 +220,7 @@ ALL_PKGS=(
   libdbus-1-dev libsensors-dev
   x11-xserver-utils x11-xkb-utils lxrandr
   zsh-syntax-highlighting keychain shellcheck
-  xclip xsel
+  copyq xclip xsel
   jq sd hexyl entr just
   ffmpeg v4l-utils mitmproxy pandoc socat pv pigz 7zip ncdu
   zoxide duf btop nmap wireguard

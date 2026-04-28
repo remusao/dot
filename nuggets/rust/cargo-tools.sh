@@ -28,6 +28,7 @@ cargo_ensure() {
 }
 
 cargo_ensure cargo-audit   cargo-audit   "${CARGO_AUDIT_VERSION}"
+cargo_ensure cargo-deny    cargo-deny    "${CARGO_DENY_VERSION}"
 cargo_ensure cargo-fuzz    cargo-fuzz    "${CARGO_FUZZ_VERSION}"
 cargo_ensure flamegraph    flamegraph    "${FLAMEGRAPH_VERSION}"
 cargo_ensure loc           loc           "${LOC_VERSION}"

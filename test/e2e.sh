@@ -255,7 +255,9 @@ check "i3/config: no scrot" bash -c '! grep -q "scrot" "$HOME/.dot/i3/config"'
 check "i3/config: i3status-rs" grep -q "i3status-rs" "$HOME/.dot/i3/config"
 check "i3/config: no pasystray" bash -c '! grep -q "pasystray" "$HOME/.dot/i3/config"'
 check "i3status-rs" command -v i3status-rs
-check "greenclip" command -v greenclip
+check "copyq" command -v copyq
+check "no greenclip" bash -c '! command -v greenclip'
+check "i3/config: no greenclip" bash -c '! grep -q "greenclip" "$HOME/.dot/i3/config"'
 check "Font Awesome 6" bash -c "fc-list | grep -qi 'Font Awesome 6'"
 check "zshrc: python3 for venvwrapper" grep -q "VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" "$HOME/.dot/zshrc"
 check "zshrc: no spark PATH" bash -c '! grep -q "spark-1.6.1" "$HOME/.dot/zshrc"'
