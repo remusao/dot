@@ -61,8 +61,8 @@ fi
 . ./nuggets/utilities/jetbrains-mono-nf.sh
 . ./nuggets/utilities/font-awesome.sh
 
-# Clipboard manager
-. ./nuggets/utilities/greenclip.sh
+# SNI→XEmbed bridge for i3bar system tray
+. ./nuggets/utilities/snixembed.sh
 
 # CLI tools (binary downloads)
 . ./nuggets/utilities/fzf.sh

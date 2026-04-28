@@ -113,7 +113,7 @@ bindsym $mod+Shift+n exec --no-startup-id dunstctl close-all
 bindsym $mod+Ctrl+n exec --no-startup-id dunstctl set-paused toggle
 
 # Clipboard manager
-bindsym $mod+Shift+v exec --no-startup-id rofi -modes "clipboard:greenclip print" -show clipboard -run-command '{cmd}'
+bindsym $mod+Shift+v exec --no-startup-id copyq menu
 
 # Program launcher (rofi)
 bindsym $mod+d exec --no-startup-id rofi -show combi
@@ -240,8 +240,10 @@ exec --no-startup-id fusuma -d
 exec --no-startup-id ~/.i3/battery-powersave.sh
 
 exec --no-startup-id picom -b
-exec --no-startup-id greenclip daemon
+exec --no-startup-id copyq
 exec --no-startup-id autorandr --change
+# SNI→XEmbed bridge so i3bar can show StatusNotifierItem apps (beru-tray, etc.)
+exec --no-startup-id snixembed --fork
 exec --no-startup-id nm-applet
 exec_always --no-startup-id ~/.fehbg
 
