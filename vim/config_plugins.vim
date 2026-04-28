@@ -56,7 +56,7 @@ let g:ale_rust_cargo_avoid_whole_workspace = 0
 let g:ale_rust_analyzer_config = {
     \ 'cargo': { 'allFeatures': v:true },
     \ 'procMacro': { 'enable': v:true },
-    \ 'checkOnSave': { 'command': 'clippy', 'enable': v:true, 'extraArgs': '--all-targets' }
+    \ 'checkOnSave': { 'command': 'clippy', 'enable': v:true }
     \ }
 
 "" Clippy
@@ -250,38 +250,17 @@ lua << EOF
 -- vim.o.timeoutlen = 100
 -- require("which-key").setup({})
 
-local api = vim.api
-local function ts_disable(_, bufnr)
-    return api.nvim_buf_line_count(bufnr) > 10000
-end
+local langs = { 'svelte', 'typescript', 'html', 'css', 'javascript', 'python', 'rust', 'yaml', 'json', 'bash', 'make', 'lua', 'toml' }
+require('nvim-treesitter').install(langs)
 
-require'nvim-treesitter.configs'.setup {
-  -- A list of parser names, or "all"
-  ensure_installed = { "svelte", "typescript", "html", "css", "javascript", "python", "rust", "yaml", "json", "bash", "make", "lua", "toml" },
-
-  -- Install parsers synchronously (only applied to `ensure_installed`)
-  sync_install = true,
-
-  -- Automatically install missing parsers when entering buffer
-  -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-  auto_install = true,
-
-  highlight = {
-    enable = true,
-    disable = ts_disable,
-    additional_vim_regex_highlighting = false,
-  },
-
-  incremental_selection = {
-    enable = true,
-  },
-
-  indent = {
-    enable = true,
-    -- disable = {"svelte", "html", "javascript", "typescript", "rust", "toml"}
-  },
-
-}
+vim.api.nvim_create_autocmd('FileType', {
+  callback = function(args)
+    if vim.api.nvim_buf_line_count(args.buf) > 10000 then return end
+    if pcall(vim.treesitter.start) then
+      vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+    end
+  end,
+})
 EOF
 
 

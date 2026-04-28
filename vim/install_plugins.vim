@@ -44,7 +44,7 @@ Plug 'rust-lang/rust.vim'
 
 Plug 'hashivim/vim-vagrant', { 'for': ['ruby'] }
 Plug 'lervag/vimtex', { 'for': ['tex'] }
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate', 'branch': 'master'}
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate', 'branch': 'main'}
 
 Plug 'github/copilot.vim'
 

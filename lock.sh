@@ -31,14 +31,17 @@ export FIREJAIL_VERSION="0.9.80"
 # https://github.com/obsidianmd/obsidian-releases/releases/latest
 export OBSIDIAN_VERSION="1.12.7"
 
-# https://github.com/99designs/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.2.0"
+# https://github.com/ByteNess/aws-vault/releases/latest
+export AWS_VAULT_VERSION="v7.10.2"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS_VERSION="v3.12.2"
 
 # crates.io: cargo-audit
 export CARGO_AUDIT_VERSION="0.22.1"
+
+# crates.io: cargo-deny
+export CARGO_DENY_VERSION="0.19.4"
 
 # crates.io: cargo-fuzz
 export CARGO_FUZZ_VERSION="0.13.1"
@@ -88,8 +91,8 @@ export NERD_FONTS_VERSION="v3.4.0"
 # https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
 export FONT_AWESOME_VERSION="7.2.0"
 
-# https://github.com/erebe/greenclip/releases/latest
-export GREENCLIP_VERSION="4.2"
+# https://git.sr.ht/~steef/snixembed/refs
+export SNIXEMBED_VERSION="0.3.3"
 
 # https://github.com/junegunn/fzf/releases/latest
 export FZF_VERSION="0.71.0"

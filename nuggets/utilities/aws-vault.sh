@@ -16,7 +16,7 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
   (
     tmp=$(mktemp "${HOME}/.local/bin/.aws-vault.XXXXXX")
     trap 'rm -f "$tmp"' EXIT
-    curl -fL "https://github.com/99designs/aws-vault/releases/download/${AWS_VAULT_VERSION}/aws-vault-linux-amd64" \
+    curl -fL "https://github.com/ByteNess/aws-vault/releases/download/${AWS_VAULT_VERSION}/aws-vault-linux-amd64" \
       -o "$tmp"
     chmod 755 "$tmp"
     mv "$tmp" "${HOME}/.local/bin/aws-vault"
