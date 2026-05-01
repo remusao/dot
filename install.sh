@@ -84,8 +84,17 @@ if ! has_repo /etc/apt/sources.list.d/mozillateam-ubuntu-ppa-noble.sources; then
   sudo add-apt-repository -y ppa:mozillateam/ppa
   REPOS_ADDED=1
 fi
-printf 'Package: thunderbird*\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001\n' \
-  | sudo tee /etc/apt/preferences.d/mozillateam-ppa > /dev/null
+sudo tee /etc/apt/preferences.d/mozillateam-ppa > /dev/null <<'EOF'
+Package: thunderbird*
+Pin: release o=LP-PPA-mozillateam
+Pin-Priority: 1001
+
+Package: thunderbird*
+Pin: release o=Ubuntu
+Pin-Priority: -1
+EOF
+printf 'Unattended-Upgrade::Allowed-Origins:: "LP-PPA-mozillateam:%s";\n' "$VERSION_CODENAME" \
+  | sudo tee /etc/apt/apt.conf.d/51mozillateam > /dev/null
 
 # ── Brave Browser ──────────────────────────────────────────────────────────
 if ! has_repo /etc/apt/sources.list.d/brave-browser-release.sources; then
@@ -187,7 +196,7 @@ if ! has_repo /etc/apt/sources.list.d/pareto.list; then
 fi
 
 # ══════════════════════════════════════════════════════════════════════════
-# Firefox snap removal (before apt install replaces it with the deb)
+# Snap removal (before apt install replaces them with debs)
 # ══════════════════════════════════════════════════════════════════════════
 if [ "$SKIP_SNAP" != "1" ] && snap list firefox &>/dev/null; then
   info "Removing Firefox snap..."
@@ -197,6 +206,15 @@ if [ "$SKIP_SNAP" != "1" ] && snap list firefox &>/dev/null; then
   sudo apt-get purge -y firefox 2>/dev/null || true
   sudo rm -f /var/lib/snapd/seed/snaps/firefox_*.snap
   sudo rm -f /var/lib/snapd/seed/assertions/firefox_*.assert
+fi
+if [ "$SKIP_SNAP" != "1" ] && snap list thunderbird &>/dev/null; then
+  info "Removing Thunderbird snap..."
+  sudo systemctl stop var-snap-thunderbird-common-host-hunspell.mount 2>/dev/null || true
+  sudo systemctl disable var-snap-thunderbird-common-host-hunspell.mount 2>/dev/null || true
+  sudo snap remove --purge thunderbird
+  sudo apt-get purge -y thunderbird 2>/dev/null || true
+  sudo rm -f /var/lib/snapd/seed/snaps/thunderbird_*.snap
+  sudo rm -f /var/lib/snapd/seed/assertions/thunderbird_*.assert
 fi
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -220,7 +238,7 @@ ALL_PKGS=(
   libdbus-1-dev libsensors-dev
   x11-xserver-utils x11-xkb-utils lxrandr
   zsh-syntax-highlighting keychain shellcheck
-  copyq xclip xsel
+  xclip
   jq sd hexyl entr just
   ffmpeg v4l-utils mitmproxy pandoc socat pv pigz 7zip ncdu
   zoxide duf btop nmap wireguard

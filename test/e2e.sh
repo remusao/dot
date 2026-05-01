@@ -255,7 +255,9 @@ check "i3/config: no scrot" bash -c '! grep -q "scrot" "$HOME/.dot/i3/config"'
 check "i3/config: i3status-rs" grep -q "i3status-rs" "$HOME/.dot/i3/config"
 check "i3/config: no pasystray" bash -c '! grep -q "pasystray" "$HOME/.dot/i3/config"'
 check "i3status-rs" command -v i3status-rs
-check "copyq" command -v copyq
+check "no copyq" bash -c '! command -v copyq'
+check "no xsel" bash -c '! command -v xsel'
+check "i3/config: no copyq" bash -c '! grep -q "copyq" "$HOME/.dot/i3/config"'
 check "no greenclip" bash -c '! command -v greenclip'
 check "i3/config: no greenclip" bash -c '! grep -q "greenclip" "$HOME/.dot/i3/config"'
 check "Font Awesome 6" bash -c "fc-list | grep -qi 'Font Awesome 6'"
