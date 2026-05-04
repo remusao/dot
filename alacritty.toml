@@ -1,4 +1,4 @@
-# Alacritty 0.16.x configuration
+# Alacritty 0.17.0 configuration
 # Matches urxvt look-and-feel from Xresources
 # Optimized for: Ubuntu 24.04, AMD GPU (Mesa/RADV), i3/X11, DPI 130
 
@@ -6,7 +6,10 @@
 live_config_reload = true
 
 [env]
-TERM = "xterm-256color"
+# Custom terminfo installed by nuggets/rust/alacritty.sh into ~/.terminfo.
+# Provides truecolor passthrough, synchronized output, undercurl support.
+TERM = "alacritty"
+# Disable winit auto-scaling so Xft.dpi=130 (from Xresources) is the single source.
 WINIT_X11_SCALE_FACTOR = "1"
 
 [window]
@@ -101,7 +104,7 @@ blinking = "Off"
 hide_when_typing = true
 
 [[hints.enabled]]
-regex = "(mailto:|gemini://|gopher://|https://|http://|news:|file:|git://|ssh://|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^`]+"
+regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|gopher://|https://|http://|news:|file:|git://|ssh://|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^`]+"
 hyperlinks = true
 post_processing = true
 persist = false
@@ -114,11 +117,15 @@ key = "Return"
 mods = "Control|Shift"
 action = "SpawnNewInstance"
 
-[debug]
-render_timer = false
-persistent_logging = false
-log_level = "Warn"
-renderer = "None"
-print_events = false
-highlight_damage = false
-prefer_egl = false
+# urxvt parity: Ctrl+Meta+C/V hardcoded in urxvt src/command.C copy PRIMARY→CLIPBOARD
+# and paste CLIPBOARD. Mirrored here as additive bindings — Ctrl+Shift+C/V (alacritty
+# default) still works.
+[[keyboard.bindings]]
+key = "C"
+mods = "Control|Alt"
+action = "Copy"
+
+[[keyboard.bindings]]
+key = "V"
+mods = "Control|Alt"
+action = "Paste"

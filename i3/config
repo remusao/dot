@@ -64,12 +64,15 @@ exec --no-startup-id gammastep -l 48.8:11.34
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
 
-# Terminals
-exec --no-startup-id urxvtd -q -o -f
-bindsym $mod+Return exec urxvtc
-bindsym $mod+Shift+Return exec alacritty
+# Terminals (urxvt is default; alacritty + kitty available for testing)
+bindsym $mod+Return       exec --no-startup-id urxvtc
+bindsym $mod+Shift+Return exec --no-startup-id alacritty
+bindsym $mod+Ctrl+Return  exec --no-startup-id kitty
 
-# Scratchpad dropdown terminal
+# urxvt daemon (required for urxvtc client launches)
+exec --no-startup-id urxvtd -q -o -f
+
+# Scratchpad dropdown terminal (alacritty)
 exec --no-startup-id alacritty --class Alacritty,scratchpad
 for_window [instance="scratchpad"] floating enable, resize set 1200 700, move scratchpad
 bindsym $mod+grave scratchpad show
