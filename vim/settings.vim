@@ -45,6 +45,8 @@ set ttimeoutlen=10
 
 " Disable modifyOtherKeys for urxvt which doesn't support it
 if $TERM =~# 'rxvt' || $COLORTERM =~# 'rxvt'
+  " Disable BCE so ctermbg doesn't flicker on first paint (Debian #747633)
+  set t_ut=
   autocmd VimEnter * ++once call chansend(v:stderr, "\x1b[>4;0m")
 endif
 set breakindent

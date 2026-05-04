@@ -9,6 +9,12 @@ export PATH="${HOME}/.local/bin:${HOME}/.pyenv/bin:${PATH}"
 # Neovim (from source)
 . ./nuggets/utilities/neovim.sh
 
+# Symbols Nerd Font (required by kitty's source build at package time)
+. ./nuggets/utilities/nerd-fonts-symbols.sh
+
+# Terminal (from source, native CPU optimization)
+. ./nuggets/utilities/kitty.sh
+
 # Desktop apps
 . ./nuggets/utilities/obsidian.sh
 

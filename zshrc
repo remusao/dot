@@ -265,6 +265,9 @@ zle -N nvim_fzf
 
 bindkey "^f" nvim_fzf
 
+# User-installed zsh completions (alacritty, etc.)
+fpath=(~/.zsh_functions $fpath)
+
 # Completions (full rebuild once per day, fast load otherwise)
 autoload -Uz compinit
 if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
