@@ -1,121 +1,89 @@
+! ── Terminal identity ───────────────────────────────────────────────
+! Must match an installed terminfo entry (ncurses-term provides this).
+! See vim/settings.vim:48 (set t_ut=) for the BCE flicker workaround.
+URxvt.termName:           rxvt-unicode-256color
 
-! Specifies the terminal type name to be set in the TERM environment variable
-URxvt*termName: screen-256color
-! Set scrollbar style to rxvt, plain, next or xterm. plain is the authors favourite.
-URxvt*scrollstyle: plain
-! True: scroll to bottom when a non-special key pressed.  Special keys are those which are intercepted by rxvt for special handling andnt passed onto the shell; False: dont scroll to bottom
-URxvt*scrollTtyKeypress: true
-! True: scroll to bottom when tty receives output; False: do not scroll to bottom when tty receives output
-URxvt*scrollTtyOutput: false
-! Turn on/off secondary screen (default enabled)
-URxvt.secondaryScreen: 1
-URxvt.secondaryScroll: 0
-URxvt.secondaryWheel: 1
+! ── Scroll behaviour ────────────────────────────────────────────────
+! jumpScroll, skipScroll, buffered all default-on (init.C:592-600).
+URxvt.scrollBar:          false
+URxvt.scrollstyle:        plain
+URxvt.scrollTtyKeypress:  true
+URxvt.scrollTtyOutput:    false
+URxvt.secondaryScreen:    1
+URxvt.secondaryScroll:    0
+URxvt.saveLines:          65535
 
+! ── Xft (global font rendering) ─────────────────────────────────────
+Xft.dpi:                  130
+Xft.autohint:             0
+Xft.lcdfilter:            lcddefault
+Xft.hinting:              true
+Xft.hintstyle:            hintslight
+Xft.rgba:                 rgb
+Xft.antialias:            true
+Xcursor.size:             32
+Xcursor.theme:            Vanilla-DMZ-AA
 
-Xft.dpi: 130
-! Xft.dpi: 120
-Xft.autohint: 0
-Xft.lcdfilter: lcddefault
-Xft.hinting: true
-Xft.hintstyle: hintslight
-Xft.rgba: rgb
-Xft.antialias: true
-Xcursor.size: 32
+! ── Font (Inconsolata for Powerline 12pt + symbol/Latin fallbacks) ─
+! urxvt does NOT use fontconfig for per-glyph fallback (rxvtfont.C:1687-1744);
+! the chain must be explicit. Italic is synthesized via Xft slant (main.C:840-873).
+URxvt.font:               xft:Inconsolata for Powerline:style=Medium:size=12, \
+                          xft:Symbols Nerd Font Mono:size=12, \
+                          xft:DejaVu Sans Mono:size=12
+URxvt.boldFont:           xft:Inconsolata for Powerline:style=BoldForPowerline:size=12, \
+                          xft:Symbols Nerd Font Mono:size=12, \
+                          xft:DejaVu Sans Mono:style=Bold:size=12
+URxvt.letterSpace:        0
+URxvt.lineSpace:          1
+URxvt.intensityStyles:    false
 
-!--------------------------------------------------------
+! ── Cursor / pointer ────────────────────────────────────────────────
+URxvt.cursorBlink:        false
+URxvt.cursorColor:        darkorange1
+URxvt.pointerBlank:       true
+URxvt.pointerColor:       #93a1a1
+URxvt.pointerColor2:      #586e75
 
+! ── Borders & input ─────────────────────────────────────────────────
+URxvt.internalBorder:     0
+URxvt.externalBorder:     0
+URxvt.iso14755:           false
+URxvt.iso14755_52:        false
+URxvt.cutchars:           ()*,<>[]{}|`""''
+URxvt.tripleclickwords:   true
 
-!U R X V T - Setting
+! ── i3 integration ──────────────────────────────────────────────────
+URxvt.urgentOnBell:       true
 
-URxvt*fading:              30
+! ── Off-focus fade ──────────────────────────────────────────────────
+URxvt.fading:             30
+URxvt.fadeColor:          #191919
 
-URxvt*scrollBar: false
-! URxvt*foreground: grey75
-! URxvt*background: grey13
-URxvt*saveLines: 65535
-URxvt*cursorBlink: false
-
-URxvt.xftAntialias:     true
-URxvt.font:             xft:Inconsolata for Powerline:regular:size=12:antialias=true:hinting=true
-URxvt.boldFont:         xft:Inconsolata for Powerline:bold:size=12:antialias=true:hinting=true
-! URxvt.font:             xft:MesloGS NF:regular:size=12:antialias=true:hinting=true
-! URxvt.boldFont:         xft:MesloGS NF:bold:size=12:antialias=true:hinting=true
-! MesloLGS NF
-! URxvt.letterSpace: -1
-URxvt.letterSpace: 0
-
-urxvt*allow_bold:    true
-
-URxvt.cutchars: ()*,<>[]{}|`""''
-URxvt.tabbed.tabbar-fg: 6
-URxvt.tabbed.tabbar-bg: 0
-URxvt.tabbed.tab-fg: 0
-URxvt.tabbed.tab-bg: 3
-! URxvt.perl-ext-common: default,matcher,resize-font,fullscreen
+! ── Perl: disabled for fastest startup, lowest per-keystroke overhead.
+! Built-in Ctrl+Meta+C/V (command.C:793-803) handles clipboard with no perl.
+! Note: enabling `matcher` would be a perf trap given saveLines=65535 — it
+! re-scans visible scrollback for URLs on every screen update.
 URxvt.perl-ext:
 URxvt.perl-ext-common:
 
+! ── Colours (Solarized-ish) ─────────────────────────────────────────
+URxvt.colorBD:            orange
+URxvt.background:         #191919
+URxvt.foreground:         #c6c6c6
 
-! URxvt.resize-font.smaller: C-Down
-! URxvt.resize-font.bigger: C-Up
-
-URxvt.urlLauncher: sensible-browser
-URxvt.iso14755: false
-URxvt*iso14755_52: false
-
-URxvt.internalBorder: 0
-URxvt.externalBorder: 0
-
-Xcursor.theme:    Vanilla-DMZ-AA
-
-!!Source http://github.com/altercation/solarized
-!
-URxvt.intensityStyles: false
-
-URxvt*colorBD: orange
-URxvt*scrollColor: grey13
-URxvt*troughColor: black
-URxvt*cursorColor: darkorange1
-URxvt*transparent: false
-! URxvt*shading: 33  # no effect when transparent is false
-! URxvt*tintColor: gray
-
-
-URxvt*background: #191919
-URxvt*foreground: #c6c6c6
-URxvt*fadeColor: #191919
-URxvt*pointerColorBackground: #586e75
-URxvt*pointerColorForeground: #93a1a1
-
-!! black dark/light
-URxvt*color0: #073642
-URxvt*color8: #002b36
-
-!! red dark/light
-URxvt*color1: #dc322f
-URxvt*color9: #cb4b16
-
-!! green dark/light
-URxvt*color2: #25b20f
-URxvt*color10: #586e75
-
-!! yellow dark/light
-URxvt*color3: #b58900
-URxvt*color11: #657b83
-
-!! blue dark/light
-URxvt*color4: #268bd2
-URxvt*color12: #839496
-
-!! magenta dark/light
-URxvt*color5: #d33682
-URxvt*color13: #6c71c4
-
-!! cyan dark/light
-URxvt*color6: #2aa198
-URxvt*color14: #93a1a1
-
-!! white dark/light
-URxvt*color7: #eee8d5
-URxvt*color15: #fdf6e3
+URxvt.color0:  #073642
+URxvt.color8:  #002b36
+URxvt.color1:  #dc322f
+URxvt.color9:  #cb4b16
+URxvt.color2:  #25b20f
+URxvt.color10: #586e75
+URxvt.color3:  #b58900
+URxvt.color11: #657b83
+URxvt.color4:  #268bd2
+URxvt.color12: #839496
+URxvt.color5:  #d33682
+URxvt.color13: #6c71c4
+URxvt.color6:  #2aa198
+URxvt.color14: #93a1a1
+URxvt.color7:  #eee8d5
+URxvt.color15: #fdf6e3

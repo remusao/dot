@@ -108,3 +108,6 @@ export DELTA_VERSION="0.19.2"
 
 # crates.io: hyperfine
 export HYPERFINE_VERSION="1.20.0"
+
+# https://github.com/kovidgoyal/kitty/releases/latest
+export KITTY_VERSION="0.46.2"

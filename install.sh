@@ -247,7 +247,18 @@ ALL_PKGS=(
   libsqlite3-dev libncurses-dev libffi-dev liblzma-dev
   libxml2-dev libxmlsec1-dev
   libclang-dev libopenblas-dev libsasl2-dev liburing-dev libzzip-dev
-  libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev
+  # alacritty build deps (source build via nuggets/rust/alacritty.sh)
+  libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev scdoc
+  # kitty build deps (source build via nuggets/utilities/kitty.sh)
+  libharfbuzz-dev libcairo2-dev libxxhash-dev liblcms2-dev librsync-dev
+  libfreetype-dev libpng-dev libcanberra-dev
+  libxcursor-dev libxinerama-dev libxrandr-dev libxi-dev
+  libxkbcommon-x11-dev libx11-xcb-dev
+  libxcb-image0-dev libxcb-xkb-dev libxcb-render0-dev
+  libgl1-mesa-dev libegl1-mesa-dev libwayland-dev wayland-protocols
+  libsimde-dev golang-go
+  python3-sphinx python3-sphinx-copybutton python3-sphinx-inline-tabs
+  python3-sphinxext-opengraph furo
   google-perftools
   tk-dev xz-utils
   fonts-inconsolata fonts-powerline fonts-dejavu fontconfig
@@ -342,6 +353,10 @@ ok "$HOME/.ssh/config"
 mkdir -p ~/.config/alacritty
 ln -sf "${DOT_DIR}/alacritty.toml" ~/.config/alacritty/alacritty.toml
 ok "$HOME/.config/alacritty/alacritty.toml"
+
+mkdir -p ~/.config/kitty
+ln -sf "${DOT_DIR}/kitty.conf" ~/.config/kitty/kitty.conf
+ok "$HOME/.config/kitty/kitty.conf"
 
 mkdir -p ~/.config/fontconfig
 ln -sf "${DOT_DIR}/fontconfig/fonts.conf" ~/.config/fontconfig/fonts.conf
