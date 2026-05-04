@@ -9,6 +9,9 @@ URxvt.scrollBar:          false
 URxvt.scrollstyle:        plain
 URxvt.scrollTtyKeypress:  true
 URxvt.scrollTtyOutput:    false
+! Keep the viewport pinned when new output arrives mid-scrollback
+! (screen.C:719-721) — only honoured when scrollTtyOutput is false.
+URxvt.scrollWithBuffer:   true
 URxvt.secondaryScreen:    1
 URxvt.secondaryScroll:    0
 URxvt.saveLines:          65535
@@ -33,6 +36,14 @@ URxvt.font:               xft:Inconsolata for Powerline:style=Medium:size=12, \
 URxvt.boldFont:           xft:Inconsolata for Powerline:style=BoldForPowerline:size=12, \
                           xft:Symbols Nerd Font Mono:size=12, \
                           xft:DejaVu Sans Mono:style=Bold:size=12
+! Alternative — MesloLGS NF 10pt (matches kitty/alacritty + p10k nerdfont-v3).
+! Real Italic/BoldItalic faces, no fallback chain needed. Tried but Inconsolata
+! looked better in urxvt; if reactivated, also set letterSpace: -1 to close the
+! 1px horizontal gap urxvt leaves between Powerline triangles and adjacent cells.
+! URxvt.font:             xft:MesloLGS NF:size=10
+! URxvt.boldFont:         xft:MesloLGS NF:style=Bold:size=10
+! URxvt.italicFont:       xft:MesloLGS NF:style=Italic:size=10
+! URxvt.boldItalicFont:   xft:MesloLGS NF:style=Bold Italic:size=10
 URxvt.letterSpace:        0
 URxvt.lineSpace:          1
 URxvt.intensityStyles:    false
@@ -51,6 +62,10 @@ URxvt.iso14755:           false
 URxvt.iso14755_52:        false
 URxvt.cutchars:           ()*,<>[]{}|`""''
 URxvt.tripleclickwords:   true
+! Neutralise PrtScn (command.C:863-868 hardcodes popen(rs[Rs_print_pipe] ?: "lpr")).
+! With saveLines=65535 + Shift+PrtScn an accidental press would spool the entire
+! scrollback to lpr; this no-op pipe keeps the key inert without disabling it.
+URxvt.print-pipe:         cat > /dev/null
 
 ! ── i3 integration ──────────────────────────────────────────────────
 URxvt.urgentOnBell:       true
