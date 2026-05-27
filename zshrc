@@ -17,6 +17,10 @@ source ~/.dot/lock.sh
 export DEFAULT_USER="remi"
 export EDITOR="$HOME/.local/bin/nvim"
 export VISUAL="$HOME/.local/bin/nvim"
+export PAGER='less'
+export LESS='-RF'
+export LESSHISTFILE=-
+export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 export TF_PLUGIN_CACHE_DIR="$HOME/.cache/terraform"
 
 # X11 cursor tweaks (only run once per X session — guarded by sentinel env var)
@@ -91,6 +95,9 @@ alias g++='g++ -Wall -Wextra -pedantic -std=c++11'
 alias inst='sudo apt-get install'
 alias lock='i3lock --color 475263'
 alias ls="ls --color=auto"
+alias l='eza --group-directories-first --git'
+alias la='eza -la --group-directories-first --git --time-style=long-iso'
+alias lt='eza --tree --git-ignore --level=2'
 alias reload='exec zsh'
 alias se='apt-cache search'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
@@ -99,9 +106,14 @@ alias vim='nvim'
 alias runpyenv='eval "$(pyenv init -)"'
 alias runnvm='source ~/.nvm/nvm.sh'
 
-# Copy
-alias pbcopy='xclip -selection clipboard'
-alias pbpaste='xclip -selection clipboard -o'
+# Clipboard (display-server-aware)
+if [[ "$XDG_SESSION_TYPE" = "wayland" ]] && command -v wl-copy >/dev/null 2>&1; then
+  alias pbcopy='wl-copy'
+  alias pbpaste='wl-paste'
+else
+  alias pbcopy='xclip -selection clipboard'
+  alias pbpaste='xclip -selection clipboard -o'
+fi
 
 # Pandoc
 alias pandock='docker run --rm -v "$(pwd):/data" -u $(id -u):$(id -g) pandoc/extra'
@@ -234,7 +246,17 @@ export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
 export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
 export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --level=2 {}'"
 export FZF_CTRL_R_OPTS="--layout=default"
-source <(fzf --zsh)
+
+# fzf shell integration (cached; invalidates on fzf version change)
+() {
+  local ver=${${(z)$(fzf --version)}[1]}
+  local fzf_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/fzf-${ver}.zsh"
+  [[ -r $fzf_cache ]] || { mkdir -p ${fzf_cache:h} && fzf --zsh > $fzf_cache }
+  source $fzf_cache
+}
+
+# zoxide (smart cd)
+eval "$(zoxide init zsh)"
 
 # Run vim with ctrl-p when ctrl-p is pressed in zsh
 ctrlp() {
