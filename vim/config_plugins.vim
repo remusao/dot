@@ -1,19 +1,14 @@
 "" --- CONFIGURE PLUGINS ---
 
-" delimitMate {{{
-augroup mydelimitMate
-    au!
-    au FileType markdown let b:delimitMate_nesting_quotes = ["`"]
-    au FileType python let b:delimitMate_nesting_quotes = ['"', "'"]
-augroup END
-" }}}
-
 " grep & fuzzy find {{{
 set grepprg=rg\ --color\ never\ --no-heading
 let g:fzf_layout = { 'window': { 'width': 1.0, 'height': 0.4, 'yoffset': 1.0, 'border': 'top' } }
 let g:fzf_history_dir = '~/.local/share/fzf-history'
-autocmd FileType fzf silent! tunmap <buffer> <C-z>
-autocmd FileType fzf tnoremap <buffer> <Esc> <Esc>
+augroup user_fzf
+  autocmd!
+  autocmd FileType fzf silent! tunmap <buffer> <C-z>
+  autocmd FileType fzf tnoremap <buffer> <Esc> <Esc>
+augroup END
 
 function! s:project_files()
   let root = systemlist('git rev-parse --show-toplevel')[0]
@@ -35,7 +30,6 @@ nnoremap <silent> <Leader>g :GFiles?<CR>
 " }}}
 
 " vim-airline {{{
-set laststatus=2
 let g:airline_detect_paste=1
 let g:airline#extensions#tabline#enabled = 1
 let g:airline_powerline_fonts = 1
@@ -44,7 +38,9 @@ let g:airline#extensions#hunks#non_zero_only = 1
 " }}}
 
 " Ale {{{
-let g:ale_python_black_executable = '/home/remi/.virtualenvs/neovim3/bin/black'
+" Native vim.lsp owns LSP-style linters (pyright/tsserver/svelteserver/rust-analyzer).
+" ALE handles non-LSP linters (ruff/mypy/eslint/tflint) and all fixers.
+let g:ale_disable_lsp = 1
 
 "" Cargo
 let g:ale_rust_cargo_use_check = 1
@@ -53,11 +49,6 @@ let g:ale_rust_cargo_check_tests = 1
 let g:ale_rust_cargo_check_examples = 1
 let g:ale_rust_cargo_default_feature_behavior = 'all'
 let g:ale_rust_cargo_avoid_whole_workspace = 0
-let g:ale_rust_analyzer_config = {
-    \ 'cargo': { 'allFeatures': v:true },
-    \ 'procMacro': { 'enable': v:true },
-    \ 'checkOnSave': { 'command': 'clippy', 'enable': v:true }
-    \ }
 
 "" Clippy
 let g:ale_rust_cargo_use_clippy = 1
@@ -66,8 +57,10 @@ let g:ale_rust_cargo_use_clippy = 1
 "" Mypy
 let g:ale_python_mypy_ignore_invalid_syntax = 1
 
+" Trailing-whitespace stripping is owned by vim-better-whitespace; ALE only
+" handles trailing empty lines here (and per-language formatters below).
 let g:ale_fixers = {
-\   '*': ['remove_trailing_lines', 'trim_whitespace'],
+\   '*': ['remove_trailing_lines'],
 \   'typescript': ['prettier'],
 \   'javascript': ['eslint', 'prettier'],
 \   'svelte': ['eslint', 'prettier'],
@@ -93,17 +86,21 @@ let g:ale_completion_enabled = 0
 let g:ale_linter_aliases = {
 \   'svelte': ['javascript', 'svelte']
 \}
+" LSP linters (pyright, tsserver, svelteserver, analyzer) removed: handled by native vim.lsp.
+" ruff_format is a formatter (see g:ale_fixers), not a linter -- removed from python.
 let g:ale_linters = {
-\   'javascript': ['eslint', 'tsserver'],
-\   'typescript': ['eslint', 'tsserver'],
-\   'svelte': ['svelteserver', 'eslint'],
+\   'javascript': ['eslint'],
+\   'typescript': ['eslint'],
+\   'svelte': ['eslint'],
 \   'terraform': ['tflint'],
-\   'python': ['ruff', 'pyright', 'mypy', 'ruff_format'],
-\   'rust': ['analyzer'],
+\   'python': ['ruff', 'mypy'],
+\   'rust': [],
 \}
 
-nmap <silent> <C-k> <Plug>(ale_previous_wrap)
-nmap <silent> <C-j> <Plug>(ale_next_wrap)
+" Diagnostic nav: vim.diagnostic.jump covers BOTH ALE and native LSP diagnostics,
+" unlike <Plug>(ale_*_wrap) which only iterates ALE's internal loclist.
+nnoremap <silent> <C-k> <Cmd>lua vim.diagnostic.jump({count=-1, wrap=true})<CR>
+nnoremap <silent> <C-j> <Cmd>lua vim.diagnostic.jump({count=1, wrap=true})<CR>
 
 let g:airline#extensions#ale#enabled = 1
 let g:ale_lint_on_text_changed = 'normal'
@@ -116,19 +113,6 @@ let g:ale_virtualtext_cursor = 'disabled'
 " }}}
 
 
-" haskell-vim {{{
-let g:haskell_enable_quantification = 1   " to enable highlighting of `forall`
-let g:haskell_enable_recursivedo = 1      " to enable highlighting of `mdo` and `rec`
-let g:haskell_enable_arrowsyntax = 1      " to enable highlighting of `proc`
-let g:haskell_enable_pattern_synonyms = 1 " to enable highlighting of `pattern`
-let g:haskell_enable_typeroles = 1        " to enable highlighting of type roles
-let g:haskell_enable_static_pointers = 1  " to enable highlighting of `static`
-let g:haskell_backpack = 1                " to enable highlighting of backpack keywords
-" let g:haskell_classic_highlighting = 1
-let g:haskell_indent_disable = 1
-" }}}
-
-
 " vim-notes {{{
 let g:notes_directories = ['~/Private/Notes', '~/dev/repositories/perso/remusao.github.io/notes']
 let g:notes_suffix = '.note'
@@ -137,81 +121,9 @@ let g:notes_smart_quotes = 1
 " }}}
 
 
-" writing {{{
-let g:vim_markdown_override_foldtext = 0
-let g:vim_markdown_math = 1
-let g:vim_markdown_toml_frontmatter = 1
-let g:vim_markdown_json_frontmatter = 1
-
-let g:vim_markdown_new_list_item_indent = 2
-" }}}
-
-" vim-javascript {{{
-let g:javascript_plugin_jsdoc = 1
-" }}}
-
 " Likewise, Files command with preview window
 command! -bang -nargs=? -complete=dir Files
   \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
-" }}}
-
-" UtilSnip {{{
-let g:UltiSnipsExpandTrigger = '<C-j>'
-let g:UltiSnipsJumpForwardTrigger = '<C-j>'
-let g:UltiSnipsJumpBackwardTrigger = '<C-k>'
-let g:ultisnips_python_style = 'google'
-" }}}
-
-" jiangmiao/auto-pairs {{{
-let g:AutoPairsMultilineClose = 0
-" }}}
-
-" Terraform {{{
-" let g:terraform_fmt_on_save = 1
-let g:terraform_align = 1
-" }}}
-
-" YouCompleteMe {{{
-let g:ycm_rust_toolchain_root='$HOME/.rustup/toolchains/stable-x86_64-unknown-linux-gnu'
-let g:ycm_show_diagnostics_ui = 0
-let g:ycm_collect_identifiers_from_tags_files = 1
-let g:ycm_add_preview_to_completeopt = 1
-let g:ycm_autoclose_preview_window_after_completion = 1
-let g:ycm_autoclose_preview_window_after_insertion = 1
-let g:ycm_semantic_triggers = {
-     \ 'elm' : ['.'],
-     \ 'haskell' : ['re![^ ]+'],
-     \}
-
-let s:lsp = '/home/remi/.dot/vim/lsp'
-let s:node_bin = '/home/remi/.nvm/versions/node/v' . $NODEJS_VERSION . '/bin'
-let g:ycm_language_server = [
-  \   {
-  \     'name': 'bash',
-  \     'cmdline': [ 'node', s:node_bin . '/bash-language-server', 'start' ],
-  \     'filetypes': [ 'sh', 'bash' ],
-  \   },
-  \   {
-  \     'name': 'yaml',
-  \     'cmdline': [ 'node', s:node_bin . '/yaml-language-server', '--stdio' ],
-  \     'filetypes': [ 'yaml' ],
-  \   },
-  \   { 'name': 'docker',
-  \     'filetypes': [ 'dockerfile' ],
-  \     'cmdline': [ s:node_bin . '/docker-langserver', '--stdio' ]
-  \   },
-  \   {
-  \     'name': 'svelte',
-  \     'cmdline': [ 'node', s:node_bin . '/svelteserver', '--stdio' ],
-  \     'filetypes': [ 'svelte' ],
-  \   },
-  \ ]
-" }}}
-
-
-" editorconfig {{{
-let g:EditorConfig_exclude_patterns = ['fugitive://.*']
-let g:EditorConfig_exec_path = '/home/remi/.local/bin/editorconfig'
 " }}}
 
 " rust {{{
@@ -220,39 +132,13 @@ let g:rust_conceal_mod_path = 0
 let g:rust_conceal_pub = 0
 let g:rust_recommended_style = 1
 let g:rust_fold = 0
-let g:rustfmt_autosave = 1
+let g:rustfmt_autosave = 0  " ALE owns rustfmt via g:ale_fixers (avoid double-fire on save)
 let g:rustfmt_autosave_if_config_present = 0
 let g:rust_use_custom_ctags_defs = 1
-let g:rust_keep_autopairs_default = 0
 " }}}
-
-" Rainbow {{{
-" let g:rainbow#max_level = 16
-" let g:rainbow#pairs = [['{', '}'], ['(', ')'], ['[', ']']]
-" augroup rainbow_lisp
-"   autocmd!
-"   autocmd FileType typescript,javascript,lisp,clojure,scheme RainbowParentheses
-" augroup END
-" }}}
-
-" vim-python {{{
-let g:python_highlight_all = 1
-let g:python_version_2 = 0
-let g:python_highlight_indent_errors = 0
-let g:python_highlight_space_errors = 0
-let g:python_highlight_func_calls = 0
-" }}}
-
-let g:vim_svelte_plugin_use_typescript = 1
 
 lua << EOF
--- vim.o.timeout = true
--- vim.o.timeoutlen = 100
--- require("which-key").setup({})
-
-local langs = { 'svelte', 'typescript', 'html', 'css', 'javascript', 'python', 'rust', 'yaml', 'json', 'bash', 'make', 'lua', 'toml' }
-require('nvim-treesitter').install(langs)
-
+-- Parsers are installed by install.sh via TSInstallSync!; no runtime install needed.
 vim.api.nvim_create_autocmd('FileType', {
   callback = function(args)
     if vim.api.nvim_buf_line_count(args.buf) > 10000 then return end
@@ -261,12 +147,18 @@ vim.api.nvim_create_autocmd('FileType', {
     end
   end,
 })
+
+require('nvim-autopairs').setup({})
 EOF
 
 
 " Copilot
 " imap <silent><script><expr> <C-J> copilot#Accept("\<CR>")
 " let g:copilot_no_tab_map = v:true
+
+" Use the copilot-language-server bundled inside the plugin instead of
+" re-downloading via npx on every launch (eliminates 'npm warn exec' in lsp.log).
+let g:copilot_version = v:false
 
 let g:copilot_filetypes = {
       \ '*': v:false,
@@ -279,3 +171,35 @@ let g:copilot_filetypes = {
       \ 'typescript': v:true,
       \ 'lua': v:true,
       \ }
+
+" Native LSP (Neovim 0.11+: vim.lsp.config / vim.lsp.enable; uses nvim-lspconfig as catalog)
+lua << EOF
+-- Override pyright cmd to use the binary inside ~/.virtualenvs/neovim3 (installed by install.sh).
+-- nvim-lspconfig's lsp/pyright.lua provides filetypes, root_markers, settings; we merge on top.
+vim.lsp.config('pyright', {
+  cmd = { vim.fn.expand('~/.virtualenvs/neovim3/bin/pyright-langserver'), '--stdio' },
+})
+
+-- rust-analyzer: enable clippy on check (modern key; checkOnSave.command is deprecated upstream).
+vim.lsp.config('rust_analyzer', {
+  settings = {
+    ['rust-analyzer'] = {
+      check = { command = 'clippy' },
+    },
+  },
+})
+
+vim.lsp.enable({ 'pyright', 'rust_analyzer', 'ts_ls', 'svelte', 'bashls', 'yamlls' })
+
+-- Enable native LSP completion per-buffer when a capable client attaches.
+-- Built-in 0.12 defaults handle K/grn/gra/grr/gri/grt/gO/<C-S>/<C-]>; nothing else needed here.
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('user_lsp_attach', { clear = true }),
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client:supports_method('textDocument/completion') then
+      vim.lsp.completion.enable(true, args.data.client_id, args.buf, { autotrigger = true })
+    end
+  end,
+})
+EOF

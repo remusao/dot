@@ -1,9 +1,6 @@
-""" Define map <Leader>
-let mapleader = ","
-
 """ Additionnal Mappings
 nnoremap ; :
-nmap <silent> ./ :nohlsearch<CR>
+nnoremap <silent> ./ :nohlsearch<CR>
 
 tnoremap <Esc> <C-\><C-n>
 
@@ -17,13 +14,17 @@ command! Q q
 " open help in a new tab
 cabbrev help tab help
 
-" Make navigating long, wrapped lines behave like normal lines
-noremap <silent> k gk
-noremap <silent> j gj
-noremap <silent> 0 g0
-noremap <silent> $ g$
-noremap <silent> ^ g^
-noremap <silent> _ g_
-
-" use 'Y' to yank to the end of a line, instead of the whole line
-noremap <silent> Y y$
+" Make navigating long, wrapped lines behave like normal lines (excluding
+" operator-pending mode, so d2k still deletes by real lines).
+nnoremap <silent> k gk
+nnoremap <silent> j gj
+nnoremap <silent> 0 g0
+nnoremap <silent> $ g$
+nnoremap <silent> ^ g^
+nnoremap <silent> _ g_
+xnoremap <silent> k gk
+xnoremap <silent> j gj
+xnoremap <silent> 0 g0
+xnoremap <silent> $ g$
+xnoremap <silent> ^ g^
+xnoremap <silent> _ g_

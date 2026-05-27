@@ -1,8 +1,8 @@
 # https://nodejs.org/en/download
-export NODEJS_VERSION="24.15.0"
+export NODEJS_VERSION="24.16.0"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM_VERSION="v0.12.1"
+export NEOVIM_VERSION="v0.12.2"
 
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.13"
@@ -11,7 +11,7 @@ export PYTHON_VERSION="3.12.13"
 export RIPGREP_VERSION="15.1.0"
 
 # crates.io: sccache
-export SCCACHE_VERSION="0.14.0"
+export SCCACHE_VERSION="0.15.0"
 
 # https://github.com/hadolint/hadolint/releases/latest
 export HADOLINT_VERSION="v2.14.0"
@@ -23,7 +23,7 @@ export NVM_VERSION="v0.40.4"
 export RESTIC_VERSION="0.18.1"
 
 # https://github.com/rclone/rclone/releases/latest
-export DOTFILES_RCLONE_VERSION="v1.73.4"
+export DOTFILES_RCLONE_VERSION="v1.74.2"
 
 # https://github.com/netblue30/firejail/releases/latest
 export FIREJAIL_VERSION="0.9.80"
@@ -32,16 +32,16 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.10.2"
+export AWS_VAULT_VERSION="v7.10.8"
 
 # https://github.com/getsops/sops/releases/latest
-export SOPS_VERSION="v3.12.2"
+export SOPS_VERSION="v3.13.1"
 
 # crates.io: cargo-audit
 export CARGO_AUDIT_VERSION="0.22.1"
 
 # crates.io: cargo-deny
-export CARGO_DENY_VERSION="0.19.4"
+export CARGO_DENY_VERSION="0.19.7"
 
 # crates.io: cargo-fuzz
 export CARGO_FUZZ_VERSION="0.13.1"
@@ -53,13 +53,13 @@ export FLAMEGRAPH_VERSION="0.6.12"
 export LOC_VERSION="0.5.0"
 
 # crates.io: oxipng
-export OXIPNG_VERSION="10.1.0"
+export OXIPNG_VERSION="10.1.1"
 
 # crates.io: tokei
 export TOKEI_VERSION="14.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI_VERSION="0.26.8"
+export TREE_SITTER_CLI_VERSION="0.26.9"
 
 # crates.io: eza
 export EZA_VERSION="0.23.4"
@@ -68,13 +68,13 @@ export EZA_VERSION="0.23.4"
 export DU_DUST_VERSION="1.2.4"
 
 # crates.io: difftastic
-export DIFFTASTIC_VERSION="0.68.0"
+export DIFFTASTIC_VERSION="0.69.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT_VERSION="0.61.1"
+export LAZYGIT_VERSION="0.62.0"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.04.13.00"
+export WATCHMAN_VERSION="2026.05.25.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -95,7 +95,7 @@ export FONT_AWESOME_VERSION="7.2.0"
 export SNIXEMBED_VERSION="0.3.3"
 
 # https://github.com/junegunn/fzf/releases/latest
-export FZF_VERSION="0.71.0"
+export FZF_VERSION="0.73.1"
 
 # crates.io: fd-find
 export FD_VERSION="10.4.2"
@@ -110,4 +110,4 @@ export DELTA_VERSION="0.19.2"
 export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.46.2"
+export KITTY_VERSION="0.47.0"
