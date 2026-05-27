@@ -1,15 +1,24 @@
+" ~/.vim is where this config lives (sourced explicitly by vimrc); also put it
+" on the runtimepath so ftplugin/ and after/ftplugin/ are auto-loaded.
+set runtimepath^=~/.vim
+set runtimepath+=~/.vim/after
+
+" Must be set before any <Leader> mapping (config_plugins.vim defines several
+" and is sourced before mappings.vim).
+let mapleader = ","
+
 " Python path with neovim package installed
 let g:python3_host_prog = '/home/remi/.virtualenvs/neovim3/bin/python'
 
 " Disable unused providers
 let g:loaded_ruby_provider = 0
 let g:loaded_perl_provider = 0
+let g:loaded_node_provider = 0
 
 set title
 set number
 set noshowmode        " airline shows the mode
 set gdefault          " global flag for search and replace
-set cursorline!       " disable cursor line highlight
 set smartcase
 set ignorecase
 set inccommand=nosplit
@@ -52,9 +61,8 @@ endif
 set breakindent
 
 set wildignore=*.swp,*.bak,*.pyc,*.class,*.so,*.zip,.git,.cabal-sandbox
-set completeopt=menu,menuone,longest
+set completeopt=menu,menuone,noselect,popup
+set pumheight=15      " Cap completion popup height (LSP can otherwise fill the screen)
 set clipboard+=unnamedplus
 set switchbuf=useopen
 set wildmode=list:longest,full
-
-autocmd Filetype gitcommit setlocal spell textwidth=80

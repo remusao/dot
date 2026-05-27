@@ -690,10 +690,15 @@ fi
 if [ ! -d ~/.virtualenvs/neovim3 ]; then
     python3 -m venv ~/.virtualenvs/neovim3
 fi
-~/.virtualenvs/neovim3/bin/pip install --quiet --upgrade pynvim ruff black pyright
+~/.virtualenvs/neovim3/bin/pip install --quiet --upgrade pynvim ruff pyright
 
-nvim --headless +'PlugInstall --sync' +qa 2>/dev/null || true
-nvim --headless '+TSInstallSync! svelte typescript html css javascript python rust yaml json bash make lua toml' +qa 2>/dev/null || true
+# Language servers for native vim.lsp (ts_ls, svelte, bashls, yamlls).
+if command -v npm >/dev/null 2>&1; then
+    npm install -g typescript typescript-language-server svelte-language-server bash-language-server yaml-language-server 2>>/tmp/nvim-install.log || true
+fi
+
+nvim --headless +'PlugInstall --sync' +qa 2>>/tmp/nvim-install.log || true
+nvim --headless '+TSInstallSync! svelte typescript html css javascript python rust yaml json bash make lua toml' +qa 2>>/tmp/nvim-install.log || true
 ok "Neovim"
 
 echo ""

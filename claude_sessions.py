@@ -9,7 +9,7 @@ from datetime import datetime
 
 SESSIONS_GLOB = os.path.expanduser("~/.claude/projects/*/*.jsonl")
 HOME = os.path.expanduser("~")
-N = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+N = int(sys.argv[1]) if len(sys.argv) > 1 else 20
 
 # ANSI
 BOLD = "\033[1m"
