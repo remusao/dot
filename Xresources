@@ -61,7 +61,7 @@ URxvt.externalBorder:     0
 URxvt.iso14755:           false
 URxvt.iso14755_52:        false
 URxvt.cutchars:           ()*,<>[]{}|`""''
-URxvt.tripleclickwords:   true
+! URxvt.tripleclickwords:   true
 ! Neutralise PrtScn (command.C:863-868 hardcodes popen(rs[Rs_print_pipe] ?: "lpr")).
 ! With saveLines=65535 + Shift+PrtScn an accidental press would spool the entire
 ! scrollback to lpr; this no-op pipe keeps the key inert without disabling it.

@@ -67,7 +67,7 @@ floating_modifier $mod
 # Terminals (urxvt is default; alacritty + kitty available for testing)
 bindsym $mod+Return       exec --no-startup-id urxvtc
 bindsym $mod+Shift+Return exec --no-startup-id alacritty
-bindsym $mod+Ctrl+Return  exec --no-startup-id kitty
+bindsym $mod+Ctrl+Return  exec --no-startup-id env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 MALLOC_CONF=abort_conf:true,narenas:1,background_thread:true,max_background_threads:1,dirty_decay_ms:5000,muzzy_decay_ms:5000 kitty --single-instance
 
 # urxvt daemon (required for urxvtc client launches)
 exec --no-startup-id urxvtd -q -o -f
