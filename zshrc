@@ -30,6 +30,10 @@ if [[ -n "$DISPLAY" && -z "$_XSET_DONE" ]] && command -v xset >/dev/null 2>&1; t
   export _XSET_DONE=1
 fi
 setopt NO_BEEP
+setopt AUTO_PUSHD           # cd pushes old dir onto stack
+setopt PUSHD_IGNORE_DUPS    # dedup dir stack
+setopt INTERACTIVE_COMMENTS # allow # comments at the prompt
+setopt NO_NOMATCH           # pass unmatched globs literally instead of erroring
 
 # Locale (LC_ALL overrides any individual LC_* setting)
 export LANG=en_US.UTF-8
