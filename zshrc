@@ -1,7 +1,6 @@
 #! /usr/bin/zsh
 
-# Load ssh key (must be before P10k instant prompt — keychain produces console output)
-eval `keychain --agents 'ssh,gpg' --eval id_ed25519 id_rsa_perso id_rsa_cliqz`
+# GPG pinentry needs to know which TTY to prompt on (e.g., signed git commits).
 export GPG_TTY=$(tty)
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.

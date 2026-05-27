@@ -74,9 +74,10 @@ check "policykit-1-gnome" dpkg -s policykit-1-gnome
 check "video group" bash -c "id -nG '$USER' | grep -qw video"
 
 section "Apt packages: terminal & shell tools"
-for cmd in fzf fdfind shellcheck keychain xclip; do
+for cmd in fzf fdfind shellcheck xclip; do
   check "$cmd" command -v "$cmd"
 done
+check "ssh-agent.service enabled" systemctl --user is-enabled ssh-agent.service
 
 section "Apt packages: dev tools"
 for cmd in python3 cmake gcc g++; do
