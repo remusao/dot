@@ -15,14 +15,15 @@ source ~/.dot/lock.sh
 
 # Options
 export DEFAULT_USER="remi"
-export EDITOR=/home/remi/.local/bin/nvim
-export VISUAL=/home/remi/.local/bin/nvim
-export TF_PLUGIN_CACHE_DIR=/home/remi/.cache/terraform/
+export EDITOR="$HOME/.local/bin/nvim"
+export VISUAL="$HOME/.local/bin/nvim"
+export TF_PLUGIN_CACHE_DIR="$HOME/.cache/terraform"
 
-# Cursor speed (X11 only)
-if [[ -n "$DISPLAY" ]]; then
+# X11 cursor tweaks (only run once per X session — guarded by sentinel env var)
+if [[ -n "$DISPLAY" && -z "$_XSET_DONE" ]] && command -v xset >/dev/null 2>&1; then
   xset b off
   xset r rate 300 100
+  export _XSET_DONE=1
 fi
 setopt NO_BEEP
 
@@ -71,7 +72,7 @@ POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version command_execution_time background_jobs time)
 POWERLEVEL9K_VCS_MAX_SYNC_LATENCY_SECONDS=0.1
-source /home/remi/.zsh/powerlevel10k/powerlevel10k.zsh-theme
+source "$HOME/.zsh/powerlevel10k/powerlevel10k.zsh-theme"
 
 # Aliases
 alias -g ...='../..'
@@ -111,20 +112,27 @@ export LD_LIBRARY_PATH="$HOME/usr/lib:$HOME/.local/lib${LD_LIBRARY_PATH:+:$LD_LI
 export C_INCLUDE_PATH="$HOME/usr/include${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}"
 export CPLUS_INCLUDE_PATH="$HOME/usr/include${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}"
 
-# Extend PATH
-export PATH=$PATH:/usr/local/sbin:/usr/bin
-export PATH=$HOME/usr/local/bin:$PATH                   # Use local first
-export PATH=$HOME/.local/bin:$PATH                      # ~/.local/bin
-export PATH=$HOME/.local/nodejs/bin:$PATH               # nodejs packages (npm)
-export PATH=$HOME/.cargo/bin:$PATH                      # Rust
-export PATH=$HOME/.pyenv/bin:$PATH                      # Add pyenv to PATH
-export PATH=$HOME/.pyenv/versions/${PYTHON_VERSION}/bin:$PATH   # Add python to PATH
-export PATH=$HOME/.poetry/bin:$PATH                     # Poetry (Python)
-export PATH=$PATH:/home/remi/.go/bin
-export PATH=$PATH:/home/remi/go/bin
+# ── PATH ────────────────────────────────────────────────────
+# Listed in priority order. typeset -U deduplicates.
+path=(
+  $HOME/.opencode/bin
+  $HOME/.bun/bin
+  $HOME/.nvm/versions/node/v${NODEJS_VERSION}/bin
+  $HOME/.pyenv/versions/${PYTHON_VERSION}/bin
+  $HOME/.pyenv/bin
+  $HOME/.cargo/bin
+  $HOME/.local/nodejs/bin
+  $HOME/.local/bin
+  $HOME/usr/local/bin
+  $path
+  /usr/local/sbin
+  /usr/bin
+  $HOME/.go/bin
+  $HOME/go/bin
+)
 typeset -U path PATH
 
-export GOPATH=/home/remi/go
+export GOPATH="$HOME/go"
 
 export GEM_HOME="$HOME/.gem"
 
@@ -157,7 +165,6 @@ setopt HIST_REDUCE_BLANKS
 setopt HIST_VERIFY              # show history expansions before executing
 
 export NVM_DIR="$HOME/.nvm"
-export PATH=${HOME}/.nvm/versions/node/v${NODEJS_VERSION}/bin/:${PATH}
 
 # Set terminal title (~/dev/repositories/project → ~/d/r/project)
 autoload -Uz add-zsh-hook
