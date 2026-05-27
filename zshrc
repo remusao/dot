@@ -26,25 +26,17 @@ if [[ -n "$DISPLAY" ]]; then
 fi
 setopt NO_BEEP
 
-# Locales
-export LC_COLLATE=en_US.UTF-8
-export LC_CTYPE=en_US.UTF-8
-export LC_MESSAGES=en_US.UTF-8
-export LC_MONETARY=en_US.UTF-8
-export LC_NUMERIC=en_US.UTF-8
-export LC_TIME=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
+# Locale (LC_ALL overrides any individual LC_* setting)
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 export LESSCHARSET=utf-8
 
-# ZSH commands completions
-# source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
-# export ZSH_AUTOSUGGEST_USE_ASYNC='true'
-# export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=30'
-# export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
-# fpath=(~/.zsh/zsh-completions/src $fpath)
-export LSCOLORS=gxfxbEaEBxxEhEhBaDaCaD
+# Editing keymap (zsh otherwise picks vi mode because EDITOR=*vi*)
+bindkey -e
+WORDCHARS=${WORDCHARS//[\/]}   # treat / as word boundary (Ctrl-W stops at path components)
+
+# Completions: dynamic prefix highlighting in lists
 zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)(?)*==02=01}:${(s.:.)LS_COLORS}")'
 
 # ZSH tab-completion
@@ -57,7 +49,6 @@ setopt always_to_end
 zstyle ':completion:*:*:*:*:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 
-zstyle ':completion:*' list-colors ''
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
 
 zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w -w"
@@ -65,13 +56,10 @@ zstyle ':completion:*:*:*:*:processes' command "ps -u $USER -o pid,user,comm -w 
 # disable named-directories autocompletion
 zstyle ':completion:*:cd:*' tag-order local-directories directory-stack path-directories
 
-# Use caching so that commands like apt and dpkg complete are useable
-zstyle ':completion::complete:*' use-cache 1
-zstyle ':completion::complete:*' cache-path $ZSH_CACHE_DIR
-
+# Cache expensive completions (apt, dpkg, etc.)
 zstyle ':completion:*' accept-exact '*(N)'
 zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path ~/.zsh/cache
+zstyle ':completion:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/compcache"
 
 # ZSH Prompt
 POWERLEVEL9K_VCS_SHOW_SUBMODULE_DIRTY=false
@@ -79,8 +67,6 @@ POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
-# POWERLEVEL9K_MODE="nerdfont-complete"
-# POWERLEVEL9K_MODE='awesome-patched'
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version command_execution_time background_jobs time)
@@ -111,7 +97,6 @@ alias update='sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-u
 alias vim='nvim'
 alias runpyenv='eval "$(pyenv init -)"'
 alias runnvm='source ~/.nvm/nvm.sh'
-alias runasdf='source ~/.asdf/asdf.sh'
 
 # Copy
 alias pbcopy='xclip -selection clipboard'
@@ -120,12 +105,11 @@ alias pbpaste='xclip -selection clipboard -o'
 # Pandoc
 alias pandock='docker run --rm -v "$(pwd):/data" -u $(id -u):$(id -g) pandoc/extra'
 
-# Globals
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib:$HOME/usr/lib:$HOME/.local/lib
-export LD_RUN_PATH=$LD_RUN_PATH:$HOME/usr/lib:$HOME/.local/lib
-export LIBRARY_PATH=$LD_LIBRARY_PATH
-export C_INCLUDE_PATH=$HOME/usr/include:$C_INCLUDE_PATH
-export CPLUS_INCLUDE_PATH=$HOME/usr/include:$CPLUS_INCLUDE_PATH
+# Custom lib/include paths (no leading colon → no CWD in search path).
+# /usr/local/lib and /usr/lib already in /etc/ld.so.conf; don't re-add.
+export LD_LIBRARY_PATH="$HOME/usr/lib:$HOME/.local/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export C_INCLUDE_PATH="$HOME/usr/include${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}"
+export CPLUS_INCLUDE_PATH="$HOME/usr/include${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}"
 
 # Extend PATH
 export PATH=$PATH:/usr/local/sbin:/usr/bin
@@ -142,10 +126,7 @@ typeset -U path PATH
 
 export GOPATH=/home/remi/go
 
-# Rust cargo
-# export RUSTC_WRAPPER="/home/remi/.cargo/bin/sccache"
-
-export GEM_HOME=$HOME/.gem/
+export GEM_HOME="$HOME/.gem"
 
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
@@ -173,18 +154,17 @@ setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_SAVE_NO_DUPS
 setopt HIST_IGNORE_SPACE        # prefix with space to omit from history
 setopt HIST_REDUCE_BLANKS
+setopt HIST_VERIFY              # show history expansions before executing
 
 export NVM_DIR="$HOME/.nvm"
 export PATH=${HOME}/.nvm/versions/node/v${NODEJS_VERSION}/bin/:${PATH}
 
-# Set title
+# Set terminal title (~/dev/repositories/project → ~/d/r/project)
+autoload -Uz add-zsh-hook
 set-window-title() {
-  # /Users/clessg/projects/dotfiles -> ~/p/dotfiles
-  window_title="\e]0;${${PWD/#"$HOME"/~}/projects/p}\a"
-  echo -ne "$window_title"
+  local title="${${PWD/#"$HOME"/~}/projects/p}"
+  print -Pn "\e]0;${title}\a"
 }
-
-PR_TITLEBAR=''
 set-window-title
 add-zsh-hook precmd set-window-title
 
@@ -276,36 +256,9 @@ else
   compinit -C
 fi
 
-######################
-# Semgrep single PRs #
-######################
-# spr() {
-# 	last="${@:$#}" # last parameter
-# 	other="${*%${!#}}" # all parameters except the last
-# 	BASE_COMMIT=${BASE_COMMIT:-origin/master}
-# 	NEW_HEAD="$last"
-# 	TEMPDIR="$(mktemp -d)"
-# 	pushd "$PWD"
-# 	git worktree add $TEMPDIR $last
-# 	cd $TEMPDIR
-# 	FILES="$(git --no-pager diff --name-only $last $(git merge-base $last $BASE_COMMIT) | xargs ls -d 2>/dev/null)"
-# 	semgrep $other $FILES
-# 	popd
-# 	rm -rf $TEMPDIR
-# }
-
-# [ -f "/home/remi/.ghcup/env" ] && . "/home/remi/.ghcup/env" # ghcup-env
-# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# bun completions
-[ -s "/home/remi/.bun/_bun" ] && source "/home/remi/.bun/_bun"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-# opencode
-export PATH=/home/remi/.opencode/bin:$PATH
-
-# Claude Code
-export CLAUDE_CODE_SUBAGENT_MODEL=claude-opus-4-6
+# bun (only if installed)
+if [[ -d "$HOME/.bun" ]]; then
+  export BUN_INSTALL="$HOME/.bun"
+  [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
+fi
+true   # ensure non-failing exit at end of rc
