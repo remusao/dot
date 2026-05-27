@@ -1,5 +1,15 @@
 #! /usr/bin/zsh
 
+# Workaround for urxvt 9.31 lines-rewrap regression — prompt appears halfway
+# down the window under tiling WMs (i3/dwm/sway) because the WM resizes urxvt
+# after the buffer is created. Only fires once per terminal (sentinel env var)
+# so `exec zsh` reloads don't clear unexpectedly. Refs: Arch FS#77062,
+# Debian Bug#1050152.
+if [[ "$TERM" == rxvt-unicode* && -z "$_TERM_INITIALIZED" ]]; then
+  clear
+  export _TERM_INITIALIZED=1
+fi
+
 # GPG pinentry needs to know which TTY to prompt on (e.g., signed git commits).
 export GPG_TTY=$(tty)
 
@@ -234,6 +244,15 @@ zle -N down-line-or-beginning-search
 bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
 
 bindkey ' ' magic-space # [Space] - do history expansion
+
+# In completion menu (menuselect): bind common emacs cursor keys to widgets
+# that aren't in menuselect's nav list; this triggers "exit menu + run main
+# keymap binding" per zshcompsys.
+zmodload -i zsh/complist
+bindkey -M menuselect '^A' beginning-of-line
+bindkey -M menuselect '^E' end-of-line
+bindkey -M menuselect '^U' backward-kill-line
+bindkey -M menuselect '^K' kill-line
 
 # Extra configuration
 if [ -e "$HOME/.zshlocal" ];
