@@ -263,6 +263,12 @@ else
   compinit -C
 fi
 
+# Compile zcompdump to bytecode for faster subsequent loads (background, disowned)
+{
+  [[ -s ~/.zcompdump && (! -s ~/.zcompdump.zwc || ~/.zcompdump -nt ~/.zcompdump.zwc) ]] &&
+    zcompile ~/.zcompdump
+} &!
+
 # bun (only if installed)
 if [[ -d "$HOME/.bun" ]]; then
   export BUN_INSTALL="$HOME/.bun"
