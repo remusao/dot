@@ -8,11 +8,10 @@ URxvt.termName:           rxvt-unicode-256color
 URxvt.scrollBar:          false
 URxvt.scrollstyle:        plain
 URxvt.scrollTtyKeypress:  true
-! scrollTtyOutput: true (the default) so a fresh terminal anchors output at
-! the top. Setting it false in combination with scrollWithBuffer made new
-! urxvt windows open with the viewport scrolled to mid-buffer (issue: prompt
-! appearing in the middle of the visible area).
-URxvt.scrollTtyOutput:    true
+URxvt.scrollTtyOutput:    false
+! Keep the viewport pinned when new output arrives mid-scrollback
+! (screen.C:719-721) — only honoured when scrollTtyOutput is false.
+URxvt.scrollWithBuffer:   true
 URxvt.secondaryScreen:    1
 URxvt.secondaryScroll:    0
 URxvt.saveLines:          65535
