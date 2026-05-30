@@ -9,7 +9,7 @@ from datetime import datetime
 
 SESSIONS_GLOB = os.path.expanduser("~/.claude/projects/*/*.jsonl")
 HOME = os.path.expanduser("~")
-N = int(sys.argv[1]) if len(sys.argv) > 1 else 20
+N = int(sys.argv[1]) if len(sys.argv) > 1 else 30
 
 # ANSI
 BOLD = "\033[1m"
@@ -48,31 +48,35 @@ def extract_session_info(path):
 
     with open(path) as f:
         for line in f:
-            obj = json.loads(line)
+            try:
+                obj = json.loads(line)
 
-            if obj.get("type") == "user" and cwd is None:
-                cwd = obj.get("cwd")
-                branch = obj.get("gitBranch")
-                slug = obj.get("slug")
+                if obj.get("type") == "user" and cwd is None:
+                    cwd = obj.get("cwd")
+                    branch = obj.get("gitBranch")
+                    slug = obj.get("slug")
 
-            if obj.get("type") == "user" and "message" in obj and first_prompt is None:
-                msg = obj["message"]
-                if isinstance(msg, dict):
-                    content = msg.get("content", "")
-                    if isinstance(content, list):
-                        content = next(
-                            (p["text"] for p in content if isinstance(p, dict) and p.get("type") == "text"),
-                            "",
-                        )
-                elif isinstance(msg, str):
-                    content = msg
-                else:
-                    content = ""
-                first_prompt = content.split("\n")[0]
+                if obj.get("type") == "user" and "message" in obj and first_prompt is None:
+                    msg = obj["message"]
+                    if isinstance(msg, dict):
+                        content = msg.get("content", "")
+                        if isinstance(content, list):
+                            content = next(
+                                (p["text"] for p in content if isinstance(p, dict) and p.get("type") == "text"),
+                                "",
+                            )
+                    elif isinstance(msg, str):
+                        content = msg
+                    else:
+                        content = ""
+                    first_prompt = content.split("\n")[0]
 
-            ts = obj.get("timestamp")
-            if ts:
-                last_ts = ts
+                ts = obj.get("timestamp")
+                if ts:
+                    last_ts = ts
+            except json.JSONDecodeError:
+                print(f"{YELLOW}Warning: Skipping malformed line in {path}{RESET}")
+                continue
 
     return {
         "uuid": uuid,

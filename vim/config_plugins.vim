@@ -110,6 +110,9 @@ let g:ale_lint_on_save = 1
 let g:ale_set_signs = 1
 let g:ale_set_highlights = 1
 let g:ale_virtualtext_cursor = 'disabled'
+" Unified cmdline echo is owned by the vim.diagnostic autocmd in the lua block
+" below (covers both ALE and native LSP); avoid ALE racing it with its own format.
+let g:ale_echo_cursor = 0
 " }}}
 
 
@@ -174,6 +177,25 @@ let g:copilot_filetypes = {
 
 " Native LSP (Neovim 0.11+: vim.lsp.config / vim.lsp.enable; uses nvim-lspconfig as catalog)
 lua << EOF
+-- Echo the most-severe diagnostic on the cursor line at the cmdline. ALE routes
+-- its findings into vim.diagnostic by default (g:ale_use_neovim_diagnostics_api),
+-- so one query covers both ALE and native LSP sources.
+local sev_hl = { 'DiagnosticError', 'DiagnosticWarn', 'DiagnosticInfo', 'DiagnosticHint' }
+vim.api.nvim_create_autocmd({ 'CursorMoved', 'DiagnosticChanged' }, {
+  group = vim.api.nvim_create_augroup('user_diagnostic_echo', { clear = true }),
+  callback = function(args)
+    if args.buf ~= vim.api.nvim_get_current_buf() then return end
+    local d = vim.diagnostic.get(0, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
+    if #d == 0 then return vim.api.nvim_echo({ { '' } }, false, {}) end
+    local best = d[1]
+    for i = 2, #d do if d[i].severity < best.severity then best = d[i] end end
+    local msg = best.message:gsub('\n', ' ')
+    local max = math.max(1, vim.v.echospace - 1)
+    if #msg > max then msg = msg:sub(1, max - 1) .. '…' end
+    vim.api.nvim_echo({ { msg, sev_hl[best.severity] or 'Normal' } }, false, {})
+  end,
+})
+
 -- Override pyright cmd to use the binary inside ~/.virtualenvs/neovim3 (installed by install.sh).
 -- nvim-lspconfig's lsp/pyright.lua provides filetypes, root_markers, settings; we merge on top.
 vim.lsp.config('pyright', {
