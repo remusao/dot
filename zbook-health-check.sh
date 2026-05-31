@@ -358,6 +358,20 @@ check_kernel_params() {
         warn "amd_iommu=off not set" "suspend may fail without it (10-15% battery drain overnight). Trade-off: disables NPU. For ROCm/VM passthrough use iommu=pt; for reliable suspend use amd_iommu=off (confirmed fix). Fix: sudo sed -i -E 's/amd_iommu=[^ \"]*//g; s/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 amd_iommu=off\"/; s/\"  +/\"/; s/  +\"/\"/' /etc/default/grub && sudo update-grub. Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525"
     fi
 
+    # NVMe write-stall mitigation (2026-05-29 I/O stall) — defense-in-depth, see report §8.16.
+    local apst_val
+    apst_val=$(kparam_value "nvme_core.default_ps_max_latency_us") || apst_val=""
+    if [[ "$apst_val" == "0" ]]; then
+        ok "nvme_core.default_ps_max_latency_us=0 — NVMe APST disabled (rules out low-power-state stalls). See report §8.16"
+    else
+        warn "nvme_core.default_ps_max_latency_us=0 not set" "defense-in-depth for the NVMe write-I/O stall that froze the system on 2026-05-29 (disables NVMe autonomous power states). Note: the stall was under load, so this is unlikely to be the sole cure — read SMART (Storage section). Fix: sudo sed -i -E 's/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 nvme_core.default_ps_max_latency_us=0\"/' /etc/default/grub && sudo update-grub. Ref: HP-ZBook report §8.16"
+    fi
+    if kparam_present "pcie_port_pm" && [[ "$(kparam_value "pcie_port_pm")" == "off" ]]; then
+        ok "pcie_port_pm=off — PCIe port runtime PM disabled (independent of pcie_aspm). See report §8.16"
+    else
+        warn "pcie_port_pm=off not set" "defense-in-depth for the 2026-05-29 NVMe I/O stall (disables PCIe port D-state PM; independent of pcie_aspm=off, which stays). Fix: sudo sed -i -E 's/GRUB_CMDLINE_LINUX_DEFAULT=\"(.*)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\\1 pcie_port_pm=off\"/' /etc/default/grub && sudo update-grub. Ref: HP-ZBook report §8.16"
+    fi
+
     # Retracted parameter check
     if kparam_present "pcie_aspm.policy"; then
         warn "pcie_aspm.policy found in cmdline" "this was retracted as ineffective — freezing still occurs during power transitions. Fix: remove pcie_aspm.policy from /etc/default/grub and use pcie_aspm=off instead. Ref: https://h30434.www3.hp.com/t5/Business-PCs-Workstations-and-Point-of-Sale-Systems/Using-the-webcam-on-zbook-ultra-g1a-Linux-ubuntu-25-04/td-p/9375051"
@@ -484,6 +498,85 @@ check_kernel_params() {
             warn "amdgpu.dcdebugmask not set (X11 session)" \
                 "PSR + Panel Replay enabled — known cause of GUI freezes on X11 with external displays (desktop unresponsive, mouse moves). Try amdgpu.dcdebugmask=0x10 first (DC_DISABLE_PSR — disables PSR v1+SU, keeps Panel Replay, lower battery impact). If freezes persist, escalate to 0x410 (also disables Panel Replay). Trade-off: ~0.5W higher idle (Intel measurement; no AMD data) plus IPS cannot activate (depends on PSR). Ref: https://wiki.archlinux.org/title/AMDGPU"
         fi
+    fi
+}
+
+# ── Storage & NVMe Health ────────────────────────────────────────────────────
+check_storage() {
+    section "Storage & NVMe Health"
+
+    if [[ ! -e /dev/nvme0 ]]; then
+        skip "NVMe checks" "no /dev/nvme0 present"
+        return
+    fi
+
+    # 1. Recurrence of the write-I/O stall that froze the system on 2026-05-29.
+    #    Scans all persisted boots (journalctl -g greps the message field server-side).
+    local to_total to_days
+    to_total=$(journalctl --no-pager -g 'timeout, aborting' 2>/dev/null | grep -cE 'nvme[0-9]+:') || to_total=0
+    if [[ "${to_total:-0}" -gt 0 ]]; then
+        to_days=$(journalctl --no-pager -g 'timeout, aborting' 2>/dev/null | grep -E 'nvme[0-9]+:' | awk '{print $1, $2}' | sort -u | tr '\n' ' ')
+        warn "NVMe write-I/O timeouts in journal ($to_total events)" "the SSD stalled under sustained write load (froze the system on 2026-05-29). Days seen: ${to_days}. Read SMART (below) and watch 'journalctl -k -f' for 'timeout, aborting'. See HP-ZBook report §8.16."
+    else
+        ok "No NVMe 'timeout, aborting' events in journal history"
+    fi
+
+    # 2. SMART health — needs nvme-cli/smartmontools + root.
+    if ! cmd_exists nvme && ! cmd_exists smartctl; then
+        warn "SMART tools not installed" "cannot read NVMe wear/health. Fix: sudo apt install nvme-cli smartmontools"
+    elif ! has_root; then
+        skip "NVMe SMART health" "needs root — re-run: sudo bash $0"
+    elif cmd_exists nvme; then
+        local smart
+        smart=$(nvme smart-log /dev/nvme0 2>/dev/null) || smart=""
+        if [[ -z "$smart" ]]; then
+            warn "Could not read NVMe SMART log" "nvme smart-log /dev/nvme0 returned nothing. Try: sudo smartctl -x /dev/nvme0"
+        else
+            local crit pct media spare spare_thr
+            crit=$(awk -F: '/critical_warning/{gsub(/[ \t]/,"",$2); print $2; exit}' <<<"$smart")
+            pct=$(awk -F: '/percentage_used/{gsub(/[ \t%]/,"",$2); print $2; exit}' <<<"$smart")
+            media=$(awk -F: '/media_errors/{gsub(/[ \t,]/,"",$2); print $2; exit}' <<<"$smart")
+            spare=$(awk -F: '/available_spare[ \t]*:/{gsub(/[ \t%]/,"",$2); print $2; exit}' <<<"$smart")
+            spare_thr=$(awk -F: '/available_spare_threshold/{gsub(/[ \t%]/,"",$2); print $2; exit}' <<<"$smart")
+            if [[ -n "${crit:-}" && "$crit" != "0" ]]; then
+                fail "NVMe critical_warning=$crit" "SMART critical warning set (temperature/spare/reliability/read-only). Back up now and contact HP. Run: sudo nvme smart-log /dev/nvme0"
+            else
+                ok "NVMe critical_warning=0 (healthy)"
+            fi
+            if [[ "${pct:-}" =~ ^[0-9]+$ ]]; then
+                if [[ "$pct" -ge 80 ]]; then
+                    warn "NVMe endurance: percentage_used=${pct}%" "≥80% of rated write endurance consumed — plan replacement. See §8.16."
+                else
+                    ok "NVMe endurance: percentage_used=${pct}%"
+                fi
+            fi
+            if [[ "${media:-}" =~ ^[0-9]+$ ]]; then
+                if [[ "$media" -gt 0 ]]; then
+                    warn "NVMe media_errors=$media" "uncorrectable media errors — back up and monitor. Run: sudo nvme error-log /dev/nvme0"
+                else
+                    ok "NVMe media_errors=0"
+                fi
+            fi
+            if [[ "${spare:-}" =~ ^[0-9]+$ && "${spare_thr:-}" =~ ^[0-9]+$ && "$spare" -lt "$spare_thr" ]]; then
+                warn "NVMe available_spare=${spare}% below threshold ${spare_thr}%" "spare blocks depleting — drive may be failing. Back up and contact HP."
+            fi
+        fi
+    else
+        skip "NVMe SMART health" "nvme-cli not installed (smartctl present — try: sudo smartctl -x /dev/nvme0)"
+    fi
+
+    # 3. Swap pressure — swapping to the on-NVMe /swap.img amplifies write stalls.
+    local swappiness
+    swappiness=$(cat /proc/sys/vm/swappiness 2>/dev/null) || swappiness=""
+    if [[ "${swappiness:-}" =~ ^[0-9]+$ ]]; then
+        if [[ "$swappiness" -le 10 ]]; then
+            ok "vm.swappiness=$swappiness — low (reduces swap pressure on the NVMe)"
+        else
+            warn "vm.swappiness=$swappiness (high)" "on 125 GiB RAM, swapping to the on-NVMe /swap.img competes with data I/O during write stalls (a factor in the 2026-05-29 freeze). Fix: re-run install.sh, or: echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/10-vm-nvme.conf && sudo sysctl --system. See §8.16."
+        fi
+    fi
+    if swapon --show=TYPE --noheadings 2>/dev/null | grep -qw file; then
+        info "Swap is file-backed on the NVMe — keep vm.swappiness low, or consider zram. See §8.16."
     fi
 }
 
@@ -1707,6 +1800,7 @@ main() {
     check_os_kernel
     check_kernel_params
     check_power
+    check_storage
     check_suspend
     check_security
     check_fde
