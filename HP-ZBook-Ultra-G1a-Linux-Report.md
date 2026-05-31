@@ -443,6 +443,22 @@ How it works: in `amdgpu_dm.c`, `DC_DISABLE_PSR` (0x10) prevents `psr_feature_en
 - **Upstream status:** autorandr tried switching from `ACTION=="change"` to `ACTION=="add|remove"` in v1.13.2 ([#321](https://github.com/phillipberndt/autorandr/issues/321)) but reverted in v1.13.3 ([#324](https://github.com/phillipberndt/autorandr/issues/324)) since add/remove events are not emitted on monitor hotplug. The upstream rule remains overly broad with no `HOTPLUG` filter.
 - **Verify fix:** `sudo udevadm control --reload-rules`, then run `cool-ryzen-apply on` — no EDID spam in `journalctl -f -u autorandr`. Plug/unplug a monitor to confirm autorandr still triggers.
 
+### 8.16 NVMe Write-I/O Stalls Under Sustained Load (CRITICAL)
+
+- **Symptoms:** Under sustained writes the whole system goes progressively "slow" then fully unresponsive (the mouse may still move briefly), forcing a hard power-off. The kernel log fills with `nvme nvme0: ... timeout, aborting req_op:WRITE(1) size:2097152` followed by `Abort status: 0x0`, then journald stops flushing. Apps with I/O watchdogs (Firefox, Thunderbird) crash-dump; dbus service activations time out (25 s); the browser compositor reports being "active for too long".
+- **Confirmed incidents on this unit:** 2026-05-20 12:00–12:02 (24 timeouts, system recovered on its own) and 2026-05-29 13:42–13:45 (24 timeouts, **did not recover** → hard reboot). No NVMe timeouts appear in the journal before May 20.
+- **Root cause — a coupled memory+I/O death spiral, NOT OOM:** `sar` (sysstat) shows the drive degrading well before the hard timeouts — `nvme0n1` average write latency climbed to **217 ms** (normal <1 ms) with queue depth 43 and ~**1.5 GiB dirty pages** stuck, load 19.9 with **9 tasks blocked in D-state** while the CPU was **68 % idle** (classic I/O-wait starvation). Critically, the machine had **~100 GiB RAM free** yet **swap filled to 100 %** (12 %→61 %→74 %→99.96 % over 30 min; direct-reclaim `pgscand` 1199/s) and `earlyoom` never fired — so this was **not** global memory exhaustion. Because swap is a file (`/swap.img`) **on the same NVMe** as the root filesystem, swap-out and dirty-page writeback fought over the one stalling device — a self-reinforcing loop. ~90 % of the 36 MB/s write load was ordinary dirty writeback, ~10 % swap. The drive's inability to drain writes is the linchpin: when it kept up (May 20) the system recovered; when it didn't (May 29) the spiral became unrecoverable. A Docker container (memory cgroup) launched ~13:38 is the likely allocation trigger.
+- **The drive:** 4 TB `PSEIN004TA87MC0`, HP-OEM firmware `HPE23007` — identified as a **Phison PS5018-E18 controller with 176-layer 3D TLC NAND** (the [UL certification database E337243](https://productiq.ulprospector.com/en/profile/3606796/azot8.e337243) lists this exact model under "PCIe M.2 2280-E18 SSD"). The E18 family has [documented firmware fragility](https://www.reddit.com/r/pcmasterrace/comments/1f1piwf/) (read-degradation and command-timing state-machine bugs) and draws 8 W+ under sustained writes. **No SSD firmware update is available** — `fwupdmgr get-devices` enumerates the drive at `HPE23007` with "No updates available" on LVFS, and HP-custom firmware cannot be flashed with retail Phison tools.
+- **SMART health (read 2026-05-31, post-incident) — the drive is physically HEALTHY:** overall-health **PASSED**, `critical_warning 0x00`, `percentage_used 1%` (barely any wear), `available_spare 100%` (threshold 5%), `media_errors 0`, 29.0 TB written over 1292 power-on-hours, 22 unsafe shutdowns (consistent with the history of hard locks). **Thermal throttling is ruled out by hardware counters:** `Warning Composite Temperature Time = 0`, `Critical Composite Temperature Time = 0`, and zero thermal-management transitions (composite 49 °C, sensor-1 61 °C vs the 82 °C warning threshold). The 198 controller error-log entries are **all benign** `Invalid Field in Command` (status `0x2002`) — host feature-probes from `nvme-cli`/`smartctl`/`fwupd` for unsupported optional log pages, unrelated to the stalls. Crucially, the write stalls do **not** appear in the controller's error log: a host-side 30 s command *timeout* is not a media/completion error, so the controller never logged a fault. **Conclusion: this is a controller/firmware behavior under sustained write load (e.g. SLC-cache exhaustion / fold stall), not failing, worn, or overheating hardware** — no drive replacement is warranted on health grounds; the durable hardware fix would be an HP SSD firmware update.
+- **Ruled out (evidence):** no thermal/lockup/MCE entries; **no filesystem corruption** (ext4 intact across all boots); disk only 66 % full; no SSD-firmware or kernel change near May 20 (kernel 1020 ran fine May 6–20); PCIe link healthy (Gen4 x4), controller `state: live`, zero media-errors / critical-warning / controller-reset entries.
+- **Mitigations (baked into `install.sh` + sysctl, applied automatically on this hardware):**
+  - `nvme_core.default_ps_max_latency_us=0` + `pcie_port_pm=off` (kernel cmdline) — the kernel's own canonical advice for `timeout, aborting` (`drivers/nvme/host/pci.c` literally prints *"Try nvme_core.default_ps_max_latency_us=0 pcie_aspm=off pcie_port_pm=off"*). **Defense-in-depth only:** these target idle/low-power-state wake hangs, whereas our stall was under active load, so they are unlikely to be the cure. `pcie_aspm=off` is kept (see §8.1); we deliberately do **not** use `pcie_aspm.policy`, which was retracted as ineffective on this platform.
+  - `vm.swappiness=10` + bounded `vm.dirty_bytes` (`/etc/sysctl.d/10-vm-nvme.conf`, written by `install.sh`) — stops the kernel swap-storming to the on-NVMe swapfile and caps the dirty-page backlog so writeback starts early instead of building a multi-GiB burst that wedges the SSD. Directly attacks the amplifier observed on May 29.
+  - GNOME tracker indexer throttled (it crash-looped throughout the incident; unneeded under i3).
+  - `nvme-cli` + `smartmontools` installed so SMART can be read and `zbook-health-check.sh` can monitor for recurrence.
+- **The durable fix is firmware, not a kernel knob** — no software setting makes a consumer SSD sustain more write throughput. SMART was clean as of 2026-05-31 (above), so **no replacement is needed now**; re-check periodically with `sudo nvme smart-log /dev/nvme0` / `sudo smartctl -x /dev/nvme0` and escalate to HP only if `percentage_used` climbs fast, `media_errors` > 0, or `available_spare` drops below threshold. To remove swap I/O from the NVMe entirely, consider **zram** (compressed RAM swap). Watch for recurrence: `journalctl -k -f | grep -i "timeout, aborting"`.
+- **References:** kernel NVMe timeout path ([`drivers/nvme/host/pci.c`](https://github.com/torvalds/linux/blob/master/drivers/nvme/host/pci.c)), [Ubuntu "NVMe errors in syslog" returns under load](https://discourse.ubuntu.com/t/ubuntu-server-nvme-errors-in-syslog/54532), [Phison E18 firmware-bug PSA](https://www.reddit.com/r/pcmasterrace/comments/1f1piwf/).
+
 ---
 
 ## 9. Suspend, Sleep, and Hibernate — Deep Dive
@@ -558,7 +574,7 @@ HibernateDelaySec=30min
 ### 9.9 Complete Recommended Kernel Parameters
 
 ```
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 amdgpu.cwsr_enable=0 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 amdgpu.cwsr_enable=0 ttm.pages_limit=32505856 ttm.page_pool_size=32505856 nvme_core.default_ps_max_latency_us=0 pcie_port_pm=off"
 ```
 
 | Parameter | Purpose |
@@ -570,6 +586,11 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_as
 | `amdgpu.cwsr_enable=0` | Prevents ROCm GPU hangs during AI/compute workloads ([ROCm #5590](https://github.com/ROCm/ROCm/issues/5590), still open as of March 2026). Only affects compute (CWSR = Compute Wave Save/Restore) — no impact on display or 3D rendering. |
 | `ttm.pages_limit=32505856` | Raises GPU unified memory ceiling from default ~62.5 GiB to 124 GiB (32505856 × 4 KiB). Allocation is fully dynamic — GPU only pins what it needs. Replaces deprecated `amdgpu.gttsize` ([patch](https://www.mail-archive.com/amd-gfx@lists.freedesktop.org/msg117333.html)). Not needed on kernel ≥ 6.18.4. Ref: [ROCm docs](https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html) |
 | `ttm.page_pool_size=32505856` | TTM page cache size — should match `pages_limit` for optimal allocation speed. Ref: [ROCm #5562](https://github.com/ROCm/ROCm/issues/5562), [AMD MI300A docs](https://instinct.docs.amd.com/projects/amdgpu-docs/en/latest/system-optimization/mi300a.html) |
+| `nvme_core.default_ps_max_latency_us=0` | Disables NVMe APST. Defense-in-depth for the §8.16 write-I/O stall (targets idle/low-power-state hangs — unlikely to fix an under-load stall, but harmless). Kernel's own canonical advice. |
+| `pcie_port_pm=off` | Disables PCIe port D-state runtime PM (independent of `pcie_aspm=off`); pairs with the line above per the kernel's NVMe-timeout hint. See §8.16. |
+
+> **Also applied (not a kernel param):** `vm.swappiness=10` + bounded `vm.dirty_bytes`,
+> written by `install.sh` to `/etc/sysctl.d/10-vm-nvme.conf` — cuts NVMe write/swap pressure (see §8.16).
 
 **Additional parameters for specific use cases:**
 
@@ -1237,7 +1258,7 @@ Verify with `xrandr --query`. Update workspace assignments in i3 config accordin
 sudo apt install linux-oem-24.04
 
 # 2. Apply kernel parameters
-sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 amdgpu.cwsr_enable=0 ttm.pages_limit=32505856 ttm.page_pool_size=32505856"/' /etc/default/grub
+sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash amd_pstate=active amd_iommu=off pcie_aspm=off amdgpu.dcdebugmask=0x410 amdgpu.cwsr_enable=0 ttm.pages_limit=32505856 ttm.page_pool_size=32505856 nvme_core.default_ps_max_latency_us=0 pcie_port_pm=off"/' /etc/default/grub
 sudo update-grub
 
 # 3. Update firmware
@@ -1633,6 +1654,7 @@ Track these upstream bugs to know when workarounds can be removed.
 | `amd_pmf` CPU hogging | [Ubuntu #2112307](https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.8/+bug/2112307), [Kernel #218863](https://bugzilla.kernel.org/show_bug.cgi?id=218863) — workqueue lockup | Open | amd_pmf driver fix for Strix Halo in OEM kernel update |
 | CrackArmor | [USN-8095-1](https://ubuntu.com/security/notices/USN-8095-1) — 9 AppArmor CVEs | Patching | Kernel update + USN-8091-1/8092-1 su/sudo patches |
 | EntrySign | [AMD-SB-7033](https://www.amd.com/en/resources/product-security/bulletin/amd-sb-7033.html) — unsigned microcode on Zen 1-5 | Patching | AGESA ≥1.2.0.3C via fwupd BIOS update |
+| `nvme_core.default_ps_max_latency_us=0`, `pcie_port_pm=off`, `vm.swappiness=10` | Internal incident 2026-05-20/29 — NVMe write-I/O stall (Phison E18, fw `HPE23007`); see §8.16 | Monitoring | HP ships SSD firmware, or no recurrence over 30 d under sustained write load (watch `journalctl -k` for `timeout, aborting`) |
 
 ---
 

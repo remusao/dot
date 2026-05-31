@@ -266,7 +266,7 @@ ALL_PKGS=(
   libfido2-1 libu2f-udev
   virtualenvwrapper tree editorconfig xdg-utils
   tldr rsync whois zstd apache2-utils
-  htop dfc earlyoom lm-sensors rasdaemon
+  htop dfc earlyoom lm-sensors rasdaemon nvme-cli smartmontools
   screen tmux parallel
   firefox
   thunderbird brave-browser google-chrome-stable openrazer-meta tailscale gh
@@ -536,11 +536,13 @@ WPCONF
     ok "Mic priorities (headphone jack > USB mic > built-in)"
 
     # Kernel parameters: amd_pstate pcie_aspm amd_iommu dcdebugmask + unified memory (TTM)
+    # + NVMe write-stall mitigation: APST off + PCIe port PM off (defense-in-depth for the
+    #   2026-05-29 NVMe I/O stall — see HP-ZBook report §8.16). Keep pcie_aspm=off as-is.
     # Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525
     # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
     info "Configuring kernel parameters (ZBook Ultra G1a)..."
     GRUB_CHANGED=0
-    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "amdgpu.cwsr_enable=0" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856"; do
+    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "amdgpu.cwsr_enable=0" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856" "nvme_core.default_ps_max_latency_us=0" "pcie_port_pm=off"; do
         param_name="${kp%%=*}"
         normalized="${param_name//-/_}"
         if ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${normalized}[= \"]" /etc/default/grub 2>/dev/null &&
@@ -553,7 +555,29 @@ WPCONF
     if [[ "$GRUB_CHANGED" == "1" ]]; then
         sudo update-grub
     fi
-    ok "Kernel parameters (amd_pstate pcie_aspm amd_iommu dcdebugmask cwsr_enable ttm.pages_limit ttm.page_pool_size)"
+    ok "Kernel parameters (amd_pstate pcie_aspm amd_iommu dcdebugmask cwsr_enable ttm.pages_limit ttm.page_pool_size nvme_core.default_ps_max_latency_us pcie_port_pm)"
+
+    # NVMe write pressure: throttle the GNOME tracker indexer. It crash-looped throughout
+    # the 2026-05-29 I/O stall and is unneeded under i3. Soft-disable via gsettings —
+    # reversible, and avoids masking units that don't exist on this box. See report §8.16.
+    if gsettings list-schemas 2>/dev/null | grep -q '^org.freedesktop.Tracker3.Miner.Files$'; then
+        gsettings set org.freedesktop.Tracker3.Miner.Files crawling-interval -2
+        gsettings set org.freedesktop.Tracker3.Miner.Files enable-monitors false
+        ok "Tracker indexer throttled (reduces NVMe write pressure)"
+    fi
+
+    # NVMe write pressure: lower swappiness + bound dirty bytes. On 125 GiB RAM, swapping
+    # to the on-NVMe /swap.img competes with data I/O and amplified the 2026-05-29 stall;
+    # default dirty_ratio=20 lets ~25 GiB of dirty pages build into SSD-wedging bursts.
+    # Written inline (restore/ is gitignored) so it reproduces on reinstall. See report §8.16.
+    sudo tee /etc/sysctl.d/10-vm-nvme.conf > /dev/null << 'SYSCTL'
+# Reduce NVMe write pressure (see HP-ZBook-Ultra-G1a-Linux-Report.md §8.16).
+vm.swappiness = 10
+vm.dirty_background_bytes = 268435456
+vm.dirty_bytes = 1073741824
+SYSCTL
+    sudo sysctl -p /etc/sysctl.d/10-vm-nvme.conf > /dev/null
+    ok "NVMe write-pressure sysctl (vm.swappiness=10, bounded dirty bytes)"
 
     # ROCm (Ryzen APU path — uses inbox kernel driver, no DKMS)
     # Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html
