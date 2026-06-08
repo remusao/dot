@@ -5,11 +5,20 @@ import json
 import glob
 import os
 import sys
+import argparse
+import shlex
+import subprocess
 from datetime import datetime
 
 SESSIONS_GLOB = os.path.expanduser("~/.claude/projects/*/*.jsonl")
 HOME = os.path.expanduser("~")
-N = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("n", nargs="?", type=int, default=30, metavar="N",
+                    help="number of recent sessions (default: 30)")
+parser.add_argument("--resume", action="store_true",
+                    help="open each listed session in a urxvtc window on i3 workspace 4")
+args = parser.parse_args()
+N = args.n
 
 # ANSI
 BOLD = "\033[1m"
@@ -108,7 +117,21 @@ for i, s in enumerate(sessions, 1):
     print(f"     {DIM}{prompt}{RESET}")
     print()
 
-print(f"{BOLD} Resume commands{RESET}\n")
-for i, s in enumerate(sessions, 1):
-    print(f" {DIM}[{i}]{RESET} {GREEN}cd {short_path(s['cwd'])} && claude --resume {s['uuid']}{RESET}")
-print()
+if args.resume:
+    # Switch to workspace 4 once; windows spawned next inherit the focused workspace.
+    subprocess.run(["i3-msg", "-q", "workspace --no-auto-back-and-forth 4"])
+    print(f"{BOLD} Opening on workspace 4{RESET}\n")
+    for i, s in enumerate(sessions, 1):
+        if not os.path.isdir(s["cwd"]):
+            print(f" {DIM}[{i}]{RESET} {YELLOW}skipped (no dir): {short_path(s['cwd'])}{RESET}")
+            continue
+        # The exact command, kept open after Claude exits via `; exec zsh`.
+        cmd = f"cd {shlex.quote(s['cwd'])} && claude --resume {s['uuid']}; exec zsh"
+        subprocess.Popen(["urxvtc", "-e", "zsh", "-ic", cmd])
+        print(f" {DIM}[{i}]{RESET} {GREEN}{short_path(s['cwd'])}{RESET}  {MAGENTA}{s['branch']}{RESET}")
+    print()
+else:
+    print(f"{BOLD} Resume commands{RESET}\n")
+    for i, s in enumerate(sessions, 1):
+        print(f" {DIM}[{i}]{RESET} {GREEN}cd {short_path(s['cwd'])} && claude --resume {s['uuid']}{RESET}")
+    print()
