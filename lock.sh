@@ -2,7 +2,7 @@
 export NODEJS_VERSION="24.16.0"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM_VERSION="v0.12.2"
+export NEOVIM_VERSION="v0.12.3"
 
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.13"
@@ -17,13 +17,13 @@ export SCCACHE_VERSION="0.15.0"
 export HADOLINT_VERSION="v2.14.0"
 
 # https://github.com/nvm-sh/nvm/releases/latest
-export NVM_VERSION="v0.40.4"
+export NVM_VERSION="v0.40.5"
 
 # https://github.com/restic/restic/releases/latest
-export RESTIC_VERSION="0.18.1"
+export RESTIC_VERSION="0.19.0"
 
 # https://github.com/rclone/rclone/releases/latest
-export DOTFILES_RCLONE_VERSION="v1.74.2"
+export DOTFILES_RCLONE_VERSION="v1.74.3"
 
 # https://github.com/netblue30/firejail/releases/latest
 export FIREJAIL_VERSION="0.9.80"
@@ -32,22 +32,22 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.10.8"
+export AWS_VAULT_VERSION="v7.12.1"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS_VERSION="v3.13.1"
 
 # crates.io: cargo-audit
-export CARGO_AUDIT_VERSION="0.22.1"
+export CARGO_AUDIT_VERSION="0.22.2"
 
 # crates.io: cargo-deny
-export CARGO_DENY_VERSION="0.19.7"
+export CARGO_DENY_VERSION="0.19.8"
 
 # crates.io: cargo-fuzz
-export CARGO_FUZZ_VERSION="0.13.1"
+export CARGO_FUZZ_VERSION="0.13.2"
 
 # crates.io: flamegraph
-export FLAMEGRAPH_VERSION="0.6.12"
+export FLAMEGRAPH_VERSION="0.6.13"
 
 # crates.io: loc
 export LOC_VERSION="0.5.0"
@@ -71,10 +71,10 @@ export DU_DUST_VERSION="1.2.4"
 export DIFFTASTIC_VERSION="0.69.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT_VERSION="0.62.0"
+export LAZYGIT_VERSION="0.62.2"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.05.25.00"
+export WATCHMAN_VERSION="2026.06.08.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -110,4 +110,4 @@ export DELTA_VERSION="0.19.2"
 export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.47.0"
+export KITTY_VERSION="0.47.3"

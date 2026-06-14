@@ -193,6 +193,7 @@ done
 check "npm: typescript" test -x "$NODE_BIN/tsc"
 check "npm: svelte-language-server" test -x "$NODE_BIN/svelteserver"
 check "npm: dockerfile-language-server-nodejs" test -x "$NODE_BIN/docker-langserver"
+check "npm: pyright" test -x "$NODE_BIN/pyright-langserver"
 
 # ─── CLAUDE & OPENCODE ──────────────────────────────────
 section "AI tools"
