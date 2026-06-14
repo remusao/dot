@@ -9,6 +9,7 @@ npm install -g \
   neovim@latest \
   prettier@latest \
   prettier-plugin-svelte@latest \
+  pyright@latest \
   stylelint@latest \
   svelte@latest \
   svelte-check@latest \

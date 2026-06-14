@@ -4,7 +4,6 @@
 import json
 import glob
 import os
-import sys
 import argparse
 import shlex
 import subprocess
@@ -13,7 +12,7 @@ from datetime import datetime
 SESSIONS_GLOB = os.path.expanduser("~/.claude/projects/*/*.jsonl")
 HOME = os.path.expanduser("~")
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("n", nargs="?", type=int, default=30, metavar="N",
+parser.add_argument("n", nargs="?", type=int, default=15, metavar="N",
                     help="number of recent sessions (default: 30)")
 parser.add_argument("--resume", action="store_true",
                     help="open each listed session in a urxvtc window on i3 workspace 4")
