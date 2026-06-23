@@ -1,5 +1,5 @@
 # https://nodejs.org/en/download
-export NODEJS_VERSION="24.16.0"
+export NODEJS_VERSION="24.17.0"
 
 # https://github.com/neovim/neovim/releases/latest
 export NEOVIM_VERSION="v0.12.3"
@@ -11,7 +11,7 @@ export PYTHON_VERSION="3.12.13"
 export RIPGREP_VERSION="15.1.0"
 
 # crates.io: sccache
-export SCCACHE_VERSION="0.15.0"
+export SCCACHE_VERSION="0.16.0"
 
 # https://github.com/hadolint/hadolint/releases/latest
 export HADOLINT_VERSION="v2.14.0"
@@ -32,7 +32,7 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.12.1"
+export AWS_VAULT_VERSION="v7.12.3"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS_VERSION="v3.13.1"
@@ -41,7 +41,7 @@ export SOPS_VERSION="v3.13.1"
 export CARGO_AUDIT_VERSION="0.22.2"
 
 # crates.io: cargo-deny
-export CARGO_DENY_VERSION="0.19.8"
+export CARGO_DENY_VERSION="0.19.9"
 
 # crates.io: cargo-fuzz
 export CARGO_FUZZ_VERSION="0.13.2"
@@ -74,7 +74,7 @@ export DIFFTASTIC_VERSION="0.69.0"
 export LAZYGIT_VERSION="0.62.2"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.06.08.00"
+export WATCHMAN_VERSION="2026.06.22.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -110,4 +110,4 @@ export DELTA_VERSION="0.19.2"
 export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.47.3"
+export KITTY_VERSION="0.47.4"

@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("n", nargs="?", type=int, default=15, metavar="N",
                     help="number of recent sessions (default: 30)")
 parser.add_argument("--resume", action="store_true",
-                    help="open each listed session in a urxvtc window on i3 workspace 4")
+                    help="open each listed session in a urxvt window on i3 workspace 4")
 args = parser.parse_args()
 N = args.n
 
@@ -126,7 +126,10 @@ if args.resume:
             continue
         # The exact command, kept open after Claude exits via `; exec zsh`.
         cmd = f"cd {shlex.quote(s['cwd'])} && claude --resume {s['uuid']}; exec zsh"
-        subprocess.Popen(["urxvtc", "-e", "zsh", "-ic", cmd])
+        # Standalone urxvt with XIM disabled (XMODIFIERS=""): independent process per
+        # window, immune to the ibus/XIM-server freeze. Matches the i3 $mod+Return binding.
+        subprocess.Popen(["urxvt", "-e", "zsh", "-ic", cmd],
+                         env={**os.environ, "XMODIFIERS": ""})
         print(f" {DIM}[{i}]{RESET} {GREEN}{short_path(s['cwd'])}{RESET}  {MAGENTA}{s['branch']}{RESET}")
     print()
 else:
