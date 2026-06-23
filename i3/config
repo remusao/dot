@@ -64,13 +64,12 @@ exec --no-startup-id gammastep -l 48.8:11.34
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
 
-# Terminals (urxvt is default; alacritty + kitty available for testing)
-bindsym $mod+Return       exec --no-startup-id urxvtc
+# Terminals — standalone urxvt (one process per window: no shared urxvtd daemon, so a
+# wedge can't take down every window at once). XMODIFIERS= disables XIM so urxvt never
+# connects to the ibus server and can't deadlock if it dies (Compose/dead keys still work
+# via Xlib's local IM). Do NOT remove XMODIFIERS= — that's what prevents the freeze.
+bindsym $mod+Return       exec --no-startup-id env XMODIFIERS= urxvt
 bindsym $mod+Shift+Return exec --no-startup-id alacritty
-bindsym $mod+Ctrl+Return  exec --no-startup-id env LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 MALLOC_CONF=abort_conf:true,narenas:1,background_thread:true,max_background_threads:1,dirty_decay_ms:5000,muzzy_decay_ms:5000 kitty --single-instance
-
-# urxvt daemon (required for urxvtc client launches)
-exec --no-startup-id urxvtd -q -o -f
 
 # Scratchpad dropdown terminal (alacritty)
 exec --no-startup-id alacritty --class Alacritty,scratchpad
