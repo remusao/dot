@@ -1,8 +1,6 @@
 """ Syntax Coloration
-let g:enable_bold_font = 1
 set background=dark
 colorscheme jellybeans
-let g:jellybeans_use_lowcolor_black = 0
 
 " hi clear inside jellybeans.vim resets to the built-in default colorscheme
 " (PR #26334). Most default TreeSitter links cascade correctly through
@@ -49,19 +47,27 @@ hi! link Removed              Constant
 " Override to subtle grey bg, preserving text colors.
 hi Search                     guibg=#404040 guifg=NONE gui=underline
 hi CurSearch                  guibg=#556779 guifg=NONE gui=underline
-hi! link IncSearch            CurSearch
 
-" Diagnostics (jellybeans defines none; ALE uses these via vim.diagnostic).
+" Visual selection: jellybeans leaves this at guibg=#404040, which is barely
+" distinguishable from Normal's #151515 background. Use a blue-grey so selections
+" are legible; guifg=NONE preserves the selected text's syntax colours. ctermbg
+" covers the 256-colour fallback — neovim's default Visual ctermbg is 15
+" (near-white #fdf6e3 in this palette), which is the invisible case.
+hi Visual                     guibg=#2d4f6f guifg=NONE ctermbg=24 ctermfg=NONE
+
+" Diagnostics (jellybeans defines none; ALE + LSP feed these via vim.diagnostic).
 hi DiagnosticError            guifg=#d44141
 hi DiagnosticWarn             guifg=#ffb964
 hi DiagnosticInfo             guifg=#b0d0f0
 hi DiagnosticHint             guifg=#d2ebbe
 hi DiagnosticOk               guifg=#70b950
-hi DiagnosticUnderlineError   gui=undercurl guisp=#d44141
-hi DiagnosticUnderlineWarn    gui=undercurl guisp=#ffb964
-hi DiagnosticUnderlineInfo    gui=undercurl guisp=#b0d0f0
-hi DiagnosticUnderlineHint    gui=undercurl guisp=#d2ebbe
-hi DiagnosticUnderlineOk      gui=undercurl guisp=#70b950
+" urxvt can't render undercurl (it shows as a solid block), so mark the offending
+" token with a plain underline + a subtle severity-coloured bg tint instead.
+hi DiagnosticUnderlineError   gui=underline guibg=#3a1f1f
+hi DiagnosticUnderlineWarn    gui=underline guibg=#3a3a1f
+hi DiagnosticUnderlineInfo    gui=underline guibg=#1f2a3a
+hi DiagnosticUnderlineHint    gui=underline guibg=#1f3a2a
+hi DiagnosticUnderlineOk      gui=underline guibg=#1f3a1f
 
 " Float windows — Neovim default bg (#07080d) is too dark.
 hi NormalFloat                guifg=#e8e8d3 guibg=#1c1c1c
@@ -70,7 +76,7 @@ hi FloatBorder                guifg=#777777 guibg=#1c1c1c
 " Window chrome — Neovim links WinSeparator to Normal; we want gravel.
 hi! link WinSeparator         VertSplit
 
-" Git gutter signs.
-hi GitGutterAdd               guifg=#70b950
-hi GitGutterChange            guifg=#ffb964
-hi GitGutterDelete            guifg=#d44141
+" Git signs (gitsigns.nvim).
+hi GitSignsAdd                guifg=#70b950
+hi GitSignsChange             guifg=#ffb964
+hi GitSignsDelete             guifg=#d44141

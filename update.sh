@@ -76,3 +76,8 @@ fi
 . ./nuggets/utilities/bat.sh
 . ./nuggets/utilities/delta.sh
 . ./nuggets/utilities/hyperfine.sh
+
+# Neovim language tooling (binary downloads)
+. ./nuggets/utilities/lua-language-server.sh
+. ./nuggets/utilities/shfmt.sh
+. ./nuggets/utilities/stylua.sh

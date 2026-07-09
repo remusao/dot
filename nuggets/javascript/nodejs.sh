@@ -8,4 +8,6 @@ fi
 
 export TMPDIR="${TMPDIR:-/tmp}"
 . "${HOME}/.nvm/nvm.sh"
-nvm install "${NODEJS_VERSION}"
+# --reinstall-packages-from carries global CLIs (npm + language servers) across a
+# Node bump; falls back to a plain install on first run (no "current" version yet).
+nvm install "${NODEJS_VERSION}" --reinstall-packages-from=current || nvm install "${NODEJS_VERSION}"
