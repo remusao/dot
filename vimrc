@@ -1,3 +1,4 @@
+lua vim.loader.enable()
 source ~/.vim/settings.vim
 source ~/.vim/install_plugins.vim
 source ~/.vim/config_plugins.vim

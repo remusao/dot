@@ -1,12 +1,12 @@
 "" --- CONFIGURE PLUGINS ---
 
 " grep & fuzzy find {{{
-set grepprg=rg\ --color\ never\ --no-heading
+" grepprg: nvim 0.12 auto-sets `rg --vimgrep -uu` + matching grepformat when rg is
+" on PATH (column-accurate quickfix), so we don't override it here.
 let g:fzf_layout = { 'window': { 'width': 1.0, 'height': 0.4, 'yoffset': 1.0, 'border': 'top' } }
 let g:fzf_history_dir = '~/.local/share/fzf-history'
 augroup user_fzf
   autocmd!
-  autocmd FileType fzf silent! tunmap <buffer> <C-z>
   autocmd FileType fzf tnoremap <buffer> <Esc> <Esc>
 augroup END
 
@@ -29,32 +29,12 @@ nnoremap <silent> <Leader>h :History<CR>
 nnoremap <silent> <Leader>g :GFiles?<CR>
 " }}}
 
-" vim-airline {{{
-let g:airline_detect_paste=1
-let g:airline#extensions#tabline#enabled = 1
-let g:airline_powerline_fonts = 1
-" Only display "hunks" if the diff is non-zero
-let g:airline#extensions#hunks#non_zero_only = 1
-" }}}
-
 " Ale {{{
-" Native vim.lsp owns LSP-style linters (pyright/tsserver/svelteserver/rust-analyzer).
-" ALE handles non-LSP linters (ruff/mypy/eslint/tflint) and all fixers.
+" Native vim.lsp owns LSP servers (pyright/vtsls/svelte/rust-analyzer/bashls/...).
+" ALE handles non-LSP linters (ruff/mypy/eslint/tflint) and all fixers, feeding
+" everything into vim.diagnostic.
 let g:ale_disable_lsp = 1
 
-"" Cargo
-let g:ale_rust_cargo_use_check = 1
-let g:ale_rust_cargo_check_all_targets = 1
-let g:ale_rust_cargo_check_tests = 1
-let g:ale_rust_cargo_check_examples = 1
-let g:ale_rust_cargo_default_feature_behavior = 'all'
-let g:ale_rust_cargo_avoid_whole_workspace = 0
-
-"" Clippy
-let g:ale_rust_cargo_use_clippy = 1
-" let g:ale_rust_cargo_clippy_options = '-D warnings -W clippy::cargo -W clippy::all -W clippy::pedantic'
-
-"" Mypy
 let g:ale_python_mypy_ignore_invalid_syntax = 1
 
 " Trailing-whitespace stripping is owned by vim-better-whitespace; ALE only
@@ -69,25 +49,24 @@ let g:ale_fixers = {
 \   'swift': ['trim_whitespace'],
 \   'rust': ['rustfmt'],
 \   'sh': ['shfmt'],
+\   'lua': ['stylua'],
 \   'ruby': ['rubocop', 'rufo'],
 \   'python': ['ruff', 'ruff_format'],
 \   'haskell': ['ormolu', 'fourmolu'],
 \}
 
 let g:ale_python_ruff_options = '--extend-select I'
-" let g:ale_python_ruff_change_directory = 0
-
+" ruff lives in the neovim venv (off the interactive PATH), so point ALE at it
+" explicitly -- otherwise the ruff linter + ruff_format fixer silently no-op.
+let g:ale_python_ruff_executable = expand('~/.virtualenvs/neovim3/bin/ruff')
+let g:ale_python_ruff_format_executable = expand('~/.virtualenvs/neovim3/bin/ruff')
+" stylua defaults to tabs/120-col; match this config's 2-space indent.
+let g:ale_lua_stylua_options = '--indent-type Spaces --indent-width 2'
 let g:ale_fix_on_save = 1
 
-let g:ale_completion_enabled = 0
-
-" NOTE: for rust I removed 'rustc' as it does not know about the dependencies
-" somehow so whole files are highlighted with warnings.
 let g:ale_linter_aliases = {
 \   'svelte': ['javascript', 'svelte']
 \}
-" LSP linters (pyright, tsserver, svelteserver, analyzer) removed: handled by native vim.lsp.
-" ruff_format is a formatter (see g:ale_fixers), not a linter -- removed from python.
 let g:ale_linters = {
 \   'javascript': ['eslint'],
 \   'typescript': ['eslint'],
@@ -97,22 +76,19 @@ let g:ale_linters = {
 \   'rust': [],
 \}
 
-" Diagnostic nav: vim.diagnostic.jump covers BOTH ALE and native LSP diagnostics,
-" unlike <Plug>(ale_*_wrap) which only iterates ALE's internal loclist.
+" Diagnostic nav: vim.diagnostic.jump covers BOTH ALE and native LSP diagnostics.
 nnoremap <silent> <C-k> <Cmd>lua vim.diagnostic.jump({count=-1, wrap=true})<CR>
 nnoremap <silent> <C-j> <Cmd>lua vim.diagnostic.jump({count=1, wrap=true})<CR>
 
-let g:airline#extensions#ale#enabled = 1
-let g:ale_lint_on_text_changed = 'normal'
 let g:ale_lint_delay = 2000
-let g:ale_lint_on_save = 1
-" let g:ale_max_signs = 10
-let g:ale_set_signs = 1
-let g:ale_set_highlights = 1
-let g:ale_virtualtext_cursor = 'disabled'
-" Unified cmdline echo is owned by the vim.diagnostic autocmd in the lua block
-" below (covers both ALE and native LSP); avoid ALE racing it with its own format.
+" ALE feeds its findings into vim.diagnostic (pinned -- the whole display design
+" relies on it; vim.diagnostic then owns signs/underline).
+let g:ale_use_neovim_diagnostics_api = 1
+" These two ALE display paths are NOT gated by the flag above, so set them
+" explicitly: no cmdline echo, and no ALE virtual_text (it would otherwise override
+" the global virtual_text=false via per-namespace opts in vim.diagnostic.set()).
 let g:ale_echo_cursor = 0
+let g:ale_virtualtext_cursor = 'disabled'
 " }}}
 
 
@@ -123,25 +99,8 @@ let g:notes_word_boundaries = 1
 let g:notes_smart_quotes = 1
 " }}}
 
-
-" Likewise, Files command with preview window
-command! -bang -nargs=? -complete=dir Files
-  \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
-" }}}
-
-" rust {{{
-let g:rust_conceal = 0
-let g:rust_conceal_mod_path = 0
-let g:rust_conceal_pub = 0
-let g:rust_recommended_style = 1
-let g:rust_fold = 0
-let g:rustfmt_autosave = 0  " ALE owns rustfmt via g:ale_fixers (avoid double-fire on save)
-let g:rustfmt_autosave_if_config_present = 0
-let g:rust_use_custom_ctags_defs = 1
-" }}}
-
 lua << EOF
--- Parsers are installed by install.sh via TSInstallSync!; no runtime install needed.
+-- Parsers are installed by install.sh (require('nvim-treesitter').install); no runtime install here.
 vim.api.nvim_create_autocmd('FileType', {
   callback = function(args)
     if vim.api.nvim_buf_line_count(args.buf) > 10000 then return end
@@ -152,57 +111,93 @@ vim.api.nvim_create_autocmd('FileType', {
 })
 
 require('nvim-autopairs').setup({})
+
+-- Git signs in the gutter (gitsigns.nvim; async, replaces vim-gitgutter).
+-- Defaults (┃/┃/▁/▔) render via the DejaVu Sans Mono fallback in urxvt.
+require('gitsigns').setup()
+
+-- Statusline (replaces vim-airline; reads vim.diagnostic + gitsigns directly).
+require('lualine').setup({
+  options = {
+    theme = 'jellybeans',
+    section_separators = { left = '', right = '' },
+    component_separators = { left = '', right = '' },
+  },
+  sections = {
+    lualine_a = { 'mode' },
+    lualine_b = {
+      'branch',
+      { 'diff', source = function()
+          local g = vim.b.gitsigns_status_dict
+          if g then return { added = g.added, modified = g.changed, removed = g.removed } end
+        end },
+      'diagnostics',
+    },
+    lualine_c = { 'filename' },
+    lualine_x = { 'encoding', 'filetype' },
+    lualine_y = { 'progress' },
+    lualine_z = { 'location' },
+  },
+  tabline = { lualine_a = { 'buffers' }, lualine_z = { 'tabs' } },
+})
 EOF
-
-
-" Copilot
-" imap <silent><script><expr> <C-J> copilot#Accept("\<CR>")
-" let g:copilot_no_tab_map = v:true
-
-" Use the copilot-language-server bundled inside the plugin instead of
-" re-downloading via npx on every launch (eliminates 'npm warn exec' in lsp.log).
-let g:copilot_version = v:false
-
-let g:copilot_filetypes = {
-      \ '*': v:false,
-      \ 'haskell': v:true,
-      \ 'javascript': v:true,
-      \ 'python': v:true,
-      \ 'rust': v:true,
-      \ 'sh': v:true,
-      \ 'svelte': v:true,
-      \ 'typescript': v:true,
-      \ 'lua': v:true,
-      \ }
 
 " Native LSP (Neovim 0.11+: vim.lsp.config / vim.lsp.enable; uses nvim-lspconfig as catalog)
 lua << EOF
--- Echo the most-severe diagnostic on the cursor line at the cmdline. ALE routes
--- its findings into vim.diagnostic by default (g:ale_use_neovim_diagnostics_api),
--- so one query covers both ALE and native LSP sources.
-local sev_hl = { 'DiagnosticError', 'DiagnosticWarn', 'DiagnosticInfo', 'DiagnosticHint' }
-vim.api.nvim_create_autocmd({ 'CursorMoved', 'DiagnosticChanged' }, {
-  group = vim.api.nvim_create_augroup('user_diagnostic_echo', { clear = true }),
-  callback = function(args)
-    if args.buf ~= vim.api.nvim_get_current_buf() then return end
-    local d = vim.diagnostic.get(0, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
-    if #d == 0 then return vim.api.nvim_echo({ { '' } }, false, {}) end
-    local best = d[1]
-    for i = 2, #d do if d[i].severity < best.severity then best = d[i] end end
-    local msg = best.message:gsub('\n', ' ')
-    local max = math.max(1, vim.v.echospace - 1)
-    if #msg > max then msg = msg:sub(1, max - 1) .. '…' end
-    vim.api.nvim_echo({ { msg, sev_hl[best.severity] or 'Normal' } }, false, {})
+-- Diagnostic display: gutter signs + a severity-tinted underline on the offending
+-- token. urxvt can't render undercurl, so DiagnosticUnderline* (in colorscheme.vim)
+-- use plain gui=underline + a subtle bg tint -- both urxvt-safe. No inline
+-- virtual_text (it clutters half-typed lines); the message shows in a float instead.
+vim.diagnostic.config({
+  virtual_text = false,
+  underline = true,
+  signs = true,
+  severity_sort = true,
+  jump = { wrap = true },  -- jump.float is deprecated; the CursorHold float (below) shows the message
+})
+
+-- Hover-to-read: when the cursor rests on a diagnostic line (after 'updatetime' =
+-- 250ms), pop the line's message(s) in a non-focusable float that auto-closes on
+-- move. Normal mode only (CursorHold, not CursorHoldI) so it never fights
+-- blink/copilot while typing. It's a floating window, not in-buffer text, so it
+-- sidesteps the clutter/red-block issues that made us drop virtual_text.
+-- Also on <C-w>d (built-in). To make it manual-only, delete this autocmd.
+vim.api.nvim_create_autocmd('CursorHold', {
+  group = vim.api.nvim_create_augroup('user_diagnostic_float', { clear = true }),
+  callback = function()
+    vim.diagnostic.open_float(nil, { focus = false, scope = 'line' })
   end,
 })
 
--- Override pyright cmd to use the binary inside ~/.virtualenvs/neovim3 (installed by install.sh).
--- nvim-lspconfig's lsp/pyright.lua provides filetypes, root_markers, settings; we merge on top.
+-- pyright: run the server from ~/.virtualenvs/neovim3 (installed by install.sh).
 vim.lsp.config('pyright', {
   cmd = { vim.fn.expand('~/.virtualenvs/neovim3/bin/pyright-langserver'), '--stdio' },
 })
 
--- rust-analyzer: enable clippy on check (modern key; checkOnSave.command is deprecated upstream).
+-- pyright has no venv auto-detection, and in a monorepo it roots at the git root
+-- (where pyrightconfig.json lives, so extraPaths resolve) -- NOT the service dir.
+-- So point it at the venv/.venv nearest the file being edited (uv/venv layouts).
+-- Runs per buffer via LspAttach + didChangeConfiguration (the mechanism the
+-- lspconfig catalog uses for :LspPyrightSetPythonPath) so switching between
+-- services -- each with its own venv -- reconfigures correctly. $VIRTUAL_ENV,
+-- if you activate one, is the fallback.
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('user_pyright_venv', { clear = true }),
+  callback = function(ev)
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+    if not client or client.name ~= 'pyright' then return end
+    local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(ev.buf))
+    local venv = vim.fs.find({ 'venv', '.venv' }, { path = dir, upward = true, type = 'directory' })[1]
+    local py = (venv and venv .. '/bin/python')
+      or (vim.env.VIRTUAL_ENV and vim.env.VIRTUAL_ENV .. '/bin/python')
+    if py and vim.uv.fs_stat(py) and (client.settings.python or {}).pythonPath ~= py then
+      client.settings = vim.tbl_deep_extend('force', client.settings or {}, { python = { pythonPath = py } })
+      client:notify('workspace/didChangeConfiguration', { settings = client.settings })
+    end
+  end,
+})
+
+-- rust-analyzer: clippy on check (modern key; checkOnSave.command is deprecated upstream).
 vim.lsp.config('rust_analyzer', {
   settings = {
     ['rust-analyzer'] = {
@@ -211,17 +206,79 @@ vim.lsp.config('rust_analyzer', {
   },
 })
 
-vim.lsp.enable({ 'pyright', 'rust_analyzer', 'ts_ls', 'svelte', 'bashls', 'yamlls' })
-
--- Enable native LSP completion per-buffer when a capable client attaches.
--- Built-in 0.12 defaults handle K/grn/gra/grr/gri/grt/gO/<C-S>/<C-]>; nothing else needed here.
-vim.api.nvim_create_autocmd('LspAttach', {
-  group = vim.api.nvim_create_augroup('user_lsp_attach', { clear = true }),
-  callback = function(args)
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    if client and client:supports_method('textDocument/completion') then
-      vim.lsp.completion.enable(true, args.data.client_id, args.buf, { autotrigger = true })
+-- lua_ls: inject the Neovim runtime into the workspace library only when editing
+-- this config, so vim.* globals resolve without false "undefined global" warnings.
+vim.lsp.config('lua_ls', {
+  on_init = function(client)
+    if client.workspace_folders then
+      local path = client.workspace_folders[1].name
+      if path ~= vim.fn.stdpath('config')
+        and (vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc')) then
+        return
+      end
     end
+    client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua or {}, {
+      runtime = { version = 'LuaJIT' },
+      workspace = { checkThirdParty = false, library = { vim.env.VIMRUNTIME } },
+    })
   end,
+  settings = { Lua = {} },
+})
+
+vim.lsp.enable({ 'pyright', 'rust_analyzer', 'vtsls', 'svelte', 'bashls', 'yamlls', 'lua_ls' })
+
+-- Neovim ships grn/gra/grr/gri/grt/gO/K/<C-]> by default, but not gd.
+vim.keymap.set('n', 'gd', vim.lsp.buf.definition)
+
+-- Copilot as ghost-text (copilot.lua). No built-in accept map -- blink drives <Tab> below.
+require('copilot').setup({
+  suggestion = { enabled = true, auto_trigger = true, keymap = { accept = false } },
+  panel = { enabled = false },
+  filetypes = {
+    ['*'] = false,
+    python = true, rust = true, javascript = true, typescript = true,
+    svelte = true, sh = true, lua = true, haskell = true,
+  },
+})
+
+-- Hide the Copilot ghost while blink's menu is open, so the two never overlap and
+-- <Tab> unambiguously acts on whichever single UI is visible.
+local cop = vim.api.nvim_create_augroup('user_copilot_blink', { clear = true })
+vim.api.nvim_create_autocmd('User', { pattern = 'BlinkCmpMenuOpen', group = cop,
+  callback = function() require('copilot.suggestion').dismiss(); vim.b.copilot_suggestion_hidden = true end })
+vim.api.nvim_create_autocmd('User', { pattern = 'BlinkCmpMenuClose', group = cop,
+  callback = function() vim.b.copilot_suggestion_hidden = false end })
+
+-- Completion engine: blink.cmp (fuzzy as-you-type; LSP + path + snippets + buffer).
+require('blink.cmp').setup({
+  keymap = {
+    preset = 'enter',                        -- <Up>/<Down> move, <Enter> accepts
+    ['<Tab>'] = {
+      'select_next',                         -- menu open: next item
+      function()                             -- menu closed: accept Copilot ghost if shown
+        local sug = require('copilot.suggestion')
+        if sug.is_visible() then sug.accept(); return true end
+      end,
+      'fallback',                            -- else: a literal tab
+    },
+    ['<S-Tab>'] = { 'select_prev', 'fallback' },
+    ['<C-l>'] = { 'snippet_forward', 'fallback' },
+    ['<C-h>'] = { 'snippet_backward', 'fallback' },
+  },
+  completion = {
+    list = { selection = { preselect = false } },
+    ghost_text = { enabled = false },        -- Copilot owns inline ghost text
+    -- Doc float the instant an item is highlighted. The default 500ms delay resets on
+    -- every keypress and, with preselect=false (nothing selected until <Tab>), it almost
+    -- never showed -- the "bare" feel vs YCM's preview panel. 0ms is async + debounced.
+    documentation = { auto_show = true, auto_show_delay_ms = 0 },
+    -- Re-open the menu when backspacing over letters inside a word (off by default).
+    trigger = { show_on_backspace_in_keyword = true },
+  },
+  sources = { default = { 'lsp', 'path', 'snippets', 'buffer' } },
+  -- Signature help shows while typing arguments (after '(' or ','); show_documentation
+  -- adds the function's docstring to that float (default shows the bare param list only).
+  signature = { enabled = true, window = { show_documentation = true } },
+  fuzzy = { implementation = 'prefer_rust_with_warning' },
 })
 EOF

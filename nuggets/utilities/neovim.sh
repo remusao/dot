@@ -21,6 +21,10 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
     git clone --depth=1 --branch "${NEOVIM_VERSION}" https://github.com/neovim/neovim.git "${TEMP}"
     cd "${TEMP}"
     make CMAKE_INSTALL_PREFIX="${HOME}/.local" CMAKE_BUILD_TYPE=RelWithDebInfo
+    # `make install` copies files forward but never purges runtime files removed
+    # upstream between versions; the stale copies break :checkhealth and can feed
+    # vim.loader a stale bytecode cache. Clear both before installing.
+    rm -rf "${HOME}/.local/share/nvim/runtime" "${HOME}/.cache/nvim/luac"
     make install
   )
 fi

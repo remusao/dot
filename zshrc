@@ -11,7 +11,7 @@ if [[ "$TERM" == rxvt-unicode* && -z "$_TERM_INITIALIZED" ]]; then
 fi
 
 # GPG pinentry needs to know which TTY to prompt on (e.g., signed git commits).
-export GPG_TTY=$(tty)
+export GPG_TTY=$TTY   # $TTY is a zsh builtin — no subprocess fork
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
@@ -44,10 +44,11 @@ setopt PUSHD_IGNORE_DUPS    # dedup dir stack
 setopt INTERACTIVE_COMMENTS # allow # comments at the prompt
 setopt NO_NOMATCH           # pass unmatched globs literally instead of erroring
 
-# Locale (LC_ALL overrides any individual LC_* setting)
+# Locale. Set only LANG (the default for every LC_* category) so per-command
+# overrides like `LC_COLLATE=C sort` still work. Avoid LC_ALL — it force-overrides
+# every category unconditionally.
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
 export LESSCHARSET=utf-8
 
 # Editing keymap (zsh otherwise picks vi mode because EDITOR=*vi*)
@@ -65,7 +66,7 @@ setopt complete_in_word
 setopt always_to_end
 
 zstyle ':completion:*:*:*:*:*' menu select
-zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
 
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
 
@@ -82,9 +83,12 @@ zstyle ':completion:*' cache-path "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/compcache
 # ZSH Prompt
 POWERLEVEL9K_VCS_SHOW_SUBMODULE_DIRTY=false
 POWERLEVEL9K_NODE_VERSION_FOREGROUND='black'
+POWERLEVEL9K_NODE_VERSION_PROJECT_ONLY=true    # only render node version inside Node projects (no fork elsewhere)
 POWERLEVEL9K_STATUS_VERBOSE=false
 POWERLEVEL9K_PROMPT_ON_NEWLINE=false
 POWERLEVEL9K_SHORTEN_DIR_LENGTH=2
+POWERLEVEL9K_DISABLE_HOT_RELOAD=true           # skip re-scanning POWERLEVEL9K_* each prompt (run `p10k reload` after edits)
+POWERLEVEL9K_INSTANT_PROMPT=quiet              # keep instant prompt; silence console-output warnings
 
 POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(context dir_writable dir vcs)
 POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status virtualenv node_version command_execution_time background_jobs time)
@@ -108,9 +112,9 @@ alias g++='g++ -Wall -Wextra -pedantic -std=c++20'
 alias inst='sudo apt install'
 alias lock='i3lock --color 475263'
 alias ls="ls --color=auto"
-alias l='eza --group-directories-first --git'
-alias la='eza -la --group-directories-first --git --time-style=long-iso'
-alias lt='eza --tree --git-ignore --level=2'
+alias l='eza --group-directories-first --git --icons=auto'
+alias la='eza -la --group-directories-first --git --time-style=long-iso --icons=auto'
+alias lt='eza --tree --git-ignore --level=2 --icons=auto'
 alias reload='exec zsh'
 alias se='apt search'
 alias tree='tree -CAFa -I "CVS|*.*.package|.svn|.git|.hg|node_modules|bower_components" --dirsfirst'
@@ -188,6 +192,7 @@ setopt HIST_SAVE_NO_DUPS
 setopt HIST_IGNORE_SPACE        # prefix with space to omit from history
 setopt HIST_REDUCE_BLANKS
 setopt HIST_VERIFY              # show history expansions before executing
+setopt HIST_FCNTL_LOCK          # lock the history file with fcntl() (safe concurrent writes)
 
 export NVM_DIR="$HOME/.nvm"
 
@@ -206,9 +211,126 @@ if [[ $TERM == *rxvt* || $COLORTERM == *rxvt* ]]; then
   add-zsh-hook precmd reset-cursor
 fi
 
-# Syntax coloring
-source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern root)
+# Syntax highlighting + autosuggestions load at the VERY END of this file — they
+# must be sourced after compinit and all `zle -N` widgets. See "Interactive
+# editing stack" near the bottom.
+
+# start typing + [Up-Arrow] - fuzzy find history forward
+autoload -U up-line-or-beginning-search
+zle -N up-line-or-beginning-search
+bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
+
+# start typing + [Down-Arrow] - fuzzy find history backward
+autoload -U down-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
+
+# Also bind raw Up/Down sequences so history search works regardless of the
+# terminal's application-mode state (urxvt=\e[A/B, alacritty/tmux/xterm=\eOA/B)
+bindkey '\e[A' up-line-or-beginning-search
+bindkey '\eOA' up-line-or-beginning-search
+bindkey '\e[B' down-line-or-beginning-search
+bindkey '\eOB' down-line-or-beginning-search
+
+bindkey ' ' magic-space # [Space] - do history expansion
+
+# Ctrl-Left / Ctrl-Right word motion (urxvt sends \eOd/\eOc; xterm/alacritty \e[1;5D/C)
+bindkey '^[Od'    backward-word
+bindkey '^[Oc'    forward-word
+bindkey '^[[1;5D' backward-word
+bindkey '^[[1;5C' forward-word
+
+# Ctrl-X Ctrl-E: edit the current command line in $EDITOR
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^X^E' edit-command-line
+
+# In completion menu (menuselect): bind common emacs cursor keys to widgets
+# that aren't in menuselect's nav list; this triggers "exit menu + run main
+# keymap binding" per zshcompsys.
+zmodload -i zsh/complist
+bindkey -M menuselect '^A' beginning-of-line
+bindkey -M menuselect '^E' end-of-line
+bindkey -M menuselect '^U' backward-kill-line
+bindkey -M menuselect '^K' kill-line
+
+# Extra configuration
+if [ -e "$HOME/.zshlocal" ];
+then
+    source $HOME/.zshlocal
+fi
+
+# fzf
+export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS='--height=40% --layout=reverse --border --scheme=path --bind ctrl-z:toggle+down'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
+export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
+export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --level=2 {}'"
+export FZF_CTRL_R_OPTS="--layout=default"
+
+# fzf shell integration (cached; invalidates on fzf version change)
+() {
+  # FZF_VERSION comes from lock.sh — avoids forking `fzf --version` every startup
+  local fzf_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/fzf-${FZF_VERSION}.zsh"
+  [[ -r $fzf_cache ]] || { mkdir -p ${fzf_cache:h} && fzf --zsh > $fzf_cache }
+  source $fzf_cache
+}
+
+# zoxide (smart cd)
+eval "$(zoxide init zsh)"
+
+# Run vim with ctrl-p when ctrl-p is pressed in zsh.
+# NOTE: intentionally overrides emacs ^P (up-history) and ^F (forward-char);
+# arrow keys handle history search and cursor movement instead.
+ctrlp() {
+  </dev/tty vim -c ProjectFiles
+}
+zle -N ctrlp
+
+bindkey "^p" ctrlp
+
+# Run vim with Fzf when ctrl-f is pressed in zsh
+nvim_fzf() {
+  </dev/tty vim -c Rg
+}
+zle -N nvim_fzf
+
+bindkey "^f" nvim_fzf
+
+# User-installed zsh completions (alacritty, etc.)
+fpath=(~/.zsh_functions $fpath)
+
+# Completions (full rebuild once per day, fast load otherwise)
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+  touch ~/.zcompdump   # compinit only rewrites the dump when completions change, which
+                       # leaves mtime stale; bump it so the fast -C path runs for the next 24h
+else
+  compinit -C
+fi
+
+# Compile zcompdump to bytecode for faster subsequent loads (background, disowned)
+{
+  [[ -s ~/.zcompdump && (! -s ~/.zcompdump.zwc || ~/.zcompdump -nt ~/.zcompdump.zwc) ]] &&
+    zcompile ~/.zcompdump
+} &!
+
+# bun (only if installed)
+if [[ -d "$HOME/.bun" ]]; then
+  export BUN_INSTALL="$HOME/.bun"
+  [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
+fi
+# deno env (guarded; kept ABOVE the final `true` so a missing file can't leave
+# the shell with a non-zero exit status)
+[[ -f "$HOME/.deno/env" ]] && . "$HOME/.deno/env"
+
+# ── Syntax highlighting — sourced LAST, after compinit and all `zle -N` widgets
+# so it wraps them correctly. git-cloned into ~/.zsh, pinned in lock.sh.
+ZSH_HIGHLIGHT_MAXLENGTH=512             # skip highlighting very long pastes (avoids lag)
+source "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
 ZSH_HIGHLIGHT_STYLES[default]='none'
 ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=red'
 ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=yellow'
@@ -233,89 +355,4 @@ ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[assign]='none'
 
-# start typing + [Up-Arrow] - fuzzy find history forward
-autoload -U up-line-or-beginning-search
-zle -N up-line-or-beginning-search
-bindkey "${terminfo[kcuu1]}" up-line-or-beginning-search
-
-# start typing + [Down-Arrow] - fuzzy find history backward
-autoload -U down-line-or-beginning-search
-zle -N down-line-or-beginning-search
-bindkey "${terminfo[kcud1]}" down-line-or-beginning-search
-
-bindkey ' ' magic-space # [Space] - do history expansion
-
-# In completion menu (menuselect): bind common emacs cursor keys to widgets
-# that aren't in menuselect's nav list; this triggers "exit menu + run main
-# keymap binding" per zshcompsys.
-zmodload -i zsh/complist
-bindkey -M menuselect '^A' beginning-of-line
-bindkey -M menuselect '^E' end-of-line
-bindkey -M menuselect '^U' backward-kill-line
-bindkey -M menuselect '^K' kill-line
-
-# Extra configuration
-if [ -e "$HOME/.zshlocal" ];
-then
-    source $HOME/.zshlocal
-fi
-
-# fzf
-export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --follow --exclude .git'
-export FZF_DEFAULT_OPTS='--height=40% --layout=reverse --border --bind ctrl-z:toggle+down'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
-export FZF_ALT_C_COMMAND='fd --type d --strip-cwd-prefix --hidden --follow --exclude .git'
-export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --level=2 {}'"
-export FZF_CTRL_R_OPTS="--layout=default"
-
-# fzf shell integration (cached; invalidates on fzf version change)
-() {
-  local ver=${${(z)$(fzf --version)}[1]}
-  local fzf_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/fzf-${ver}.zsh"
-  [[ -r $fzf_cache ]] || { mkdir -p ${fzf_cache:h} && fzf --zsh > $fzf_cache }
-  source $fzf_cache
-}
-
-# zoxide (smart cd)
-eval "$(zoxide init zsh)"
-
-# Run vim with ctrl-p when ctrl-p is pressed in zsh
-ctrlp() {
-  </dev/tty vim -c ProjectFiles
-}
-zle -N ctrlp
-
-bindkey "^p" ctrlp
-
-# Run vim with Fzf when ctrl-f is pressed in zsh
-nvim_fzf() {
-  </dev/tty vim -c Rg
-}
-zle -N nvim_fzf
-
-bindkey "^f" nvim_fzf
-
-# User-installed zsh completions (alacritty, etc.)
-fpath=(~/.zsh_functions $fpath)
-
-# Completions (full rebuild once per day, fast load otherwise)
-autoload -Uz compinit
-if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
-  compinit
-else
-  compinit -C
-fi
-
-# Compile zcompdump to bytecode for faster subsequent loads (background, disowned)
-{
-  [[ -s ~/.zcompdump && (! -s ~/.zcompdump.zwc || ~/.zcompdump -nt ~/.zcompdump.zwc) ]] &&
-    zcompile ~/.zcompdump
-} &!
-
-# bun (only if installed)
-if [[ -d "$HOME/.bun" ]]; then
-  export BUN_INSTALL="$HOME/.bun"
-  [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
-fi
 true   # ensure non-failing exit at end of rc

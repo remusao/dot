@@ -15,15 +15,15 @@ cargo_ensure() {
   if ! [ -f "${CARGO_BIN}/${binary}" ]; then
     needs_build="1"
   else
-    local current
-    current=$("${CARGO_BIN}/${binary}" --version 2>/dev/null | head -n 1)
-    if ! echo "$current" | grep -qF "$version"; then
+    # Match the pinned version anywhere in `--version` output — some tools (eza)
+    # print the number on line 2, so don't restrict to the first line.
+    if ! "${CARGO_BIN}/${binary}" --version 2>/dev/null | grep -qF "$version"; then
       needs_build="1"
     fi
   fi
 
   if [ "$needs_build" = "1" ]; then
-    cargo install "$crate" --locked "$@"
+    cargo install "$crate" --version "$version" --locked "$@"
   fi
 }
 

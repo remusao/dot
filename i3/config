@@ -68,7 +68,9 @@ floating_modifier $mod
 # wedge can't take down every window at once). XMODIFIERS= disables XIM so urxvt never
 # connects to the ibus server and can't deadlock if it dies (Compose/dead keys still work
 # via Xlib's local IM). Do NOT remove XMODIFIERS= — that's what prevents the freeze.
-bindsym $mod+Return       exec --no-startup-id env XMODIFIERS= urxvt
+# Inner `exec` makes i3's `sh -c` wrapper exec-replace into env→urxvt rather than
+# lingering as a waiting /bin/sh for the window's life (one fewer process per window).
+bindsym $mod+Return       exec --no-startup-id exec env XMODIFIERS= urxvt
 bindsym $mod+Shift+Return exec --no-startup-id alacritty
 
 # Scratchpad dropdown terminal (alacritty)

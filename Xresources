@@ -6,7 +6,6 @@ URxvt.termName:           rxvt-unicode-256color
 ! ── Scroll behaviour ────────────────────────────────────────────────
 ! jumpScroll, skipScroll, buffered all default-on (init.C:592-600).
 URxvt.scrollBar:          false
-URxvt.scrollstyle:        plain
 URxvt.scrollTtyKeypress:  true
 URxvt.scrollTtyOutput:    false
 ! Keep the viewport pinned when new output arrives mid-scrollback
@@ -27,23 +26,22 @@ Xft.antialias:            true
 Xcursor.size:             32
 Xcursor.theme:            Vanilla-DMZ-AA
 
-! ── Font (Inconsolata for Powerline 12pt + symbol/Latin fallbacks) ─
-! urxvt does NOT use fontconfig for per-glyph fallback (rxvtfont.C:1687-1744);
-! the chain must be explicit. Italic is synthesized via Xft slant (main.C:840-873).
+! ── Font (Inconsolata for Powerline 12pt normal+bold; MesloLGS NF italics) ─
+! urxvt does NOT use fontconfig for per-glyph fallback (rxvtfont.C:1686-1743);
+! the chain must be explicit. Inconsolata has no italic face, so italic/boldItalic
+! use real MesloLGS NF slanted faces at size 10 — its cell is exactly 12x25px,
+! identical to Inconsolata size 12, so italic aligns in the fixed grid (no clip).
+! Only italic text (comments/emphasis) uses Meslo; Powerline/prompt glyphs stay
+! Inconsolata, so letterSpace:0 is unaffected (the 1px triangle gap only applied to
+! Meslo-as-primary). Full-Meslo primary was tried but Inconsolata looked better here.
 URxvt.font:               xft:Inconsolata for Powerline:style=Medium:size=12, \
                           xft:Symbols Nerd Font Mono:size=12, \
                           xft:DejaVu Sans Mono:size=12
 URxvt.boldFont:           xft:Inconsolata for Powerline:style=BoldForPowerline:size=12, \
                           xft:Symbols Nerd Font Mono:size=12, \
                           xft:DejaVu Sans Mono:style=Bold:size=12
-! Alternative — MesloLGS NF 10pt (matches kitty/alacritty + p10k nerdfont-v3).
-! Real Italic/BoldItalic faces, no fallback chain needed. Tried but Inconsolata
-! looked better in urxvt; if reactivated, also set letterSpace: -1 to close the
-! 1px horizontal gap urxvt leaves between Powerline triangles and adjacent cells.
-! URxvt.font:             xft:MesloLGS NF:size=10
-! URxvt.boldFont:         xft:MesloLGS NF:style=Bold:size=10
-! URxvt.italicFont:       xft:MesloLGS NF:style=Italic:size=10
-! URxvt.boldItalicFont:   xft:MesloLGS NF:style=Bold Italic:size=10
+URxvt.italicFont:         xft:MesloLGS NF:style=Italic:size=10
+URxvt.boldItalicFont:     xft:MesloLGS NF:style=Bold Italic:size=10
 URxvt.letterSpace:        0
 URxvt.lineSpace:          1
 URxvt.intensityStyles:    false
