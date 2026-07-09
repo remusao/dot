@@ -40,17 +40,26 @@ warning = 90
 
 # GPU (AMD Radeon — utilization + temperature)
 [[block]]
-block = "custom"
-command = "printf '{\"text\":\"%s%% %s°\"}' $(cat /sys/class/drm/card1/device/gpu_busy_percent) $(awk '{printf \"%d\",$1/1000}' /sys/class/drm/card1/device/hwmon/hwmon*/temp1_input)"
-json = true
+block = "amd_gpu"
+format = " \uf2db $utilization"
+merge_with_next = true
 interval = 5
-format = " \uf2db $text"
+
+[[block]]
+block = "temperature"
+format = " $max"
+chip = "amdgpu-*"
+interval = 5
+good = 50
+idle = 70
+info = 80
+warning = 90
 
 # Network
 [[block]]
 block = "net"
 format = " $icon {$signal_strength |$ip}"
-interval = 5
+interval = 10
 [block.icons_overrides]
 net_wired = "󰈀"
 
