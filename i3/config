@@ -10,26 +10,26 @@ popup_during_fullscreen smart
 focus_wrapping workspace
 
 # Window assignments
-for_window [class="(?i)firefox"] move --no-auto-back-and-forth to workspace 2
-for_window [class="(?i)chromium-browser"] move --no-auto-back-and-forth to workspace 2
-for_window [class="(?i)brave-browser"] move --no-auto-back-and-forth to workspace 2
-for_window [class="(?i)thunderbird"] move --no-auto-back-and-forth to workspace 3
+assign [class="(?i)firefox"] 2
+assign [class="(?i)chromium-browser"] 2
+assign [class="(?i)brave-browser"] 2
+assign [class="(?i)thunderbird"] 3
 
 # Multiscreen (AMD amdgpu output names)
-workspace 1 output HDMI-A-0
-workspace 2 output HDMI-A-0
-workspace 3 output HDMI-A-0
-workspace 4 output HDMI-A-0
-workspace 5 output HDMI-A-0
-workspace 6 output eDP
-workspace 7 output eDP
-workspace 8 output eDP
-workspace 9 output eDP
-workspace 10 output eDP
+workspace 1 output HDMI-A-0 eDP
+workspace 2 output HDMI-A-0 eDP
+workspace 3 output HDMI-A-0 eDP
+workspace 4 output HDMI-A-0 eDP
+workspace 5 output HDMI-A-0 eDP
+workspace 6 output eDP HDMI-A-0
+workspace 7 output eDP HDMI-A-0
+workspace 8 output eDP HDMI-A-0
+workspace 9 output eDP HDMI-A-0
+workspace 10 output eDP HDMI-A-0
 
 # Window borders
 default_border pixel 2
-smart_borders on
+hide_edge_borders smart
 
 # Window colors              border   background  text      indicator  child_border
 client.background            #222222
@@ -108,8 +108,8 @@ bindsym XF86AudioPrev exec --no-startup-id playerctl previous
 bindsym XF86AudioNext exec --no-startup-id playerctl next
 
 # Screenshots (maim replaces scrot)
-bindsym Print exec --no-startup-id bash -c 'maim /tmp/screenshot_$(date +%Y%m%d_%H%M%S).png'
-bindsym --release $mod+Print exec --no-startup-id bash -c 'maim -s | xclip -selection clipboard -t image/png'
+bindsym Print exec --no-startup-id maim /tmp/screenshot_$(date +%Y%m%d_%H%M%S).png
+bindsym --release $mod+Print exec --no-startup-id maim -s | xclip -selection clipboard -t image/png
 
 # Dunst notification controls
 bindsym $mod+n exec --no-startup-id dunstctl history-pop
@@ -173,6 +173,16 @@ bindsym $mod+space focus mode_toggle
 # focus the parent container
 bindsym $mod+a focus parent
 
+# focus the last focused child (counterpart to focus parent)
+bindsym $mod+z focus child
+
+# Multi-monitor: focus / move the current workspace to the next output
+bindsym $mod+o focus output next
+bindsym $mod+Shift+o move workspace to output next
+
+# Keep a floating window visible across workspaces
+bindsym $mod+t sticky toggle
+
 # switch to workspace
 bindsym $mod+1 workspace 1
 bindsym $mod+2 workspace 2
@@ -202,7 +212,7 @@ bindsym $mod+Shift+c reload
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
 bindsym $mod+Shift+r restart
 # exit i3 (logs you out of your X session)
-bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -b 'Yes, exit i3' 'i3-msg exit'"
+bindsym $mod+Shift+e exec --no-startup-id "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -b 'Yes, exit i3' 'i3-msg exit'"
 
 # resize window (you can also use the mouse for that)
 mode "resize" {
@@ -215,6 +225,17 @@ mode "resize" {
         bindsym Down resize grow height 10 px or 10 ppt
         bindsym Up resize shrink height 10 px or 10 ppt
         bindsym Right resize grow width 10 px or 10 ppt
+
+        # Fine-grained (1 px) resize with Shift
+        bindsym Shift+j resize shrink width 1 px or 1 ppt
+        bindsym Shift+k resize grow height 1 px or 1 ppt
+        bindsym Shift+l resize shrink height 1 px or 1 ppt
+        bindsym Shift+semicolon resize grow width 1 px or 1 ppt
+
+        bindsym Shift+Left resize shrink width 1 px or 1 ppt
+        bindsym Shift+Down resize grow height 1 px or 1 ppt
+        bindsym Shift+Up resize shrink height 1 px or 1 ppt
+        bindsym Shift+Right resize grow width 1 px or 1 ppt
 
         bindsym Return mode "default"
         bindsym Escape mode "default"
