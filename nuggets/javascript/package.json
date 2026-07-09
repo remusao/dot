@@ -1,0 +1,28 @@
+{
+  "name": "nvim-node-tools",
+  "version": "1.0.0",
+  "description": "Locked Node-based language servers & tools for Neovim (managed by dotfiles; edit + npm install to bump, commit the lockfile)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "private": true,
+  "dependencies": {
+    "@vtsls/language-server": "0.3.0",
+    "bash-language-server": "5.6.0",
+    "dockerfile-language-server-nodejs": "0.15.0",
+    "prettier": "3.9.4",
+    "prettier-plugin-svelte": "4.1.1",
+    "stylelint": "17.14.0",
+    "svelte": "5.56.4",
+    "svelte-check": "4.7.2",
+    "svelte-language-server": "0.18.3",
+    "svgo": "4.0.1",
+    "typescript": "6.0.3",
+    "yaml-language-server": "1.24.0"
+  }
+}

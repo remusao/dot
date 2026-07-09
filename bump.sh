@@ -53,6 +53,16 @@ github_latest() {
   # Try /releases/latest first
   tag=$(gh_api "/repos/${owner}/${repo}/releases/latest" | jq -r '.tag_name // empty')
 
+  # Fall back to git tags for repos that publish tags but no GitHub Releases
+  # (e.g. zsh-users/*). Keep only clean vX.Y.Z tags (drop alpha/beta/rc/pre) and
+  # take the highest by version sort.
+  if [[ -z "$tag" ]]; then
+    tag=$(gh_api "/repos/${owner}/${repo}/tags?per_page=100" \
+      | jq -r '.[].name // empty' \
+      | grep -E '^v?[0-9]+\.[0-9]+(\.[0-9]+)?$' \
+      | sort -V | tail -n1)
+  fi
+
   if [[ -z "$tag" ]]; then
     return 1
   fi

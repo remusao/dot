@@ -237,7 +237,7 @@ ALL_PKGS=(
   network-manager-gnome gnome-keyring
   libdbus-1-dev libsensors-dev
   x11-xserver-utils x11-xkb-utils lxrandr
-  zsh-syntax-highlighting keychain shellcheck
+  keychain shellcheck
   xclip
   jq sd hexyl entr just
   ffmpeg v4l-utils mitmproxy pandoc socat pv pigz 7zip ncdu
@@ -368,6 +368,17 @@ ln -sf "${DOT_DIR}/picom/picom.conf" ~/.config/picom/picom.conf
 ln -sf "${DOT_DIR}/dunst/dunstrc" ~/.config/dunst/dunstrc
 ln -sf "${DOT_DIR}/i3status-rust/config.toml" ~/.config/i3status-rust/config.toml
 ok "rofi/picom/dunst/i3status-rust configs"
+
+# ── Thunderbird user.js (symlink into the default profile) ──────────────────
+# [Install*]/Default= is authoritative in current TB; fall back to [Profile*] with Default=1.
+if [ -f "${HOME}/.thunderbird/profiles.ini" ]; then
+    tb_prof=$(awk -F= '/^\[Install/{i=1;next} /^\[/{i=0} i&&/^Default=/{print $2;exit}' "${HOME}/.thunderbird/profiles.ini")
+    [ -z "$tb_prof" ] && tb_prof=$(awk -F= '/^\[Profile/{p=d=""} /^Path=/{p=$2} /^Default=1/{d=1} d&&p{print p;exit}' "${HOME}/.thunderbird/profiles.ini")
+    if [ -n "$tb_prof" ] && [ -d "${HOME}/.thunderbird/${tb_prof}" ]; then
+        ln -sf "${DOT_DIR}/thunderbird/user.js" "${HOME}/.thunderbird/${tb_prof}/user.js"
+        ok "Thunderbird user.js (${tb_prof})"
+    fi
+fi
 
 # ── Udev rules ────────────────────────────────────────────────────────────
 info "Installing udev rules..."
@@ -652,7 +663,14 @@ if [ ! -d "$P10K_DIR" ]; then
     mkdir -p "${HOME}/.zsh"
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K_DIR"
 fi
-ok "Zsh + Powerlevel10k"
+
+# zsh plugins (pinned in lock.sh; sourced from ~/.zsh by zshrc in the correct order)
+ZSYH_DIR="${HOME}/.zsh/zsh-syntax-highlighting"
+if [ ! -d "$ZSYH_DIR" ]; then
+    git clone --depth=1 --branch "$ZSH_SYNTAX_HIGHLIGHTING_VERSION" \
+        https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSYH_DIR"
+fi
+ok "Zsh + Powerlevel10k + zsh-syntax-highlighting"
 
 # ── IBus (hide tray icon — single layout, no need for indicator) ──────
 gsettings set org.freedesktop.ibus.panel show-icon-on-systray false
@@ -714,15 +732,18 @@ fi
 if [ ! -d ~/.virtualenvs/neovim3 ]; then
     python3 -m venv ~/.virtualenvs/neovim3
 fi
-~/.virtualenvs/neovim3/bin/pip install --quiet --upgrade pynvim ruff pyright
+~/.virtualenvs/neovim3/bin/pip install --quiet --upgrade pynvim ruff mypy pyright
 
-# Language servers for native vim.lsp (ts_ls, svelte, bashls, yamlls).
-if command -v npm >/dev/null 2>&1; then
-    npm install -g typescript typescript-language-server svelte-language-server bash-language-server yaml-language-server 2>>/tmp/nvim-install.log || true
-fi
-
-nvim --headless +'PlugInstall --sync' +qa 2>>/tmp/nvim-install.log || true
-nvim --headless '+TSInstallSync! svelte typescript html css javascript python rust yaml json bash make lua toml' +qa 2>>/tmp/nvim-install.log || true
+# npm language servers (vtsls, svelte, bashls, yamlls) are installed reproducibly
+# by nuggets/javascript/packages.sh, run via update.sh above -- no inline install here.
+# Pin plugins to the committed snapshot (plug-snapshot.vim) for reproducible
+# installs, then clone. Only the commit-setting lines are applied, not the
+# snapshot's async PlugUpdate!. Interactive :PlugUpdate stays unpinned -- re-run
+# :PlugSnapshot ~/.dot/plug-snapshot.vim after bumping versions.
+nvim --headless -c "if filereadable('${DOT_DIR}/plug-snapshot.vim') | for pin in filter(readfile('${DOT_DIR}/plug-snapshot.vim'), 'v:val =~# \"g:plugs\"') | execute pin | endfor | endif" +'PlugInstall --sync' +'PlugClean!' +qa 2>>/tmp/nvim-install.log || true
+# main-branch nvim-treesitter has no :TSInstallSync; use the Lua install API and
+# block until parsers finish building (headless would otherwise quit mid-install).
+nvim --headless -c 'lua require("nvim-treesitter").install({"svelte","typescript","html","css","javascript","python","rust","yaml","json","bash","make","lua","toml","markdown","markdown_inline"}):wait(300000)' -c 'qa!' 2>>/tmp/nvim-install.log || true
 ok "Neovim"
 
 echo ""

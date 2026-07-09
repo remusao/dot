@@ -1,1 +1,1 @@
-setlocal spell textwidth=80
+setlocal spell spelloptions=camel textwidth=80

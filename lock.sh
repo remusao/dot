@@ -1,8 +1,8 @@
 # https://nodejs.org/en/download
-export NODEJS_VERSION="24.17.0"
+export NODEJS_VERSION="24.18.0"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM_VERSION="v0.12.3"
+export NEOVIM_VERSION="v0.12.4"
 
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.13"
@@ -20,7 +20,7 @@ export HADOLINT_VERSION="v2.14.0"
 export NVM_VERSION="v0.40.5"
 
 # https://github.com/restic/restic/releases/latest
-export RESTIC_VERSION="0.19.0"
+export RESTIC_VERSION="0.19.1"
 
 # https://github.com/rclone/rclone/releases/latest
 export DOTFILES_RCLONE_VERSION="v1.74.3"
@@ -32,10 +32,10 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.12.3"
+export AWS_VAULT_VERSION="v7.12.5"
 
 # https://github.com/getsops/sops/releases/latest
-export SOPS_VERSION="v3.13.1"
+export SOPS_VERSION="v3.13.2"
 
 # crates.io: cargo-audit
 export CARGO_AUDIT_VERSION="0.22.2"
@@ -59,7 +59,7 @@ export OXIPNG_VERSION="10.1.1"
 export TOKEI_VERSION="14.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI_VERSION="0.26.9"
+export TREE_SITTER_CLI_VERSION="0.26.10"
 
 # crates.io: eza
 export EZA_VERSION="0.23.4"
@@ -71,10 +71,10 @@ export DU_DUST_VERSION="1.2.4"
 export DIFFTASTIC_VERSION="0.69.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT_VERSION="0.62.2"
+export LAZYGIT_VERSION="0.63.0"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.06.22.00"
+export WATCHMAN_VERSION="2026.07.06.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -89,13 +89,13 @@ export I3STATUS_RUST_VERSION="0.36.1"
 export NERD_FONTS_VERSION="v3.4.0"
 
 # https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
-export FONT_AWESOME_VERSION="7.2.0"
+export FONT_AWESOME_VERSION="7.3.0"
 
 # https://git.sr.ht/~steef/snixembed/refs
 export SNIXEMBED_VERSION="0.3.3"
 
 # https://github.com/junegunn/fzf/releases/latest
-export FZF_VERSION="0.73.1"
+export FZF_VERSION="0.74.0"
 
 # crates.io: fd-find
 export FD_VERSION="10.4.2"
@@ -111,3 +111,15 @@ export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
 export KITTY_VERSION="0.47.4"
+
+# https://github.com/LuaLS/lua-language-server/releases/latest
+export LUA_LANGUAGE_SERVER_VERSION="3.18.2"
+
+# https://github.com/mvdan/sh/releases/latest (shfmt)
+export SHFMT_VERSION="v3.13.1"
+
+# https://github.com/JohnnyMorganz/StyLua/releases/latest
+export STYLUA_VERSION="v2.5.2"
+
+# https://github.com/zsh-users/zsh-syntax-highlighting/tags
+export ZSH_SYNTAX_HIGHLIGHTING_VERSION="0.8.0"
