@@ -31,6 +31,6 @@ user_pref("network.connectivity-service.enabled", false); // stop detectportal p
 user_pref("mail.chat.enabled", false);
 
 // UI / snappiness
-user_pref("ui.prefersReducedMotion", 1);       // INTEGER; disables cosmetic animations
+user_pref("ui.prefersReducedMotion", 0);       // motion allowed; =1 also gates OFF smooth scroll in Gecko (nsLayoutUtils::IsSmoothScrollingEnabled)
 user_pref("mail.uidensity", 0);                // compact
 user_pref("mail.biff.play_sound", false);
