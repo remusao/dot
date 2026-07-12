@@ -77,6 +77,10 @@ printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' \
   | sudo tee /etc/apt/preferences.d/mozilla > /dev/null
 printf 'Package: firefox*\nPin: release o=Ubuntu*\nPin-Priority: -1\n' \
   | sudo tee /etc/apt/preferences.d/firefox-no-snap > /dev/null
+# Auto-install Firefox security updates from packages.mozilla.org (Suite/site "mozilla" — not covered by
+# the default Ubuntu Allowed-Origins). Without this, firefox only updates on a manual `apt upgrade`.
+printf 'Unattended-Upgrade::Origins-Pattern { "site=packages.mozilla.org"; };\n' \
+  | sudo tee /etc/apt/apt.conf.d/52unattended-upgrades-firefox > /dev/null
 
 # ── Thunderbird PPA ────────────────────────────────────────────────────────
 if ! has_repo /etc/apt/sources.list.d/mozillateam-ubuntu-ppa-noble.sources; then
@@ -382,6 +386,21 @@ if [ -f "${HOME}/.thunderbird/profiles.ini" ]; then
         ok "Thunderbird user.js (${tb_prof})"
     fi
 fi
+
+# ── Firefox user.js (symlink into the active profile) + policies.json (system-wide) ─────────
+# [Install*]/Default= is authoritative; fall back to [Profile*] Default=1. prefs.js guard skips dead profiles.
+if [ -f "${HOME}/.mozilla/firefox/profiles.ini" ]; then
+    ff_prof=$(awk -F= '/^\[Install/{i=1;next} /^\[/{i=0} i&&/^Default=/{print $2;exit}' "${HOME}/.mozilla/firefox/profiles.ini")
+    [ -z "$ff_prof" ] && ff_prof=$(awk -F= '/^\[Profile/{p=d=""} /^Path=/{p=$2} /^Default=1/{d=1} d&&p{print p;exit}' "${HOME}/.mozilla/firefox/profiles.ini")
+    if [ -n "$ff_prof" ] && [ -f "${HOME}/.mozilla/firefox/${ff_prof}/prefs.js" ]; then
+        ln -sf "${DOT_DIR}/firefox/user.js" "${HOME}/.mozilla/firefox/${ff_prof}/user.js"
+        ok "Firefox user.js (${ff_prof})"
+    fi
+fi
+# Enterprise policies (locked telemetry / newtab / password-manager) — /etc/firefox/policies survives apt upgrades.
+sudo install -d -m 0755 /etc/firefox/policies
+sudo install -m 0644 "${DOT_DIR}/firefox/policies.json" /etc/firefox/policies/policies.json
+ok "Firefox policies.json"
 
 # ── Udev rules ────────────────────────────────────────────────────────────
 info "Installing udev rules..."
