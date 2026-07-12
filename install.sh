@@ -240,7 +240,7 @@ ALL_PKGS=(
   keychain shellcheck
   xclip
   jq sd hexyl entr just
-  ffmpeg v4l-utils mitmproxy pandoc socat pv pigz 7zip ncdu
+  ffmpeg v4l-utils vainfo radeontop mitmproxy pandoc socat pv pigz 7zip ncdu
   zoxide duf btop nmap wireguard
   protobuf-compiler libsnappy-dev libboost-all-dev libzstd-dev
   libssl-dev zlib1g-dev libbz2-dev libreadline-dev
@@ -290,6 +290,9 @@ for grp in video render; do
   fi
 done
 ok "System packages"
+
+# ── Default browser: Brave (idempotent; brave-browser installed above) ─────
+xdg-settings set default-web-browser brave-browser.desktop 2>/dev/null || true
 
 # ── Purge residual docker.io (triggers Pareto Security false positive) ──
 if dpkg-query -W docker.io &>/dev/null; then
