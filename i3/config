@@ -4,7 +4,7 @@ set $mod Mod4
 
 # Behavior
 workspace_auto_back_and_forth yes
-focus_on_window_activation smart
+focus_on_window_activation urgent
 force_display_urgency_hint 500 ms
 popup_during_fullscreen smart
 focus_wrapping workspace
