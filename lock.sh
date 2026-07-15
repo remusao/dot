@@ -8,7 +8,7 @@ export NEOVIM_VERSION="v0.12.4"
 export PYTHON_VERSION="3.12.13"
 
 # crates.io: ripgrep
-export RIPGREP_VERSION="15.1.0"
+export RIPGREP_VERSION="15.2.0"
 
 # crates.io: sccache
 export SCCACHE_VERSION="0.16.0"
@@ -17,13 +17,13 @@ export SCCACHE_VERSION="0.16.0"
 export HADOLINT_VERSION="v2.14.0"
 
 # https://github.com/nvm-sh/nvm/releases/latest
-export NVM_VERSION="v0.40.5"
+export NVM_VERSION="v0.40.6"
 
 # https://github.com/restic/restic/releases/latest
 export RESTIC_VERSION="0.19.1"
 
 # https://github.com/rclone/rclone/releases/latest
-export DOTFILES_RCLONE_VERSION="v1.74.3"
+export DOTFILES_RCLONE_VERSION="v1.74.4"
 
 # https://github.com/netblue30/firejail/releases/latest
 export FIREJAIL_VERSION="0.9.80"
@@ -32,7 +32,7 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.12.5"
+export AWS_VAULT_VERSION="v7.12.7"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS_VERSION="v3.13.2"
@@ -41,7 +41,7 @@ export SOPS_VERSION="v3.13.2"
 export CARGO_AUDIT_VERSION="0.22.2"
 
 # crates.io: cargo-deny
-export CARGO_DENY_VERSION="0.19.9"
+export CARGO_DENY_VERSION="0.20.2"
 
 # crates.io: cargo-fuzz
 export CARGO_FUZZ_VERSION="0.13.2"
@@ -59,7 +59,7 @@ export OXIPNG_VERSION="10.1.1"
 export TOKEI_VERSION="14.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI_VERSION="0.26.10"
+export TREE_SITTER_CLI_VERSION="0.26.11"
 
 # crates.io: eza
 export EZA_VERSION="0.23.4"
@@ -71,10 +71,10 @@ export DU_DUST_VERSION="1.2.4"
 export DIFFTASTIC_VERSION="0.69.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT_VERSION="0.63.0"
+export LAZYGIT_VERSION="0.63.1"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.07.06.00"
+export WATCHMAN_VERSION="2026.07.13.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -89,7 +89,7 @@ export I3STATUS_RUST_VERSION="0.36.1"
 export NERD_FONTS_VERSION="v3.4.0"
 
 # https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
-export FONT_AWESOME_VERSION="7.3.0"
+export FONT_AWESOME_VERSION="7.3.1"
 
 # https://git.sr.ht/~steef/snixembed/refs
 export SNIXEMBED_VERSION="0.3.3"
