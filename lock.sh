@@ -32,7 +32,7 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.12.7"
+export AWS_VAULT_VERSION="v7.13.0"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS_VERSION="v3.13.2"
@@ -62,7 +62,7 @@ export TOKEI_VERSION="14.0.0"
 export TREE_SITTER_CLI_VERSION="0.26.11"
 
 # crates.io: eza
-export EZA_VERSION="0.23.4"
+export EZA_VERSION="0.23.5"
 
 # crates.io: du-dust
 export DU_DUST_VERSION="1.2.4"
@@ -74,7 +74,7 @@ export DIFFTASTIC_VERSION="0.69.0"
 export LAZYGIT_VERSION="0.63.1"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.07.13.00"
+export WATCHMAN_VERSION="2026.07.20.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -95,7 +95,7 @@ export FONT_AWESOME_VERSION="7.3.1"
 export SNIXEMBED_VERSION="0.3.3"
 
 # https://github.com/junegunn/fzf/releases/latest
-export FZF_VERSION="0.74.0"
+export FZF_VERSION="0.74.1"
 
 # crates.io: fd-find
 export FD_VERSION="10.4.2"
@@ -110,7 +110,7 @@ export DELTA_VERSION="0.19.2"
 export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.47.4"
+export KITTY_VERSION="0.48.0"
 
 # https://github.com/LuaLS/lua-language-server/releases/latest
 export LUA_LANGUAGE_SERVER_VERSION="3.18.2"
