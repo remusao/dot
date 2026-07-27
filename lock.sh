@@ -32,10 +32,10 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.12.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.13.0"
+export AWS_VAULT_VERSION="v7.13.1"
 
 # https://github.com/getsops/sops/releases/latest
-export SOPS_VERSION="v3.13.2"
+export SOPS_VERSION="v3.13.3"
 
 # crates.io: cargo-audit
 export CARGO_AUDIT_VERSION="0.22.2"
@@ -110,7 +110,7 @@ export DELTA_VERSION="0.19.2"
 export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.48.0"
+export KITTY_VERSION="0.48.1"
 
 # https://github.com/LuaLS/lua-language-server/releases/latest
 export LUA_LANGUAGE_SERVER_VERSION="3.18.2"
