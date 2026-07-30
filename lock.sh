@@ -11,10 +11,10 @@ export PYTHON_VERSION="3.12.13"
 export RIPGREP_VERSION="15.2.0"
 
 # crates.io: sccache
-export SCCACHE_VERSION="0.16.0"
+export SCCACHE_VERSION="0.17.0"
 
 # https://github.com/hadolint/hadolint/releases/latest
-export HADOLINT_VERSION="v2.14.0"
+export HADOLINT_VERSION="v2.15.0"
 
 # https://github.com/nvm-sh/nvm/releases/latest
 export NVM_VERSION="v0.40.6"
@@ -29,10 +29,10 @@ export DOTFILES_RCLONE_VERSION="v1.74.4"
 export FIREJAIL_VERSION="0.9.80"
 
 # https://github.com/obsidianmd/obsidian-releases/releases/latest
-export OBSIDIAN_VERSION="1.12.7"
+export OBSIDIAN_VERSION="1.13.4"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.13.1"
+export AWS_VAULT_VERSION="v7.13.2"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS_VERSION="v3.13.3"
@@ -74,7 +74,7 @@ export DIFFTASTIC_VERSION="0.69.0"
 export LAZYGIT_VERSION="0.63.1"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.07.20.00"
+export WATCHMAN_VERSION="2026.07.27.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -110,7 +110,7 @@ export DELTA_VERSION="0.19.2"
 export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.48.1"
+export KITTY_VERSION="0.48.2"
 
 # https://github.com/LuaLS/lua-language-server/releases/latest
 export LUA_LANGUAGE_SERVER_VERSION="3.18.2"
