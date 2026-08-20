@@ -1,5 +1,5 @@
 # https://nodejs.org/en/download
-export NODEJS_VERSION="24.18.0"
+export NODEJS_VERSION="24.19.0"
 
 # https://github.com/neovim/neovim/releases/latest
 export NEOVIM_VERSION="v0.12.4"
@@ -14,25 +14,25 @@ export RIPGREP_VERSION="15.2.0"
 export SCCACHE_VERSION="0.17.0"
 
 # https://github.com/hadolint/hadolint/releases/latest
-export HADOLINT_VERSION="v2.15.0"
+export HADOLINT_VERSION="v2.15.1"
 
 # https://github.com/nvm-sh/nvm/releases/latest
-export NVM_VERSION="v0.40.6"
+export NVM_VERSION="v0.40.7"
 
 # https://github.com/restic/restic/releases/latest
 export RESTIC_VERSION="0.19.1"
 
 # https://github.com/rclone/rclone/releases/latest
-export DOTFILES_RCLONE_VERSION="v1.74.4"
+export DOTFILES_RCLONE_VERSION="v1.75.0"
 
 # https://github.com/netblue30/firejail/releases/latest
 export FIREJAIL_VERSION="0.9.80"
 
 # https://github.com/obsidianmd/obsidian-releases/releases/latest
-export OBSIDIAN_VERSION="1.13.4"
+export OBSIDIAN_VERSION="1.13.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
-export AWS_VAULT_VERSION="v7.13.2"
+export AWS_VAULT_VERSION="v7.13.5"
 
 # https://github.com/getsops/sops/releases/latest
 export SOPS_VERSION="v3.13.3"
@@ -47,34 +47,34 @@ export CARGO_DENY_VERSION="0.20.2"
 export CARGO_FUZZ_VERSION="0.13.2"
 
 # crates.io: flamegraph
-export FLAMEGRAPH_VERSION="0.6.13"
+export FLAMEGRAPH_VERSION="0.6.14"
 
 # crates.io: loc
 export LOC_VERSION="0.5.0"
 
 # crates.io: oxipng
-export OXIPNG_VERSION="10.1.1"
+export OXIPNG_VERSION="10.2.0"
 
 # crates.io: tokei
 export TOKEI_VERSION="14.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI_VERSION="0.26.11"
+export TREE_SITTER_CLI_VERSION="0.26.12"
 
 # crates.io: eza
 export EZA_VERSION="0.23.5"
 
 # crates.io: du-dust
-export DU_DUST_VERSION="1.2.4"
+export DU_DUST_VERSION="1.2.5"
 
 # crates.io: difftastic
-export DIFFTASTIC_VERSION="0.69.0"
+export DIFFTASTIC_VERSION="0.70.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest
-export LAZYGIT_VERSION="0.63.1"
+export LAZYGIT_VERSION="0.64.1"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.07.27.00"
+export WATCHMAN_VERSION="2026.08.17.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -86,7 +86,7 @@ export FUSUMA_VERSION="3.12.0"
 export I3STATUS_RUST_VERSION="0.36.1"
 
 # https://github.com/ryanoasis/nerd-fonts/releases/latest
-export NERD_FONTS_VERSION="v3.4.0"
+export NERD_FONTS_VERSION="v3.5.0"
 
 # https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
 export FONT_AWESOME_VERSION="7.3.1"
@@ -95,7 +95,7 @@ export FONT_AWESOME_VERSION="7.3.1"
 export SNIXEMBED_VERSION="0.3.3"
 
 # https://github.com/junegunn/fzf/releases/latest
-export FZF_VERSION="0.74.1"
+export FZF_VERSION="0.74.3"
 
 # crates.io: fd-find
 export FD_VERSION="10.4.2"
@@ -113,7 +113,7 @@ export HYPERFINE_VERSION="1.20.0"
 export KITTY_VERSION="0.48.2"
 
 # https://github.com/LuaLS/lua-language-server/releases/latest
-export LUA_LANGUAGE_SERVER_VERSION="3.18.2"
+export LUA_LANGUAGE_SERVER_VERSION="3.19.1"
 
 # https://github.com/mvdan/sh/releases/latest (shfmt)
 export SHFMT_VERSION="v3.13.1"
