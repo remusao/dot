@@ -356,3 +356,5 @@ ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[assign]='none'
 
 true   # ensure non-failing exit at end of rc
+
+. "/tmp/uv1113/env"
