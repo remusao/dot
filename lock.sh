@@ -2,10 +2,10 @@
 export NODEJS_VERSION="24.19.0"
 
 # https://github.com/neovim/neovim/releases/latest
-export NEOVIM_VERSION="v0.12.4"
+export NEOVIM_VERSION="v0.12.5"
 
 # https://www.python.org/downloads/
-export PYTHON_VERSION="3.12.13"
+export PYTHON_VERSION="3.12.14"
 
 # crates.io: ripgrep
 export RIPGREP_VERSION="15.2.0"
@@ -29,7 +29,7 @@ export DOTFILES_RCLONE_VERSION="v1.75.0"
 export FIREJAIL_VERSION="0.9.80"
 
 # https://github.com/obsidianmd/obsidian-releases/releases/latest
-export OBSIDIAN_VERSION="1.13.7"
+export OBSIDIAN_VERSION="1.13.8"
 
 # https://github.com/ByteNess/aws-vault/releases/latest
 export AWS_VAULT_VERSION="v7.13.5"
@@ -59,7 +59,7 @@ export OXIPNG_VERSION="10.2.0"
 export TOKEI_VERSION="14.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI_VERSION="0.26.12"
+export TREE_SITTER_CLI_VERSION="0.26.13"
 
 # crates.io: eza
 export EZA_VERSION="0.23.5"
@@ -74,7 +74,7 @@ export DIFFTASTIC_VERSION="0.70.0"
 export LAZYGIT_VERSION="0.64.1"
 
 # https://github.com/facebook/watchman/releases/latest
-export WATCHMAN_VERSION="2026.08.17.00"
+export WATCHMAN_VERSION="2026.08.24.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -86,7 +86,7 @@ export FUSUMA_VERSION="3.12.0"
 export I3STATUS_RUST_VERSION="0.36.1"
 
 # https://github.com/ryanoasis/nerd-fonts/releases/latest
-export NERD_FONTS_VERSION="v3.5.0"
+export NERD_FONTS_VERSION="v3.5.1"
 
 # https://github.com/FortAwesome/Font-Awesome/releases (latest 6.x)
 export FONT_AWESOME_VERSION="7.3.1"
@@ -98,7 +98,7 @@ export SNIXEMBED_VERSION="0.3.3"
 export FZF_VERSION="0.74.3"
 
 # crates.io: fd-find
-export FD_VERSION="10.4.2"
+export FD_VERSION="10.5.0"
 
 # https://github.com/sharkdp/bat/releases/latest
 export BAT_VERSION="0.26.1"
