@@ -1,0 +1,5 @@
+; Lifecycle scripts are the main npm supply-chain vector, and a compromised
+; transitive dep only needs one to run arbitrary code at install time.
+; nuggets/javascript/packages.sh passes --ignore-scripts explicitly so the repo
+; does not depend on this file; this covers ad-hoc `npm install` in project dirs.
+ignore-scripts=true

@@ -1,0 +1,17 @@
+# Neovim's Python provider and the Python tooling ALE drives.
+#
+# pynvim  -- the :python3 provider itself
+# ruff    -- linter AND formatter for python (vim/config_plugins.vim wires ALE to
+#            this exact venv path, since it is off the interactive PATH)
+# mypy    -- type checker, same ALE wiring
+# pyright -- LSP server; vim/config_plugins.vim runs it from this venv, which is
+#            why nuggets/javascript/packages.sh uninstalls the npm build
+#
+# To bump: edit this file, then regenerate the lock from the pinned interpreter
+#   uv pip compile --generate-hashes --python ~/.pyenv/versions/$PYTHON_VERSION/bin/python3 \
+#     nuggets/python/requirements.in -o nuggets/python/requirements.txt
+# and commit both.
+pynvim
+ruff
+mypy
+pyright

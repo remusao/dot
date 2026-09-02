@@ -2,8 +2,10 @@
 
 set -e
 
-# Keep npm itself current (nvm's npm).
-npm install -g npm@latest
+# npm itself is pinned too; `npm@latest` would float against the locked tree below.
+if [ "$(npm --version)" != "${NPM_VERSION}" ]; then
+  npm install -g --ignore-scripts "npm@${NPM_VERSION}"
+fi
 
 # --- Node-based language servers & tools, locked via package-lock.json ---------
 # Installed with `npm ci` from the committed lockfile: the ENTIRE dependency tree
@@ -20,24 +22,45 @@ LOCK_HASH="$(sha256sum "${SRC_DIR}/package-lock.json" | awk '{print $1}')"
 if [ ! -f "${STAMP}" ] || [ "$(cat "${STAMP}" 2>/dev/null)" != "${LOCK_HASH}" ]; then
   mkdir -p "${TOOLS_DIR}"
   cp "${SRC_DIR}/package.json" "${SRC_DIR}/package-lock.json" "${TOOLS_DIR}/"
-  ( cd "${TOOLS_DIR}" && npm ci )
-
-  # Expose only the binaries we use (skip transitive tool bins to keep ~/.local/bin
-  # clean). prettier-plugin-svelte ships no bin -- prettier loads it from the tree.
-  for b in vtsls bash-language-server svelteserver yaml-language-server \
-           tsc tsserver prettier svelte-check stylelint svgo docker-langserver; do
-    if [ -e "${TOOLS_DIR}/node_modules/.bin/${b}" ]; then
-      ln -sf "${TOOLS_DIR}/node_modules/.bin/${b}" "${HOME}/.local/bin/${b}"
-    fi
-  done
-
-  # One-time migration: drop the old per-package nvm globals so ONLY the locked
-  # copies are on PATH (idempotent -- a no-op once they're gone).
-  npm uninstall -g \
-    bash-language-server dockerfile-language-server-nodejs neovim prettier \
-    prettier-plugin-svelte pyright stylelint svelte svelte-check \
-    svelte-language-server svgo typescript typescript-language-server \
-    @vtsls/language-server yaml-language-server >/dev/null 2>&1 || true
+  # --ignore-scripts here, not in an unmanaged ~/.npmrc, so the hardening travels
+  # with the repo. The lockfile's sha512s prove the tarballs match what git
+  # recorded, not that the registry ever signed them -- hence `audit signatures`.
+  ( cd "${TOOLS_DIR}" && npm ci --ignore-scripts && npm audit signatures )
 
   echo "${LOCK_HASH}" > "${STAMP}"
+fi
+
+# Expose only the binaries we use (skip transitive tool bins to keep ~/.local/bin
+# clean). prettier-plugin-svelte ships no bin -- prettier loads it from the tree.
+# Outside the stamp guard: a wiped ~/.local/bin would otherwise never be repaired.
+mkdir -p "${HOME}/.local/bin"
+for b in vtsls bash-language-server svelteserver yaml-language-server \
+         tsc tsserver prettier svelte-check stylelint svgo docker-langserver; do
+  link="${HOME}/.local/bin/${b}"
+  if [ -e "${TOOLS_DIR}/node_modules/.bin/${b}" ]; then
+    ln -sf "${TOOLS_DIR}/node_modules/.bin/${b}" "${link}"
+  else
+    # A bin can vanish upstream (typescript 7 dropped `tsserver`). Drop the link
+    # rather than leave it dangling, but only ours -- never another nugget's.
+    echo "packages.sh: WARNING: ${b} is not in the locked tree" >&2
+    case "$(readlink "${link}" 2>/dev/null)" in
+      "${TOOLS_DIR}"/*) rm -f "${link}" ;;
+    esac
+  fi
+done
+
+# Drop the legacy nvm globals: zshrc puts nvm's bin dir AHEAD of ~/.local/bin, so
+# a leftover global silently shadows the locked copy.
+NPM_G="$(npm root -g)"
+STALE=""
+for p in bash-language-server dockerfile-language-server-nodejs neovim prettier \
+         prettier-plugin-svelte pyright stylelint svelte svelte-check \
+         svelte-language-server svgo typescript typescript-language-server \
+         @vtsls/language-server yaml-language-server; do
+  if [ -e "${NPM_G}/${p}" ]; then STALE="${STALE} ${p}"; fi
+done
+if [ -n "${STALE}" ]; then
+  echo "packages.sh: removing shadowing nvm globals:${STALE}"
+  # shellcheck disable=SC2086  # deliberate word splitting: one npm call, N names
+  npm uninstall -g ${STALE}
 fi
