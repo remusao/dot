@@ -74,7 +74,7 @@ check "policykit-1-gnome" dpkg -s policykit-1-gnome
 check "video group" bash -c "id -nG '$USER' | grep -qw video"
 
 section "Apt packages: terminal & shell tools"
-for cmd in fzf fdfind shellcheck xclip; do
+for cmd in fzf shellcheck xclip; do
   check "$cmd" command -v "$cmd"
 done
 check "ssh-agent.service enabled" systemctl --user is-enabled ssh-agent.service
@@ -95,15 +95,15 @@ for pkg in libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
 done
 
 section "Apt packages: CLI tools"
-for cmd in tldr rsync whois zstd tree editorconfig restic; do
+for cmd in tldr rsync whois zstd tree editorconfig; do
   check "$cmd" command -v "$cmd"
 done
 
 # ─── PPA PACKAGES ────────────────────────────────────────
 section "PPA packages"
 if [ "$SKIP_SNAP" != "1" ]; then
-  check "firefox (not snap)" ! snap list firefox
-  check "thunderbird (not snap)" ! snap list thunderbird
+  check "firefox (not snap)" bash -c '! snap list firefox'
+  check "thunderbird (not snap)" bash -c '! snap list thunderbird'
 else
   skip "firefox (not snap)"
   skip "thunderbird (not snap)"
@@ -146,14 +146,16 @@ section "Neovim Python provider"
 check "neovim3 venv exists" test -d "$HOME/.virtualenvs/neovim3"
 check "neovim3 python" test -x "$HOME/.virtualenvs/neovim3/bin/python"
 check "pynvim installed" "$HOME/.virtualenvs/neovim3/bin/python" -c "import pynvim"
+# No black: nothing installs or references it (ruff_format formats).
 check "ruff installed" test -x "$HOME/.virtualenvs/neovim3/bin/ruff"
-check "black installed" test -x "$HOME/.virtualenvs/neovim3/bin/black"
+check "mypy installed" test -x "$HOME/.virtualenvs/neovim3/bin/mypy"
 check "pyright installed" test -x "$HOME/.virtualenvs/neovim3/bin/pyright"
+check "neovim3 venv on pinned python" bash -c "'$HOME/.virtualenvs/neovim3/bin/python' -V | grep -q '${PYTHON_VERSION}'"
 
 # ─── VERSION MANAGERS ────────────────────────────────────
 section "pyenv + Python"
 check "pyenv dir" test -d "$HOME/.pyenv"
-check "pyenv binary" "$HOME/.pyenv/bin/pyenv" --version
+check "pyenv ${PYENV_RELEASE}" bash -c "'${HOME}/.pyenv/bin/pyenv' --version | grep -q '${PYENV_RELEASE#v}'"
 check "python ${PYTHON_VERSION}" test -d "$HOME/.pyenv/versions/${PYTHON_VERSION}"
 check "python binary" "$HOME/.pyenv/versions/${PYTHON_VERSION}/bin/python3" --version
 
@@ -173,9 +175,30 @@ check "sccache ${SCCACHE_VERSION}" bash -c "'${HOME}/.cargo/bin/sccache' --versi
 check "ripgrep ${RIPGREP_VERSION}" bash -c "'${HOME}/.cargo/bin/rg' --version | head -1 | grep -q '${RIPGREP_VERSION}'"
 check "ripgrep pcre2" "$HOME/.cargo/bin/rg" --pcre2-version
 
+# ─── CLI TOOLS (binary downloads) ────────────────────────
+section "CLI tools"
+check "fd ${FD_VERSION}" bash -c "'${HOME}/.local/bin/fd' --version | grep -q '${FD_VERSION}'"
+check "bat ${BAT_VERSION}" bash -c "'${HOME}/.local/bin/bat' --version | grep -q '${BAT_VERSION}'"
+check "delta ${DELTA_VERSION}" bash -c "'${HOME}/.local/bin/delta' --version | grep -q '${DELTA_VERSION}'"
+check "stylua ${STYLUA_VERSION}" bash -c "'${HOME}/.local/bin/stylua' --version | grep -q '${STYLUA_VERSION#v}'"
+check "shfmt ${SHFMT_VERSION}" bash -c "'${HOME}/.local/bin/shfmt' --version | grep -q '${SHFMT_VERSION}'"
+check "lazygit ${LAZYGIT_VERSION}" bash -c "'${HOME}/.local/bin/lazygit' --version | grep -q 'version=${LAZYGIT_VERSION},'"
+check "sops ${SOPS_VERSION}" bash -c "'${HOME}/.local/bin/sops' --version | head -1 | grep -q '${SOPS_VERSION#v}'"
+check "aws-vault ${AWS_VAULT_VERSION}" bash -c "'${HOME}/.local/bin/aws-vault' --version 2>&1 | grep -qF '${AWS_VAULT_VERSION}'"
+check "hyperfine ${HYPERFINE_VERSION}" bash -c "'${HOME}/.local/bin/hyperfine' --version | grep -q '${HYPERFINE_VERSION}'"
+check "rclone ${DOTFILES_RCLONE_VERSION}" bash -c "'${HOME}/.local/bin/rclone' version | head -1 | grep -q '${DOTFILES_RCLONE_VERSION}'"
+check "restic ${RESTIC_VERSION}" bash -c "'${HOME}/.local/bin/restic' version | grep -q '${RESTIC_VERSION}'"
+check "cosign ${COSIGN_VERSION}" bash -c "'${HOME}/.local/bin/cosign' version --json | grep -q '${COSIGN_VERSION}'"
+check "lua-language-server ${LUA_LANGUAGE_SERVER_VERSION}" bash -c "'${HOME}/.local/share/lua-language-server/bin/lua-language-server' --version | grep -q '${LUA_LANGUAGE_SERVER_VERSION}'"
+# musl and glibc builds report the same version; only linkage tells them apart,
+# and fd/bat have no ldd guard in their nugget to self-heal.
+for b in fd bat delta stylua; do
+  check "$b is glibc-linked" bash -c "ldd '${HOME}/.local/bin/$b' | grep -q 'libc\.so\.6'"
+done
+
 # ─── DOCKER TOOLS ────────────────────────────────────────
 section "Docker tools"
-check "hadolint" "$HOME/.local/bin/hadolint" --version
+check "hadolint ${HADOLINT_VERSION}" bash -c "'${HOME}/.local/bin/hadolint' --version | grep -q '${HADOLINT_VERSION#v}'"
 
 # ─── FONTS ───────────────────────────────────────────────
 section "Fonts"
@@ -184,16 +207,18 @@ check "Inconsolata Powerline" test -f "$HOME/.local/share/fonts/Inconsolata-dz-P
 check "font cache" bash -c "fc-list | grep -qi inconsolata"
 check "MesloLGS NF" bash -c "fc-list | grep -qi 'MesloLGS NF'"
 
-# ─── NPM PACKAGES ───────────────────────────────────────
-section "npm global packages"
-NODE_BIN="$HOME/.nvm/versions/node/v${NODEJS_VERSION}/bin"
-for pkg in bash-language-server prettier yaml-language-server svgo stylelint; do
-  check "npm: $pkg" test -x "$NODE_BIN/$pkg" -o -f "$NODE_BIN/$pkg"
+# ─── NODE TOOLS ─────────────────────────────────────────
+# Lockfile-pinned in ~/.local/bin, not nvm globals. The nvm-absence half matters:
+# zshrc ranks nvm's bin dir first, so a leftover `npm -g` copy shadows these.
+section "node tools (lockfile-pinned)"
+for b in bash-language-server prettier yaml-language-server svgo stylelint \
+  tsc svelteserver docker-langserver vtsls; do
+  check "node tool: $b" test -x "$HOME/.local/bin/$b"
+  check "node tool: $b not an nvm global" \
+    test ! -e "$HOME/.nvm/versions/node/v${NODEJS_VERSION}/bin/$b"
 done
-check "npm: typescript" test -x "$NODE_BIN/tsc"
-check "npm: svelte-language-server" test -x "$NODE_BIN/svelteserver"
-check "npm: dockerfile-language-server-nodejs" test -x "$NODE_BIN/docker-langserver"
-check "npm: pyright" test -x "$NODE_BIN/pyright-langserver"
+# pyright deliberately the venv one: config_plugins.vim runs the server from there.
+check "pyright (venv, not npm)" test -x "$HOME/.virtualenvs/neovim3/bin/pyright-langserver"
 
 # ─── CLAUDE & OPENCODE ──────────────────────────────────
 section "AI tools"
@@ -218,7 +243,8 @@ if [[ "$PRODUCT_NAME" == *"ZBook Ultra G1a"* ]]; then
   check "cool-ryzen-apply installed" test -x /usr/local/bin/cool-ryzen-apply
   check "cool-ryzen sudoers" test -f /etc/sudoers.d/cool-ryzen
   check "cool-ryzen udev rule" test -f /etc/udev/rules.d/85-cool-ryzen-ac.rules
-  check "i3 power saver keybinding" grep -q 'cool-ryzen' "$HOME/.dot/i3/config"
+  check "i3 power saver keybinding" grep -q '~/.i3/cool-ryzen.sh' "$HOME/.dot/i3/config"
+check "i3 auto-toggle keybinding" grep -q '~/.i3/cool-ryzen-auto-toggle.sh' "$HOME/.dot/i3/config"
 fi
 
 # ─── FIREJAIL ─────────────────────────────────────────────
@@ -237,14 +263,14 @@ fi
 section "Additional packages"
 check "gh" command -v gh
 check "google-chrome" dpkg -s google-chrome-stable
-check "obsidian" dpkg -s obsidian
+check "obsidian ${OBSIDIAN_VERSION}" test "$(dpkg-query -W -f='${db:Status-Status} ${Version}' obsidian 2>/dev/null || true)" = "installed ${OBSIDIAN_VERSION}"
 
 # ─── CONFIG SANITY CHECKS ───────────────────────────────
 section "Config sanity"
 check "ssh_config: no UseRoaming" bash -c '! grep -q "UseRoaming" "$HOME/.dot/ssh_config"'
 check "ssh_config: no ssh-rsa" bash -c '! grep -q "ssh-rsa" "$HOME/.dot/ssh_config"'
 check "ssh_config: KbdInteractive" grep -q "KbdInteractiveAuthentication" "$HOME/.dot/ssh_config"
-check "i3/config: brightnessctl" grep -q "brightnessctl" "$HOME/.dot/i3/config"
+check "i3: brightnessctl" grep -q "brightnessctl" "$HOME/.dot/i3/media-keys.sh"
 check "i3/config: no xbacklight" bash -c '! grep -q "xbacklight" "$HOME/.dot/i3/config"'
 check "i3/config: playerctl" grep -q "playerctl" "$HOME/.dot/i3/config"
 check "i3/config: xss-lock" grep -q "xss-lock" "$HOME/.dot/i3/config"
@@ -252,8 +278,8 @@ check "i3/config: mic mute" grep -q "XF86AudioMicMute" "$HOME/.dot/i3/config"
 check "i3/config: no dbus-send spotify" bash -c '! grep -q "org.mpris.MediaPlayer2.spotify" "$HOME/.dot/i3/config"'
 check "i3/config: AMD output names" bash -c '! grep -q "output HDMI2\|output eDP1" "$HOME/.dot/i3/config"'
 check "i3/config: no deprecated new_window" bash -c '! grep -q "new_window" "$HOME/.dot/i3/config"'
-check "i3/config: no redshift" bash -c '! grep -q "redshift" "$HOME/.dot/i3/config"'
-check "i3/config: no scrot" bash -c '! grep -q "scrot" "$HOME/.dot/i3/config"'
+check "i3/config: no redshift" bash -c '! grep -vE "^[[:space:]]*#" "$HOME/.dot/i3/config" | grep -q redshift'
+check "i3/config: no scrot" bash -c '! grep -vE "^[[:space:]]*#" "$HOME/.dot/i3/config" | grep -q scrot'
 check "i3/config: i3status-rs" grep -q "i3status-rs" "$HOME/.dot/i3/config"
 check "i3/config: no pasystray" bash -c '! grep -q "pasystray" "$HOME/.dot/i3/config"'
 check "i3status-rs" command -v i3status-rs
@@ -262,7 +288,7 @@ check "no xsel" bash -c '! command -v xsel'
 check "i3/config: no copyq" bash -c '! grep -q "copyq" "$HOME/.dot/i3/config"'
 check "no greenclip" bash -c '! command -v greenclip'
 check "i3/config: no greenclip" bash -c '! grep -q "greenclip" "$HOME/.dot/i3/config"'
-check "Font Awesome 6" bash -c "fc-list | grep -qi 'Font Awesome 6'"
+check "Font Awesome ${FONT_AWESOME_VERSION}" bash -c "fc-list | grep -qi 'Font Awesome ${FONT_AWESOME_VERSION%%.*}'"
 check "zshrc: python3 for venvwrapper" grep -q "VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" "$HOME/.dot/zshrc"
 check "zshrc: no spark PATH" bash -c '! grep -q "spark-1.6.1" "$HOME/.dot/zshrc"'
 check "zshrc: no ruby 2.5 PATH" bash -c '! grep -q "ruby/2.5.0" "$HOME/.dot/zshrc"'

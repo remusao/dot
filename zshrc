@@ -135,8 +135,10 @@ fi
 # Pandoc
 alias pandock='docker run --rm -v "$(pwd):/data" -u $(id -u):$(id -g) pandoc/extra'
 
-# Custom lib/include paths (no leading colon → no CWD in search path).
-# /usr/local/lib and /usr/lib already in /etc/ld.so.conf; don't re-add.
+# Custom lib/include paths. The ${VAR:+:...} guards are load-bearing: an empty
+# element in LD_LIBRARY_PATH is treated as '.', so a bare colon would put CWD on
+# the search path. Inert today anyway -- ~/usr does not exist and ~/.local/lib
+# holds only package subtrees, no top-level shared objects.
 export LD_LIBRARY_PATH="$HOME/usr/lib:$HOME/.local/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export C_INCLUDE_PATH="$HOME/usr/include${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}"
 export CPLUS_INCLUDE_PATH="$HOME/usr/include${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}"
@@ -356,5 +358,3 @@ ZSH_HIGHLIGHT_STYLES[back-double-quoted-argument]='fg=cyan'
 ZSH_HIGHLIGHT_STYLES[assign]='none'
 
 true   # ensure non-failing exit at end of rc
-
-. "/tmp/uv1113/env"
