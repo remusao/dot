@@ -35,10 +35,13 @@ fi
 
 # Query GitHub API — uses `gh` if available (authenticated, 5000 req/hr),
 # falls back to unauthenticated curl (60 req/hr).
+# Falls back on gh *failing*, not just on gh being absent: an installed but
+# unauthenticated gh exits non-zero with empty stdout.
 gh_api() {
-  local endpoint="$1"
-  if command -v gh &>/dev/null; then
-    gh api "$endpoint" 2>/dev/null
+  local endpoint="$1" out
+  if command -v gh &>/dev/null &&
+    out=$(gh api "$endpoint" 2>/dev/null) && [[ -n "$out" ]]; then
+    printf '%s' "$out"
   else
     curl -fsSL "https://api.github.com${endpoint}" 2>/dev/null
   fi
@@ -47,8 +50,29 @@ gh_api() {
 # Extract the latest version from a GitHub releases/latest redirect or API.
 # Handles monorepos where tags look like "cargo-audit/v0.22.1".
 github_latest() {
-  local owner="$1" repo="$2" hint="$3"
+  local owner="$1" repo="$2" hint="$3" asset="${4:-}"
   local tag
+
+  # Some projects tag releases without the artifact we install (Obsidian
+  # mobile-only .apk builds; watchman went five weeks with no linux.zip), which
+  # 404s the download in update.sh. Take the newest release publishing every
+  # `(asset: ...)` pattern from lock.sh; matched case-insensitively, as GitHub
+  # resolves asset downloads. Must return early: the monorepo re-query below
+  # does no asset filtering, so falling through would drop the restriction.
+  if [[ -n "$asset" ]]; then
+    tag=$(gh_api "/repos/${owner}/${repo}/releases?per_page=50" \
+      | jq -r --arg pats "$asset" \
+        '[ .[]
+           | select(.draft == false and .prerelease == false)
+           | select([ ($pats | split(" ")[]) as $p
+                      | [.assets[].name | test($p; "i")] | any ] | all)
+         ][0].tag_name // empty')
+    if [[ -z "$tag" ]]; then
+      return 1
+    fi
+    echo "$tag"
+    return 0
+  fi
 
   # Try /releases/latest first
   tag=$(gh_api "/repos/${owner}/${repo}/releases/latest" | jq -r '.tag_name // empty')
@@ -114,11 +138,15 @@ is_newer() {
   [[ "$oldest" == "$current" ]]
 }
 
-# Query crates.io for the latest version of a crate.
+# Query crates.io for the latest stable version of a crate.
+#
+# max_stable_version, not `cargo search`: search reports max_version, which
+# includes prereleases and would pin an rc into lock.sh.
 crates_latest() {
   local crate="$1"
-  cargo search --limit 1 "$crate" 2>/dev/null \
-    | awk -F'"' -v c="$crate" '$0 ~ "^"c" " {print $2}'
+  curl -fsSL -H 'User-Agent: dotfiles-bump.sh' \
+    "https://crates.io/api/v1/crates/${crate}" 2>/dev/null \
+    | jq -r '.crate.max_stable_version // empty'
 }
 
 echo "${BOLD}Checking for version updates...${RESET}"
@@ -128,6 +156,7 @@ UPDATES=0
 WARNINGS=0
 comment_url=""
 source_type=""  # "github", "crates", or "unknown"
+asset_pattern=""
 
 while IFS= read -r line; do
   # Capture comment: either a URL or "crates.io:<crate-name>"
@@ -136,9 +165,14 @@ while IFS= read -r line; do
     source_type="crates"
     crate_name="${BASH_REMATCH[1]}"
     continue
-  elif [[ "$line" =~ ^#\ (https?://.+) ]]; then
+  elif [[ "$line" =~ ^#\ (https?://[^[:space:]]+) ]]; then
     comment_url="${BASH_REMATCH[1]}"
     source_type=""
+    # Optional "(asset: <regex>...)" suffix — see github_latest.
+    asset_pattern=""
+    if [[ "$line" =~ \(asset:[[:space:]]*([^\)]+)\) ]]; then
+      asset_pattern="${BASH_REMATCH[1]}"
+    fi
     continue
   fi
 
@@ -146,6 +180,12 @@ while IFS= read -r line; do
   if [[ "$line" =~ ^export\ ([A-Z_0-9_]+)=\"([^\"]*)\" ]]; then
     var="${BASH_REMATCH[1]}"
     current="${BASH_REMATCH[2]}"
+
+    # Slaved to the version pin above them; nothing to look up independently.
+    if [[ "$var" == *_COMMIT || "$var" == *_SHA256 ]]; then
+      comment_url=""; source_type=""
+      continue
+    fi
 
     if [[ -z "$comment_url" ]]; then
       warn "${var}: no URL comment found, skipping"
@@ -174,7 +214,7 @@ while IFS= read -r line; do
       owner="${BASH_REMATCH[1]}"
       repo="${BASH_REMATCH[2]}"
 
-      latest_tag=$(github_latest "$owner" "$repo" "$var") || {
+      latest_tag=$(github_latest "$owner" "$repo" "$var" "$asset_pattern") || {
         err "${var}: failed to query GitHub (${owner}/${repo})"
         WARNINGS=$((WARNINGS + 1))
         comment_url=""; source_type=""

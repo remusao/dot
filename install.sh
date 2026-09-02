@@ -239,7 +239,7 @@ ALL_PKGS=(
   maim
   picom autorandr
   network-manager-gnome gnome-keyring
-  libdbus-1-dev libsensors-dev
+  libdbus-1-dev libsensors-dev libpulse-dev
   x11-xserver-utils x11-xkb-utils lxrandr
   keychain shellcheck
   xclip
@@ -303,6 +303,16 @@ if dpkg-query -W docker.io &>/dev/null; then
     sudo dpkg --purge docker.io 2>/dev/null || true
     ok "Purged residual docker.io from dpkg database"
 fi
+
+# ── Purge distro copies of tools the nuggets now own ──────────────────────
+# PATH order only hides them: anything with a sanitized PATH -- sudo, systemd
+# units, cron -- still resolves the older distro binary. fzf.sh does the same.
+for pkg in git-delta hyperfine fd-find; do
+    if dpkg-query -W "$pkg" &>/dev/null; then
+        sudo apt-get purge -y "$pkg" 2>/dev/null || true
+        ok "Purged distro ${pkg} (superseded by the pinned build)"
+    fi
+done
 
 # ── Pareto Security service ──────────────────────────────────────────────
 sudo systemctl enable paretosecurity.socket
@@ -368,6 +378,10 @@ ok "$HOME/.config/kitty/kitty.conf"
 mkdir -p ~/.config/fontconfig
 ln -sf "${DOT_DIR}/fontconfig/fonts.conf" ~/.config/fontconfig/fonts.conf
 ok "$HOME/.config/fontconfig/fonts.conf"
+
+# Copied, never symlinked: npm saves its user config by writing through
+# ~/.npmrc, so a symlink would commit whatever `npm login` puts there.
+[ -f "${HOME}/.npmrc" ] || install -m 600 "${DOT_DIR}/npmrc" "${HOME}/.npmrc"
 
 mkdir -p ~/.config/rofi ~/.config/picom ~/.config/dunst ~/.config/i3status-rust
 ln -sf "${DOT_DIR}/rofi/config.rasi" ~/.config/rofi/config.rasi
@@ -482,14 +496,20 @@ GESTURES
     ok "Trackpad gestures (fusuma)"
 
     # Power saver: GPU low-power + CPU min freq toggle (AC/battery auto-switch)
-    sudo install -m 755 "${DOT_DIR}/nuggets/utilities/cool-ryzen-apply.sh" /usr/local/bin/cool-ryzen-apply
-    printf '%s ALL=(root) NOPASSWD: /usr/local/bin/cool-ryzen-apply *\n' "$USER" \
+    sudo install -m 755 "${DOT_DIR}/i3/cool-ryzen-apply.sh" /usr/local/bin/cool-ryzen-apply
+    # Enumerated, not `*`: a wildcard lets any argument run as root. Every form
+    # actually invoked via sudo; udev's "--auto" already runs as root.
+    CR_CMD=/usr/local/bin/cool-ryzen-apply
+    printf '%s ALL=(root) NOPASSWD: %s on, %s off, %s on --notify, %s off --notify\n' \
+        "$USER" "$CR_CMD" "$CR_CMD" "$CR_CMD" "$CR_CMD" \
         > /tmp/cool-ryzen-sudoers
     if sudo visudo -cf /tmp/cool-ryzen-sudoers &>/dev/null; then
         sudo install -m 440 /tmp/cool-ryzen-sudoers /etc/sudoers.d/cool-ryzen
+        ok "Power saver toggle (cool-ryzen)"
+    else
+        err "cool-ryzen sudoers rule rejected by visudo -- toggle will not work"
     fi
     rm -f /tmp/cool-ryzen-sudoers
-    ok "Power saver toggle (cool-ryzen)"
 
     # PD cycling diagnostic (real-time power supply state monitor)
     ln -sf "${DOT_DIR}/power-monitor.py" "${HOME}/.local/bin/power-monitor"
@@ -700,40 +720,48 @@ ok "IBus tray icon hidden"
 
 # ── Fonts ──────────────────────────────────────────────────────────────────
 info "Installing fonts..."
-FONTS_CHANGED=0
-mkdir -p ~/.local/share/fonts
+source "${DOT_DIR}/nuggets/lib/fonts.sh"
+
+# Staged and handed to font_install in one go: atomic replace, one cache refresh.
+NEW_FONTS=()
 
 for f in "${DOT_DIR}/fonts/"*; do
-  dest="${HOME}/.local/share/fonts/$(basename "$f")"
+  dest="${FONT_DIR}/$(basename "$f")"
   if [ ! -f "$dest" ] || ! diff -q "$f" "$dest" &>/dev/null; then
-    cp "$f" "$dest"
-    FONTS_CHANGED=1
+    NEW_FONTS+=("$f")
   fi
 done
 
-# Powerline-patched fonts (provides "Inconsolata for Powerline" etc.)
-if [ ! -f "${HOME}/.local/share/fonts/Inconsolata for Powerline.otf" ]; then
-  POWERLINE_FONTS_DIR=$(mktemp -d)
-  git clone --depth=1 https://github.com/powerline/fonts.git "$POWERLINE_FONTS_DIR"
-  "$POWERLINE_FONTS_DIR/install.sh"
-  rm -rf "$POWERLINE_FONTS_DIR"
-  FONTS_CHANGED=1
-fi
-
-# MesloLGS NF – recommended font for Powerlevel10k
-MESLO_URL="https://github.com/romkatv/powerlevel10k-media/raw/master"
+# MesloLGS NF – recommended font for Powerlevel10k. Commit-pinned: `raw/master`
+# is a branch tip, so the faces were whatever upstream had that day.
+MESLO_URL="https://github.com/romkatv/powerlevel10k-media/raw/${MESLO_NF_COMMIT}"
+MESLO_STAGE=$(mktemp -d)
 for variant in Regular Bold Italic "Bold Italic"; do
   file="MesloLGS NF ${variant}.ttf"
-  if [ ! -f "${HOME}/.local/share/fonts/${file}" ]; then
-    curl -fsSL -o "${HOME}/.local/share/fonts/${file}" \
+  if [ ! -f "${FONT_DIR}/${file}" ]; then
+    curl -fsSL -o "${MESLO_STAGE}/${file}" \
       "${MESLO_URL}/$(printf '%s' "$file" | sed 's/ /%20/g')"
-    FONTS_CHANGED=1
+    NEW_FONTS+=("${MESLO_STAGE}/${file}")
   fi
 done
 
-if [ "$FONTS_CHANGED" = "1" ]; then
-  fc-cache -f
-fi
+font_install "${NEW_FONTS[@]}"
+rm -rf "$MESLO_STAGE"
+
+# Powerline-patched Inconsolata, the urxvt primary face. Only the two styles
+# Xresources names: upstream's install.sh cp's ~50 faces into the live font dir.
+POWERLINE_RAW="https://raw.githubusercontent.com/powerline/fonts/${POWERLINE_FONTS_COMMIT}/Inconsolata"
+POWERLINE_STAGE=$(mktemp -d)
+POWERLINE_FONTS=()
+for file in "Inconsolata for Powerline.otf" "Inconsolata Bold for Powerline.ttf"; do
+  if [ ! -f "${FONT_DIR}/${file}" ]; then
+    curl -fsSL --proto '=https' -o "${POWERLINE_STAGE}/${file}" \
+      "${POWERLINE_RAW}/$(printf '%s' "$file" | sed 's/ /%20/g')"
+    POWERLINE_FONTS+=("${POWERLINE_STAGE}/${file}")
+  fi
+done
+font_install "${POWERLINE_FONTS[@]}"
+rm -rf "$POWERLINE_STAGE"
 ok "Fonts"
 
 # ── Language toolchains ────────────────────────────────────────────────────
@@ -751,10 +779,25 @@ if [ ! -f "$PLUG_VIM" ]; then
       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 fi
 
-if [ ! -d ~/.virtualenvs/neovim3 ]; then
-    python3 -m venv ~/.virtualenvs/neovim3
+# Neovim's Python provider and the tooling ALE drives (vim/config_plugins.vim
+# points ALE at these exact paths), from a hash-pinned lock rather than
+# `pip install --upgrade`. Built from the pyenv interpreter, not the system one:
+# a venv records an absolute path to the python that made it, so the stamp covers
+# PYTHON_VERSION as well as the lock hash.
+# To bump: edit nuggets/python/requirements.in, then `uv pip compile
+# --generate-hashes --python ~/.pyenv/versions/${PYTHON_VERSION}/bin/python3`.
+NVIM_VENV="${HOME}/.virtualenvs/neovim3"
+PY_REQ="${DOT_DIR}/nuggets/python/requirements.txt"
+VENV_WANT="${PYTHON_VERSION} $(sha256sum "${PY_REQ}" | awk '{print $1}')"
+
+if [ "$(cat "${NVIM_VENV}/.installed" 2>/dev/null)" != "${VENV_WANT}" ]; then
+    rm -rf "${NVIM_VENV:?}"
+    "${HOME}/.pyenv/versions/${PYTHON_VERSION}/bin/python3" -m venv "${NVIM_VENV}"
+    "${NVIM_VENV}/bin/pip" install --quiet --disable-pip-version-check \
+        --require-hashes -r "${PY_REQ}"
+    echo "${VENV_WANT}" > "${NVIM_VENV}/.installed"
+    ok "Neovim Python venv (${PYTHON_VERSION}, hash-pinned)"
 fi
-~/.virtualenvs/neovim3/bin/pip install --quiet --upgrade pynvim ruff mypy pyright
 
 # npm language servers (vtsls, svelte, bashls, yamlls) are installed reproducibly
 # by nuggets/javascript/packages.sh, run via update.sh above -- no inline install here.
@@ -769,4 +812,4 @@ nvim --headless -c 'lua require("nvim-treesitter").install({"svelte","typescript
 ok "Neovim"
 
 echo ""
-info "Done! Log out and back in for zsh and docker group to take effect."
+info "Done! Log out and back in for zsh and the docker group to take effect."

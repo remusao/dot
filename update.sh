@@ -2,6 +2,11 @@
 
 set -Eeuo pipefail
 
+# Nuggets are sourced: without this a nugget dying under `set -e` aborts the
+# whole run with no output at all. set -E propagates the trap into subshells.
+trap 'printf "update.sh: FAILED at %s:%s (exit %s)\n  %s\n" \
+  "${BASH_SOURCE[0]}" "$LINENO" "$?" "$BASH_COMMAND" >&2' ERR
+
 . "$(dirname "$0")/lock.sh"
 
 export PATH="${HOME}/.local/bin:${HOME}/.pyenv/bin:${PATH}"
@@ -26,6 +31,17 @@ fi
 # Rust
 . ./nuggets/rust/rustup.sh
 . ./nuggets/rust/sccache.sh
+
+# Nothing else points cargo at sccache (no ~/.cargo/config.toml) and each
+# `cargo install` below builds in its own throwaway target dir, so the shared
+# dependency tree was recompiled every time. Must come after sccache.sh (cannot
+# wrap its own build); guarded so a clean machine gets no missing wrapper path.
+# `sccache --show-stats` proves nothing: stats live in the server's memory, and
+# it exits after 600s idle.
+if [ -x "${HOME}/.cargo/bin/sccache" ]; then
+  export RUSTC_WRAPPER="${HOME}/.cargo/bin/sccache"
+fi
+
 . ./nuggets/rust/ripgrep.sh
 . ./nuggets/rust/alacritty.sh
 . ./nuggets/rust/i3status-rust.sh
@@ -45,7 +61,8 @@ fi
 # AWS
 . ./nuggets/utilities/aws-vault.sh
 
-# Secrets
+# Secrets -- cosign first, it verifies sops' manifest
+. ./nuggets/utilities/cosign.sh
 . ./nuggets/utilities/sops.sh
 
 # Backup
