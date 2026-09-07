@@ -183,6 +183,7 @@ check "delta ${DELTA_VERSION}" bash -c "'${HOME}/.local/bin/delta' --version | g
 check "stylua ${STYLUA_VERSION}" bash -c "'${HOME}/.local/bin/stylua' --version | grep -q '${STYLUA_VERSION#v}'"
 check "shfmt ${SHFMT_VERSION}" bash -c "'${HOME}/.local/bin/shfmt' --version | grep -q '${SHFMT_VERSION}'"
 check "lazygit ${LAZYGIT_VERSION}" bash -c "'${HOME}/.local/bin/lazygit' --version | grep -q 'version=${LAZYGIT_VERSION},'"
+check "git-lfs ${GIT_LFS_VERSION}" bash -c "'${HOME}/.local/bin/git-lfs' --version | grep -q '^git-lfs/${GIT_LFS_VERSION#v} '"
 check "sops ${SOPS_VERSION}" bash -c "'${HOME}/.local/bin/sops' --version | head -1 | grep -q '${SOPS_VERSION#v}'"
 check "aws-vault ${AWS_VAULT_VERSION}" bash -c "'${HOME}/.local/bin/aws-vault' --version 2>&1 | grep -qF '${AWS_VAULT_VERSION}'"
 check "hyperfine ${HYPERFINE_VERSION}" bash -c "'${HOME}/.local/bin/hyperfine' --version | grep -q '${HYPERFINE_VERSION}'"
