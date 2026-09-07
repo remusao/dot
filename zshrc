@@ -187,15 +187,6 @@ export GEM_HOME="$HOME/.gem"
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 
-# Python Virtualenv
-export WORKON_HOME=$HOME/.virtualenvs
-export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-export VIRTUALENVWRAPPER_VIRTUALENV=/usr/bin/virtualenv
-export VIRTUALENVWRAPPER_LOG_DIR=$WORKON_HOME
-export VIRTUALENVWRAPPER_HOOK_DIR=$WORKON_HOME
-[[ -f /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh ]] && \
-  source /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh
-
 export PIP_REQUIRE_VIRTUALENV=true
 
 # History management
