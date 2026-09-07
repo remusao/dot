@@ -52,7 +52,6 @@ check "zsh is default shell" test "$(getent passwd "$USER" | cut -d: -f7)" = "$(
 check "powerlevel10k cloned" test -d "$HOME/.zsh/powerlevel10k"
 check "powerlevel10k theme file" test -f "$HOME/.zsh/powerlevel10k/powerlevel10k.zsh-theme"
 check "zsh-syntax-highlighting" test -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-check "virtualenvwrapper" test -f /usr/share/virtualenvwrapper/virtualenvwrapper_lazy.sh
 
 # ─── APT CORE PACKAGES ──────────────────────────────────
 section "Apt packages: core tools"
@@ -290,7 +289,7 @@ check "i3/config: no copyq" bash -c '! grep -q "copyq" "$HOME/.dot/i3/config"'
 check "no greenclip" bash -c '! command -v greenclip'
 check "i3/config: no greenclip" bash -c '! grep -q "greenclip" "$HOME/.dot/i3/config"'
 check "Font Awesome ${FONT_AWESOME_VERSION}" bash -c "fc-list | grep -qi 'Font Awesome ${FONT_AWESOME_VERSION%%.*}'"
-check "zshrc: python3 for venvwrapper" grep -q "VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" "$HOME/.dot/zshrc"
+check "zshrc: no virtualenvwrapper" bash -c '! grep -q "VIRTUALENVWRAPPER" "$HOME/.dot/zshrc"'
 check "zshrc: no spark PATH" bash -c '! grep -q "spark-1.6.1" "$HOME/.dot/zshrc"'
 check "zshrc: no ruby 2.5 PATH" bash -c '! grep -q "ruby/2.5.0" "$HOME/.dot/zshrc"'
 check "zshrc: no Nim PATH" bash -c '! grep -q "Nim/bin" "$HOME/.dot/zshrc"'
