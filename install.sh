@@ -43,6 +43,53 @@ SKIP_AI_TOOLS=${DOTFILES_SKIP_AI_TOOLS:-0}
 SKIP_ROCM=${DOTFILES_SKIP_ROCM:-0}
 
 has_repo() { [ -f "$1" ]; }
+
+# Vendors migrate their own source file between formats: Chrome's postinst
+# replaced google-chrome.list with google-chrome.sources on 2026-09-07. Guarding
+# on a single extension makes the block re-add a repo the vendor already owns,
+# leaving apt fetching the same index under two URIs.
+has_repo_either() { [ -f "${1%.*}.list" ] || [ -f "${1%.*}.sources" ]; }
+
+# has_repo() only proves the source file exists, so once a repo was added its
+# keyring was never touched again -- and no package owns these keyrings, so
+# nothing else refreshes them either. GitHub CLI rotated to a second signing key
+# (published 2026-04-08) and let the old one expire on 2026-09-05, which broke
+# `apt-get update` with EXPKEYSIG + NO_PUBKEY. Re-fetching on every run makes a
+# rotation heal itself instead of becoming a manual fire-drill.
+#
+# The download is validated before the live keyring is touched: a vendor 404 that
+# serves an HTML error page must never clobber a working key. Writes only on a
+# real difference, so repeat runs are silent no-ops.
+#   refresh_keyring <url> <dest> [raw|dearmor]
+refresh_keyring() {
+  local url="$1" dest="$2" mode="${3:-raw}" dl out
+  dl="$(mktemp)"; out="$(mktemp)"
+  if ! curl -fsSL --max-time 30 -o "$dl" "$url"; then
+    err "keyring download failed, keeping existing $dest ($url)"
+    rm -f "$dl" "$out"; return 0
+  fi
+  if [ "$mode" = "dearmor" ]; then
+    # --dearmor is a passthrough when the input is already binary.
+    if ! gpg --dearmor --yes --output "$out" < "$dl" 2>/dev/null; then
+      err "keyring not dearmorable, keeping existing $dest ($url)"
+      rm -f "$dl" "$out"; return 0
+    fi
+  else
+    cp "$dl" "$out"
+  fi
+  if ! gpg --show-keys --with-colons "$out" 2>/dev/null | grep -q '^pub:'; then
+    err "download contains no public key, keeping existing $dest ($url)"
+    rm -f "$dl" "$out"; return 0
+  fi
+  if [ -f "$dest" ] && cmp -s "$out" "$dest"; then
+    rm -f "$dl" "$out"; return 0
+  fi
+  sudo install -D -m 0644 "$out" "$dest"
+  rm -f "$dl" "$out"
+  ok "refreshed keyring $dest"
+  REPOS_ADDED=1
+}
+
 REPOS_ADDED=0
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -101,7 +148,7 @@ printf 'Unattended-Upgrade::Allowed-Origins:: "LP-PPA-mozillateam:%s";\n' "$VERS
   | sudo tee /etc/apt/apt.conf.d/51mozillateam > /dev/null
 
 # ── Brave Browser ──────────────────────────────────────────────────────────
-if ! has_repo /etc/apt/sources.list.d/brave-browser-release.sources; then
+if ! has_repo_either /etc/apt/sources.list.d/brave-browser-release.sources; then
   info "Adding Brave Browser repo..."
   sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg \
     https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
@@ -111,7 +158,7 @@ if ! has_repo /etc/apt/sources.list.d/brave-browser-release.sources; then
 fi
 
 # ── Google Chrome ─────────────────────────────────────────────────────────
-if ! has_repo /etc/apt/sources.list.d/google-chrome.list; then
+if ! has_repo_either /etc/apt/sources.list.d/google-chrome.list; then
   info "Adding Google Chrome repo..."
   wget -q -O- https://dl.google.com/linux/linux_signing_key.pub \
     | sudo gpg --dearmor --output /usr/share/keyrings/google-chrome.gpg --yes
@@ -145,7 +192,7 @@ SRCS
 fi
 
 # ── 1Password ──────────────────────────────────────────────────────────────
-if [ "$SKIP_1PASSWORD" != "1" ] && ! has_repo /etc/apt/sources.list.d/1password.list; then
+if [ "$SKIP_1PASSWORD" != "1" ] && ! has_repo_either /etc/apt/sources.list.d/1password.list; then
   info "Adding 1Password repo..."
   curl -sS https://downloads.1password.com/linux/keys/1password.asc \
     | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg --yes
@@ -192,12 +239,69 @@ fi
 # ── Pareto Security ──────────────────────────────────────────────────────
 if ! has_repo /etc/apt/sources.list.d/pareto.list; then
   info "Adding Pareto Security repo..."
-  curl -fsSL https://pkg.paretosecurity.com/debian/pubkey.gpg \
+  # /debian/pubkey.gpg now 404s (serves a 27 kB HTML error page); with
+  # `set -o pipefail` + `curl -f` that aborted the whole install on a fresh
+  # machine. The key moved to the site root and is served already dearmored --
+  # gpg --dearmor is a passthrough on binary input, so the pipe still applies.
+  curl -fsSL https://pkg.paretosecurity.com/paretosecurity.gpg \
     | sudo gpg --dearmor --output /usr/share/keyrings/paretosecurity.gpg --yes
   echo "deb [signed-by=/usr/share/keyrings/paretosecurity.gpg] https://pkg.paretosecurity.com/debian stable main" \
     | sudo tee /etc/apt/sources.list.d/pareto.list > /dev/null
   REPOS_ADDED=1
 fi
+
+# ══════════════════════════════════════════════════════════════════════════
+# Keyring refresh (vendor signing-key rotations)
+# ══════════════════════════════════════════════════════════════════════════
+# Only the four keyrings nothing else maintains. Deliberately excluded:
+#   brave-keyring / sur5r-keyring / tailscale-archive-keyring / amdgpu-install
+#     ship their keyring as a deb, so apt upgrades it.
+#   google-chrome.gpg and 1password-archive-keyring.gpg are rewritten by
+#     google-chrome-stable.postinst and 1password.postinst on every package
+#     upgrade. Refreshing them here would just fight those scripts.
+# Each call is skipped unless the repo is actually configured, so a machine that
+# opted out of Docker does not grow a stray keyring.
+if has_repo /etc/apt/sources.list.d/github-cli.list; then
+  refresh_keyring https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    /etc/apt/keyrings/githubcli-archive-keyring.gpg
+fi
+if has_repo /etc/apt/sources.list.d/mozilla.list; then
+  refresh_keyring https://packages.mozilla.org/apt/repo-signing-key.gpg \
+    /etc/apt/keyrings/packages.mozilla.org.asc
+fi
+if has_repo /etc/apt/sources.list.d/docker.sources; then
+  refresh_keyring https://download.docker.com/linux/ubuntu/gpg \
+    /etc/apt/keyrings/docker.asc
+fi
+if has_repo /etc/apt/sources.list.d/pareto.list; then
+  refresh_keyring https://pkg.paretosecurity.com/paretosecurity.gpg \
+    /usr/share/keyrings/paretosecurity.gpg dearmor
+fi
+
+# ══════════════════════════════════════════════════════════════════════════
+# OEM repos: pin Signed-By
+# ══════════════════════════════════════════════════════════════════════════
+# ubuntu-release-upgrader converted these two from .list to deb822 during a
+# partial upgrade (migrateToDeb822Sources in DistUpgradeController.py). It infers
+# the keyring from the source filename -- trusted.gpg.d/oem-nantou-meta.gpg --
+# which never existed, because the OEM keys live in ubuntu-keyring-2008-oem.gpg
+# and ubuntu-keyring-2020-oem.gpg. That heuristic only works for PPAs added by
+# add-apt-repository, so both files came out with no Signed-By and apt prints
+#   N: Missing Signed-By in the sources.list(5) entry for '...'
+# on every update, verifying them against the deprecated global trusted.gpg.d
+# store instead. apt cannot self-heal this: it would inherit Signed-By from the
+# cached Release file, but that path requires Valid-Until and Canonical's OEM
+# index has no such field. ubuntu-oem-keyring holds both signing keys and is
+# dpkg-managed, so pinning it stays correct across key updates.
+for f in /etc/apt/sources.list.d/oem-nantou-meta.sources \
+         /etc/apt/sources.list.d/oem-stella-chippo-meta.sources; do
+  if [ -f "$f" ] && ! grep -qi '^Signed-By:' "$f"; then
+    info "Pinning Signed-By in $(basename "$f")..."
+    echo "Signed-By: /usr/share/keyrings/ubuntu-oem-keyring.gpg" \
+      | sudo tee -a "$f" > /dev/null
+    REPOS_ADDED=1
+  fi
+done
 
 # ══════════════════════════════════════════════════════════════════════════
 # Snap removal (before apt install replaces them with debs)
@@ -230,7 +334,7 @@ if [ "$REPOS_ADDED" = "1" ]; then
 fi
 ALL_PKGS=(
   ca-certificates curl gnupg lsb-release software-properties-common wget
-  zsh git git-lfs build-essential clang g++ cmake ninja-build gettext unzip pkg-config
+  zsh git build-essential clang g++ cmake ninja-build gettext unzip pkg-config
   python3-pip python3-venv python3-dev
   rxvt-unicode
   i3 i3lock i3status rofi gammastep feh
@@ -266,9 +370,9 @@ ALL_PKGS=(
   google-perftools
   tk-dev xz-utils
   fonts-inconsolata fonts-powerline fonts-dejavu fontconfig
-  gimp evince libreoffice vlc
+  gimp evince libreoffice
   libfido2-1 libu2f-udev
-  virtualenvwrapper tree editorconfig xdg-utils
+  tree editorconfig xdg-utils
   tldr rsync whois zstd apache2-utils
   htop dfc earlyoom lm-sensors rasdaemon nvme-cli smartmontools
   screen tmux parallel
@@ -313,6 +417,16 @@ for pkg in git-delta hyperfine fd-find; do
         ok "Purged distro ${pkg} (superseded by the pinned build)"
     fi
 done
+
+# git-lfs belongs in that loop but cannot be purged unconditionally: gitconfig
+# sets filter.lfs.required = true, so an absent binary hard-fails every checkout
+# in an LFS repo rather than degrading like delta's pager does. README order is
+# install.sh then update.sh, so on a fresh machine the nugget does not exist yet
+# -- gate on it and let the purge happen on the next run. Converges either way.
+if [ -x "${HOME}/.local/bin/git-lfs" ] && dpkg-query -W git-lfs &>/dev/null; then
+    sudo apt-get purge -y git-lfs 2>/dev/null || true
+    ok "Purged distro git-lfs (superseded by the pinned build)"
+fi
 
 # ── Pareto Security service ──────────────────────────────────────────────
 sudo systemctl enable paretosecurity.socket
