@@ -74,6 +74,10 @@ fi
 # Git TUI
 . ./nuggets/utilities/lazygit.sh
 
+# Git LFS -- the distro package is universe, so it only gets security fixes
+# through Ubuntu Pro's esm-apps. Upstream static binary instead.
+. ./nuggets/utilities/git-lfs.sh
+
 # Git performance (filesystem monitor)
 . ./nuggets/utilities/watchman.sh
 
