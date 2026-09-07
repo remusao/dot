@@ -32,6 +32,23 @@ export LESSHISTFILE=-
 export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 export TF_PLUGIN_CACHE_DIR="$HOME/.cache/terraform"
 
+# Claude Code scrolls on bare mouse movement under urxvt. urxvt reports motion
+# with the *last pressed* button, and button_release() returns early for wheel
+# "buttons" 4-7 without clearing MEvent.button — so after one wheel tick every
+# MotionNotify (mode 1003) is encoded as SGR 96/97 = wheel|motion. Claude Code
+# decodes with `code & 67`, which masks off the motion bit (32), leaving a plain
+# wheelup/wheeldown. Upstream urxvt fixed only the never-clicked case (5ec6fb5e,
+# post-9.31); the wheel path still leaks. Ask for mouse mode "scroll" instead:
+# only 1000+1006, so motion is never reported and the wheel still scrolls.
+# Costs Claude's own drag-to-select (needs motion); Shift+drag still gives
+# urxvt's native selection. Set the var to 0 to get full mouse mode back.
+# TERM-gated so kitty/alacritty keep full mouse; inside tmux the gate won't
+# fire (TERM=screen-*), which is correct — tmux re-encodes mouse itself.
+# Full analysis: ~/.dot/URXVT_MOUSE_SCROLL_BUG.md
+if [[ "$TERM" == rxvt-unicode* ]]; then
+  export CLAUDE_CODE_DISABLE_MOUSE_CLICKS="${CLAUDE_CODE_DISABLE_MOUSE_CLICKS:-1}"
+fi
+
 # X11 cursor tweaks (only run once per X session — guarded by sentinel env var)
 if [[ -n "$DISPLAY" && -z "$_XSET_DONE" ]] && command -v xset >/dev/null 2>&1; then
   xset b off
