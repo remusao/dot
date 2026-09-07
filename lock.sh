@@ -131,6 +131,9 @@ export BAT_VERSION="0.26.1"
 # https://github.com/dandavison/delta/releases/latest (asset: -x86_64-unknown-linux-gnu\.tar\.gz$)
 export DELTA_VERSION="0.19.2"
 
+# https://github.com/git-lfs/git-lfs/releases/latest (asset: ^git-lfs-linux-amd64-v[0-9.]+\.tar\.gz$ ^sha256sums\.asc$)
+export GIT_LFS_VERSION="v3.8.0"
+
 # https://github.com/sharkdp/hyperfine/releases/latest (asset: -x86_64-unknown-linux-musl\.tar\.gz$)
 export HYPERFINE_VERSION="1.20.0"
 
