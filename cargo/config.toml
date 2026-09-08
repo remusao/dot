@@ -1,0 +1,27 @@
+# Cargo global config. Project .cargo/config.toml files merge on top, so what
+# a repo sets still wins.
+#
+# Deliberately no rustflags here: [target.<triple>].rustflags *replaces*
+# [build].rustflags instead of merging, so adding one linker flag would
+# silently drop search's -C target-cpu=native.
+
+[build]
+# Relative on purpose. Cargo resolves a program path containing a separator
+# against the parent of the config file's directory, so from $CARGO_HOME this
+# lands on $CARGO_HOME/bin/sccache without hardcoding /home/remi.
+#
+# Covers C/C++ too: cargo re-exports this as RUSTC_WRAPPER to build scripts,
+# and cc-rs uses that as its compiler launcher. cmake-rs does not — it passes
+# cc-rs's raw compiler path — hence CMAKE_*_COMPILER_LAUNCHER in zshrc.
+#
+# A missing binary here fails every cargo command, so install.sh only links
+# this file after update.sh has built sccache.
+rustc-wrapper = ".cargo/bin/sccache"
+
+[target.x86_64-unknown-linux-gnu]
+# Linking is the one step sccache cannot cache — bin crates are `cannot_cache!`
+# because they invoke the linker. Measured on search's `ranking` (946M debug
+# binary, 589 inputs): GNU ld 6.64s, rust-lld 934ms (rustc's default since
+# 1.90), mold 406ms, wild 404ms. mold and wild tie; mold wins on maturity.
+# See cc-mold for why this is a linker wrapper and not a rustflag.
+linker = ".local/bin/cc-mold"

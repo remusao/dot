@@ -184,6 +184,24 @@ export GOPATH="$HOME/go"
 
 export GEM_HOME="$HOME/.gem"
 
+# ── sccache ─────────────────────────────────────────────────────────────────
+# No RUSTC_WRAPPER here — ~/.cargo/config.toml sets build.rustc-wrapper, which
+# also covers editors, scripts and cron, and cargo re-exports it to build
+# scripts so cc-rs picks it up.
+#
+# cmake-rs is the gap: it passes cc-rs's raw compiler path as
+# -DCMAKE_C_COMPILER and drops the wrapper, so aws-lc-sys, kenlm, keyvi,
+# rdkafka-sys and sentencepiece-sys compile uncached. CMake seeds
+# CMAKE_<LANG>_COMPILER_LAUNCHER from these.
+if [ -x "$HOME/.cargo/bin/sccache" ]; then
+  export CMAKE_C_COMPILER_LAUNCHER="$HOME/.cargo/bin/sccache"
+  export CMAKE_CXX_COMPILER_LAUNCHER="$HOME/.cargo/bin/sccache"
+  # Never idle out (default 600s). Hit-rate counters live in the server's
+  # memory and reset on restart, so this is what makes `sccache -s` readable;
+  # it also avoids re-walking the cache dir to rebuild the LRU index.
+  export SCCACHE_IDLE_TIMEOUT=0
+fi
+
 # Init pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 

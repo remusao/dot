@@ -884,6 +884,32 @@ mkdir -p ~/.local/bin ~/.config/nvim/backups ~/.virtualenvs
 (cd "${DOT_DIR}" && bash ./update.sh)
 ok "Toolchains"
 
+# ── Rust build cache + linker ──────────────────────────────────────────────
+# Below update.sh, not in the symlink block above: ~/.cargo/config.toml names
+# sccache and cc-mold, and cargo hard-errors on every invocation if either is
+# missing. On a fresh machine the symlink block runs before the nuggets exist,
+# which would brick the `cargo install sccache` that fixes it.
+info "Wiring sccache + mold..."
+mkdir -p ~/.config/sccache ~/.local/bin
+ln -sf "${DOT_DIR}/sccache/config" ~/.config/sccache/config
+ok "$HOME/.config/sccache/config"
+# Before the config that names it. Safe to link even if the mold nugget has not
+# run: cc-mold degrades to rustc's own lld when mold is absent.
+ln -sf "${DOT_DIR}/cargo/cc-mold" ~/.local/bin/cc-mold
+ok "$HOME/.local/bin/cc-mold"
+
+if [ -e "${HOME}/.cargo/config.toml" ] && [ ! -L "${HOME}/.cargo/config.toml" ]; then
+    err "$HOME/.cargo/config.toml exists and is not a symlink, skipping"
+elif "${HOME}/.cargo/bin/sccache" --version >/dev/null 2>&1; then
+    ln -sf "${DOT_DIR}/cargo/config.toml" ~/.cargo/config.toml
+    ok "$HOME/.cargo/config.toml"
+    # update.sh already started a server on the stock 10G cap; config is only
+    # read at startup, so retire it.
+    "${HOME}/.cargo/bin/sccache" --stop-server >/dev/null 2>&1 || true
+else
+    err "sccache not runnable, skipping ~/.cargo/config.toml (would break cargo)"
+fi
+
 # ── Neovim setup ───────────────────────────────────────────────────────────
 info "Setting up Neovim..."
 ln -sf "${DOT_DIR}/vimrc" "${HOME}/.config/nvim/init.vim"
