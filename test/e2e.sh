@@ -171,6 +171,43 @@ check "cargo" "$HOME/.cargo/bin/cargo" --version
 check "rust stable" bash -c "'${HOME}/.cargo/bin/rustup' toolchain list | grep -q stable"
 check "rust-src" bash -c "'${HOME}/.cargo/bin/rustup' component list --installed | grep -q rust-src"
 check "sccache ${SCCACHE_VERSION}" bash -c "'${HOME}/.cargo/bin/sccache' --version | grep -q '${SCCACHE_VERSION}'"
+check "~/.config/sccache/config is symlink" test -L "$HOME/.config/sccache/config"
+check "~/.cargo/config.toml is symlink" test -L "$HOME/.cargo/config.toml"
+# Server honours the config file rather than the stock 10G default. Size is
+# read back out of the config so the two cannot drift.
+check "sccache cache size from config" bash -c '
+  want=$(sed -n "s/^size = \"\([0-9]*\)G\"$/\1 GiB/p" "$HOME/.config/sccache/config")
+  [ -n "$want" ] && "$HOME/.cargo/bin/sccache" --show-stats | grep -q "Max cache size *$want"'
+check "mold ${MOLD_VERSION}" bash -c "'${HOME}/.local/bin/mold' --version | grep -q '${MOLD_VERSION}'"
+# cc-mold selects mold with -B<dir>, which needs a program named exactly `ld`.
+check "mold ld alias" test -x "$HOME/.local/libexec/mold/ld"
+check "~/.local/bin/cc-mold is symlink" test -L "$HOME/.local/bin/cc-mold"
+# One throwaway crate proves both halves of the config at once: a bad relative
+# program path in build.rustc-wrapper or linker fails at *runtime*, on every
+# cargo command. `cargo config get` would answer that but is nightly-only. Env
+# is stripped so this tests the config file, not an inherited RUSTC_WRAPPER.
+# It needs both targets: a bin alone is `cannot_cache!("crate-type")`, so only
+# the lib moves the sccache counter, and only the bin exercises the linker.
+check "cargo routes rustc through sccache + mold" bash -c '
+  executed() { "$HOME/.cargo/bin/sccache" --show-stats --stats-format=json |
+    grep -o "\"requests_executed\":[0-9]*" | head -1; }
+  d=$(mktemp -d) || exit 1
+  trap "rm -rf \"$d\"" EXIT
+  mkdir -p "$d/src"
+  printf "[package]\nname=\"scccheck\"\nversion=\"0.0.0\"\nedition=\"2021\"\n" > "$d/Cargo.toml"
+  printf "pub fn f() -> u8 { 1 }\n" > "$d/src/lib.rs"
+  printf "fn main() { println!(\"{}\", scccheck::f()); }\n" > "$d/src/main.rs"
+  before=$(executed)
+  (cd "$d" && env -u RUSTC_WRAPPER CARGO_INCREMENTAL=0 "$HOME/.cargo/bin/cargo" build -q) || exit 1
+  [ "$before" != "$(executed)" ] || exit 1
+  "$d/target/debug/scccheck" >/dev/null || exit 1
+  readelf -p .comment "$d/target/debug/scccheck" | grep -qi "mold"'
+# cmake-rs drops the wrapper, so these are what cache aws-lc-sys/kenlm/keyvi/
+# rdkafka-sys/sentencepiece-sys. Read from a real zsh: e2e.sh may run from a
+# shell that never sourced zshrc.
+check "zshrc exports cmake launchers" bash -c '
+  zsh -ic "print -r -- \$CMAKE_C_COMPILER_LAUNCHER \$CMAKE_CXX_COMPILER_LAUNCHER" 2>/dev/null |
+    grep -q "/\.cargo/bin/sccache /.*/\.cargo/bin/sccache$"'
 check "ripgrep ${RIPGREP_VERSION}" bash -c "'${HOME}/.cargo/bin/rg' --version | head -1 | grep -q '${RIPGREP_VERSION}'"
 check "ripgrep pcre2" "$HOME/.cargo/bin/rg" --pcre2-version
 

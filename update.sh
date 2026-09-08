@@ -32,12 +32,19 @@ fi
 . ./nuggets/rust/rustup.sh
 . ./nuggets/rust/sccache.sh
 
-# Nothing else points cargo at sccache (no ~/.cargo/config.toml) and each
-# `cargo install` below builds in its own throwaway target dir, so the shared
-# dependency tree was recompiled every time. Must come after sccache.sh (cannot
-# wrap its own build); guarded so a clean machine gets no missing wrapper path.
-# `sccache --show-stats` proves nothing: stats live in the server's memory, and
-# it exits after 600s idle.
+# Linker for every Rust build, via cargo/config.toml -> cargo/cc-mold. Lives in
+# utilities/ but is sourced here, ahead of the cargo installs below, so they
+# link with it on a fresh machine too.
+. ./nuggets/utilities/mold.sh
+
+# Each `cargo install` below builds in its own throwaway target dir, so the
+# shared dependency tree was recompiled every time. ~/.cargo/config.toml now
+# sets the same wrapper, but this export stays: on a fresh machine install.sh
+# only links that file *after* this script runs. Must come after sccache.sh
+# (cannot wrap its own build); guarded so a clean machine gets no missing
+# wrapper path.
+# `sccache --show-stats` proves nothing here: stats live in the server's
+# memory, and SCCACHE_IDLE_TIMEOUT=0 is set in zshrc, not for this shell.
 if [ -x "${HOME}/.cargo/bin/sccache" ]; then
   export RUSTC_WRAPPER="${HOME}/.cargo/bin/sccache"
 fi

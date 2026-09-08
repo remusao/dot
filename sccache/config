@@ -1,0 +1,15 @@
+# sccache server config. Read once at server start — `sccache --stop-server`
+# to apply an edit. `dir` omitted: the default is already ~/.cache/sccache.
+#
+# Preprocessor cache mode is left implicit: absent it defaults to on, but a
+# [cache.disk.preprocessor_cache_mode] table turns it OFF unless that table
+# itself sets use_preprocessor_cache_mode = true.
+
+[cache.disk]
+# One full dev build of the search workspace lands ~3G here (librocksdb-sys
+# alone is 431M), against 84G in that clone's target/. 55 clones share these
+# entries, so what multiplies the total is profiles x toolchain versions x
+# branch drift, not clone count — 100G is ~30 full builds of headroom. The 10G
+# default would thrash. LRU-evicted, so this is a ceiling, not a reservation;
+# `sccache --show-stats` reports the live size.
+size = "100G"
