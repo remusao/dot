@@ -35,7 +35,7 @@ export NVM_VERSION="v0.40.7"
 export RESTIC_VERSION="0.19.1"
 
 # https://github.com/rclone/rclone/releases/latest (asset: -linux-amd64\.zip$ ^SHA256SUMS$)
-export DOTFILES_RCLONE_VERSION="v1.75.0"
+export DOTFILES_RCLONE_VERSION="v1.75.1"
 
 # https://github.com/netblue30/firejail/releases/latest (asset: ^firejail_[0-9.]+_1_amd64\.deb$ ^firejail-[0-9.]+\.asc$)
 export FIREJAIL_VERSION="0.9.80"
@@ -69,10 +69,10 @@ export FLAMEGRAPH_VERSION="0.6.14"
 export LOC_VERSION="0.5.0"
 
 # crates.io: oxipng
-export OXIPNG_VERSION="10.2.0"
+export OXIPNG_VERSION="10.2.1"
 
 # crates.io: tokei
-export TOKEI_VERSION="14.0.0"
+export TOKEI_VERSION="15.0.0"
 
 # crates.io: tree-sitter-cli
 export TREE_SITTER_CLI_VERSION="0.27.0"
@@ -87,7 +87,7 @@ export DU_DUST_VERSION="1.2.5"
 export DIFFTASTIC_VERSION="0.70.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest (asset: _linux_x86_64\.tar\.gz$ ^checksums\.txt$)
-export LAZYGIT_VERSION="0.64.1"
+export LAZYGIT_VERSION="0.65.0"
 
 # https://github.com/facebook/watchman/releases/latest (asset: linux\.zip$)
 export WATCHMAN_VERSION="2026.07.27.00"
@@ -144,7 +144,7 @@ export KITTY_VERSION="0.48.2"
 export LUA_LANGUAGE_SERVER_VERSION="3.19.1"
 
 # https://github.com/mvdan/sh/releases/latest (shfmt) (asset: _linux_amd64$)
-export SHFMT_VERSION="v3.14.0"
+export SHFMT_VERSION="v3.14.1"
 
 # https://github.com/JohnnyMorganz/StyLua/releases/latest (asset: ^stylua-linux-x86_64\.zip$)
 export STYLUA_VERSION="v2.5.2"
