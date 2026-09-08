@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# cc(1) that links with mold. Wired up as [target.*].linker in cargo/config.toml.
+#
+# Why a wrapper and not a rustflag: `-C link-arg=...` would have to live in
+# `target.<triple>.rustflags`, and those *replace* `build.rustflags` rather than
+# merging — silently dropping search's `-C target-cpu=native`. `linker` is its
+# own key, so it composes with whatever a project sets.
+
+mold_dir="${HOME}/.local/libexec/mold"
+
+# rustc >= 1.90 selects its bundled rust-lld with `-B<sysroot>/gcc-ld` and
+# `-fuse-ld=lld`. `-fuse-ld` beats `-B`, so mold is unreachable until both are
+# gone. With mold missing, leave them: stripping them with nothing to replace
+# them falls back to GNU ld, measured 7x slower than lld — worse than nothing.
+if [ ! -x "${mold_dir}/ld" ]; then
+  exec cc "$@"
+fi
+
+# Only rustc's own default is dropped; an explicit -fuse-ld=gold/bfd survives.
+argv=()
+for arg in "$@"; do
+  case "$arg" in
+    -fuse-ld=lld | -B*/gcc-ld) continue ;;
+  esac
+  argv+=("$arg")
+done
+
+exec cc "${argv[@]}" -B"${mold_dir}"

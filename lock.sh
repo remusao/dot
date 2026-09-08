@@ -143,6 +143,9 @@ export KITTY_VERSION="0.48.2"
 # https://github.com/LuaLS/lua-language-server/releases/latest (asset: -linux-x64\.tar\.gz$)
 export LUA_LANGUAGE_SERVER_VERSION="3.19.1"
 
+# https://github.com/rui314/mold/releases/latest (asset: -x86_64-linux\.tar\.gz$)
+export MOLD_VERSION="2.42.0"
+
 # https://github.com/mvdan/sh/releases/latest (shfmt) (asset: _linux_amd64$)
 export SHFMT_VERSION="v3.14.1"
 
