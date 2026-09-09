@@ -1,6 +1,6 @@
 # https://nodejs.org/dist/index.json -- LTS line only (24.x).
 # Do not repoint at nodejs/node: releases/latest there is Current, not LTS.
-export NODEJS_VERSION="24.20.0"
+export NODEJS_VERSION="24.21.0"
 
 # https://registry.npmjs.org/npm -- dist-tags.latest; npm/cli is a monorepo, so its releases are not npm versions.
 export NPM_VERSION="12.0.2"
