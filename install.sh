@@ -504,6 +504,54 @@ ln -sf "${DOT_DIR}/dunst/dunstrc" ~/.config/dunst/dunstrc
 ln -sf "${DOT_DIR}/i3status-rust/config.toml" ~/.config/i3status-rust/config.toml
 ok "rofi/picom/dunst/i3status-rust configs"
 
+# ── Claude Code hooks (owned by the gamba repo, not by these dotfiles) ─────
+# The hook that routes `cargo` to `gamba` ships with gamba so it can be shared,
+# and its installer merges into ~/.claude/settings.json rather than symlinking
+# it -- Claude Code writes through that file and it holds API keys, the same
+# reason ~/.npmrc is copied above. Skipped when the checkout is absent.
+GAMBA_REPO="${HOME}/dev/repositories/perso/gamba"
+GAMBA_HOOKS="${GAMBA_REPO}/integrations/claude-code/install.py"
+if [ -f "$GAMBA_HOOKS" ]; then
+    if python3 "$GAMBA_HOOKS"; then
+        ok "gamba Claude Code hook"
+    else
+        err "gamba hook install failed (settings.json left untouched)"
+    fi
+fi
+
+# ── gamba itself, from the same checkout as the hook above ────────────────
+# The hook is a SYMLINK into the repo, so it is always at HEAD; the binary is a
+# copy from whenever someone last installed one. Nothing owned that copy, so the
+# two drifted -- measured: the hook at HEAD rewriting `cargo` to a `gamba` three
+# commits old, which silently lacked the warning the newer one exists to print.
+# Installing both here is what makes them one version.
+#
+# Only when the commit differs: `cargo install` relinks a 2 MB binary otherwise,
+# on every run of this script. `-V` prints `gamba 0.1.0 (<sha> <date>) <path>`.
+if [ -d "$GAMBA_REPO" ] && command -v cargo >/dev/null; then
+    want=$(git -C "$GAMBA_REPO" rev-parse --short HEAD 2>/dev/null || echo unknown)
+    # The stamp with its dirty marker kept: `2862a9c+` is a binary built from
+    # uncommitted source, which no sha can be compared against, so it rebuilds.
+    have=$(gamba -V 2>/dev/null | sed -n 's/.*(\([0-9a-f+]*\) .*/\1/p')
+    if [ "$want" = unknown ]; then
+        err "gamba: no commit in $GAMBA_REPO; binary left alone"
+    elif [ "$want" = "$have" ]; then
+        ok "gamba $have (current)"
+    elif cargo install --path "$GAMBA_REPO" --force --quiet; then
+        ok "gamba $want installed (was ${have:-none})"
+    else
+        err "gamba build failed; the old binary is still on PATH"
+    fi
+    # One binary, or the hook's bare `which gamba` picks whichever PATH orders
+    # first -- which is how a stale copy won for three commits. `type -a -P`,
+    # not `command -v -a`: `command -v` takes no `-a` and prints one match.
+    others=$(type -a -P gamba 2>/dev/null | grep -vx "${HOME}/.cargo/bin/gamba" || true)
+    if [ -n "$others" ]; then
+        err "another gamba shadows the installed one; delete it:"
+        echo "$others" | sed 's/^/      rm /' >&2
+    fi
+fi
+
 # ── Thunderbird user.js (symlink into the default profile) ──────────────────
 # [Install*]/Default= is authoritative in current TB; fall back to [Profile*] with Default=1.
 if [ -f "${HOME}/.thunderbird/profiles.ini" ]; then
