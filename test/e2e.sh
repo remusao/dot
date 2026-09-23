@@ -336,6 +336,248 @@ check "packages.sh: no tslint" bash -c '! grep -q "tslint" "$HOME/.dot/nuggets/j
 check "no keepassxc.sh" test ! -f "$HOME/.dot/nuggets/utilities/keepassxc.sh"
 check "no docker-compose.sh" test ! -f "$HOME/.dot/nuggets/docker/docker-compose.sh"
 
+# ─── BACKUP TOOLCHAIN ────────────────────────────────────
+# Behavioural, not just "is it installed". Each of these pins a defect that shipped:
+# see BACKUP_AUDIT.md. They run against throwaway trees and repos under /tmp; no real
+# repository, no real $HOME, and cleanup.sh only ever runs with an explicit --dir.
+section "Backup toolchain"
+
+BK_TMP="$(mktemp -d)"
+trap 'rm -rf "$BK_TMP"' EXIT
+
+# A directory NAME used to be able to execute commands: du prints `<size>\t<path>`,
+# a newline in the path survives `cut -f1`, and the result reached $(( )).
+bk_no_code_exec_from_dirname() {
+  local w="$BK_TMP/rce" d
+  mkdir -p "$w"
+  d="$(printf 'p\nTOTAL_REMOVED[$(touch %s/PWNED)]' "$w")"
+  mkdir -p "$w/$d/node_modules"
+  "$HOME/.dot/cleanup.sh" --dir "$w" --dry-run >/dev/null 2>&1 || true
+  "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1 || true
+  [ ! -e "$w/PWNED" ]
+}
+check "cleanup.sh: a directory name cannot execute code" bk_no_code_exec_from_dirname
+
+bk_archive_no_code_exec() {
+  local w="$BK_TMP/rce2" d
+  mkdir -p "$w"
+  d="$(printf 'q\nCOMPRESSION_LEVEL[$(touch %s/PWNED)]' "$w")"
+  mkdir -p "$w/$d"; echo x > "$w/$d/f"
+  "$HOME/.dot/archive.sh" --no-cleanup "$w/$d" >/dev/null 2>&1 || true
+  [ ! -e "$w/PWNED" ]
+}
+check "archive.sh: a directory name cannot execute code" bk_archive_no_code_exec
+
+# An error path that exits 0 makes every downstream check meaningless.
+check "backup.sh: no args exits non-zero"  bash -c '! "$HOME/.dot/backup.sh" >/dev/null 2>&1'
+check "restore.sh: no args exits non-zero" bash -c '! "$HOME/.dot/restore.sh" >/dev/null 2>&1'
+check "archive.sh: no args exits non-zero" bash -c '! "$HOME/.dot/archive.sh" >/dev/null 2>&1'
+check "backup.sh: --help exits 0"          bash -c '"$HOME/.dot/backup.sh" --help >/dev/null 2>&1'
+
+# cleanup.sh could only ever exit 0, so checking its status from backup.sh was a no-op.
+bk_cleanup_reports_failure() {
+  local w="$BK_TMP/failexit"
+  mkdir -p "$w/proj/node_modules/x"; echo y > "$w/proj/node_modules/x/f"
+  chmod 500 "$w/proj"
+  ! "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1
+  local rc=$?; chmod 700 "$w/proj"; return $rc
+}
+check "cleanup.sh: reports failure with a non-zero exit" bk_cleanup_reports_failure
+
+# Precious things cleanup.sh must not touch.
+bk_cleanup_preserves() {
+  local w="$BK_TMP/preserve"
+  mkdir -p "$w"; ( cd "$w"
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t \
+           GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+    git init -q s1 && cd s1 && echo cfg > _config.yml && mkdir _site &&
+      echo html > _site/index.html && git add -A && git commit -qm i && cd ..
+    git init -q s2 && cd s2 && echo a > a.txt && printf 'vendor/\n' > .gitignore &&
+      git add -A && git commit -qm i && mkdir vendor && cd vendor &&
+      git init -q nested && cd nested && echo W > w.txt && git add -A && git commit -qm w
+  ) >/dev/null 2>&1
+  echo GARBAGE > "$w/s1/.git/index"
+  "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1 || true
+  # git-tracked _site survives even with a corrupt index (is_git_tracked fails closed),
+  # and a nested checkout inside an ignored vendor/ is never deleted.
+  [ -f "$w/s1/_site/index.html" ] && [ -f "$w/s2/vendor/nested/w.txt" ]
+}
+check "cleanup.sh: keeps tracked _site and nested checkouts" bk_cleanup_preserves
+
+# archive.sh -x used to trust the filename and merge over an unrelated live directory.
+bk_extract_refuses_mismatch() {
+  local w="$BK_TMP/xmis"
+  mkdir -p "$w/important" "$w/src/important"
+  echo PRECIOUS > "$w/important/data.txt"
+  echo OTHER    > "$w/src/important/data.txt"
+  tar -C "$w/src" -cf - important | zstd -9 -q -o "$w/other-name.tar.zst"
+  ! "$HOME/.dot/archive.sh" -x "$w/other-name.tar.zst" >/dev/null 2>&1 &&
+    [ "$(cat "$w/important/data.txt")" = "PRECIOUS" ] &&
+    [ -f "$w/other-name.tar.zst" ]
+}
+check "archive.sh -x: refuses an archive whose top-level member differs" bk_extract_refuses_mismatch
+
+# tar drops ACLs, xattrs, sparseness and setgid unless asked; archive.sh deletes the
+# source, so anything lost here is lost for good.
+bk_archive_roundtrip_fidelity() {
+  local w="$BK_TMP/fid"
+  mkdir -p "$w/proj/sub"; echo hi > "$w/proj/f.txt"
+  chmod 2755 "$w/proj/sub"; truncate -s 20M "$w/proj/sparse.img"
+  command -v setfacl >/dev/null 2>&1 && setfacl -m u:nobody:r "$w/proj/f.txt"
+  ( cd "$w" && "$HOME/.dot/archive.sh" --no-cleanup proj >/dev/null 2>&1 &&
+    "$HOME/.dot/archive.sh" -x proj.tar.zst >/dev/null 2>&1 ) || return 1
+  [ "$(stat -c%a "$w/proj/sub")" = "2755" ] &&
+  [ "$(stat -c%b "$w/proj/sparse.img")" -eq 0 ] &&
+  { ! command -v getfacl >/dev/null 2>&1 || getfacl -p "$w/proj/f.txt" 2>/dev/null | grep -q nobody; }
+}
+check "archive.sh: round trip keeps setgid, ACLs and sparseness" bk_archive_roundtrip_fidelity
+
+# The full pipeline, against a throwaway repo. Covers snapshot-ID resolution, the
+# staging default, and content fidelity — the restore path that had never been tested.
+bk_backup_restore_roundtrip() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/rt" h="$BK_TMP/rt/home"
+  mkdir -p "$h/.dot" "$h/dev/repositories" "$w/bin" "$h/data/sub dir"
+  printf '#!/usr/bin/env bash\nwhile [[ "${1:-}" == --preserve-env=* || "${1:-}" == -* ]]; do shift; done\nexec "$@"\n' > "$w/bin/sudo"
+  chmod +x "$w/bin/sudo"
+  cp -a "$HOME/.dot/backup.sh" "$HOME/.dot/restore.sh" "$HOME/.dot/cleanup.sh" "$h/.dot/"
+  local i; for i in $(seq 1 1100); do echo "d$i" > "$h/data/f$i"; done
+  echo spaces > "$h/data/sub dir/a b.txt"; ln "$h/data/f1" "$h/data/hard.txt"
+  printf 'testpw\n' > "$w/pw"; chmod 400 "$w/pw"
+  # -i asks for the word CREATE on the terminal; script(1) supplies one.
+  ( cd "$h/.dot" && HOME="$h" PATH="$w/bin:$PATH" RESTIC_PASSWORD_FILE="$w/pw" \
+      script -qec "./backup.sh $w/repo -i --allow-same-device --no-prune" /dev/null <<< "CREATE" >/dev/null 2>&1
+  ) || return 1
+  ( cd "$h/.dot" && HOME="$h" PATH="$w/bin:$PATH" RESTIC_PASSWORD_FILE="$w/pw" \
+      ./restore.sh "$w/repo" --home-only -t "$w/out" -y >/dev/null 2>&1 ) || return 1
+  diff -r --no-dereference "$h/data" "$w/out$h/data" >/dev/null 2>&1
+}
+check "backup.sh -> restore.sh: round trip preserves content" bk_backup_restore_roundtrip
+
+# A bare-metal restore runs on a reinstalled machine whose hostname need not match
+# the one that took the backup. Filtering on $(hostname) alone used to find nothing.
+bk_restore_other_hostname() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/host"; mkdir -p "$w/h"; echo x > "$w/h/f"
+  export RESTIC_PASSWORD=testpw
+  restic init --repo "$w/r" -q && restic backup "$w/h" --repo "$w/r" --tag home --host old-machine -q || return 1
+  "$HOME/.dot/restore.sh" "$w/r" --home-only -t "$w/out" -y >/dev/null 2>&1 && [ -f "$w/out$w/h/f" ]
+}
+check "restore.sh: finds snapshots taken under another hostname" bk_restore_other_hostname
+
+# A killed check/forget/prune leaves an EXCLUSIVE lock that restic never expires; it
+# blocked backup.sh at its very first step.
+bk_backup_clears_stale_lock() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/stale" h="$BK_TMP/stale/home" p i
+  mkdir -p "$h/.dot" "$h/dev/repositories" "$w/bin" "$h/data" "$w/big"
+  printf '#!/usr/bin/env bash\nwhile [[ "${1:-}" == --preserve-env=* || "${1:-}" == -* ]]; do shift; done\nexec "$@"\n' > "$w/bin/sudo"
+  chmod +x "$w/bin/sudo"
+  cp -a "$HOME/.dot/backup.sh" "$HOME/.dot/cleanup.sh" "$h/.dot/"
+  for i in $(seq 1 1100); do echo "d$i" > "$h/data/f$i"; done
+  printf 'testpw\n' > "$w/pw"; export RESTIC_PASSWORD=testpw
+  ( cd "$h/.dot" && HOME="$h" PATH="$w/bin:$PATH" RESTIC_PASSWORD_FILE="$w/pw" \
+      script -qec "./backup.sh $w/r -i --allow-same-device --no-prune" /dev/null <<< "CREATE" >/dev/null 2>&1 ) || return 1
+  head -c 300M /dev/urandom > "$w/big/b"; restic backup "$w/big" --repo "$w/r" -q || return 1
+  restic check --repo "$w/r" --read-data </dev/null >/dev/null 2>&1 & p=$!
+  for i in $(seq 1 200); do ls "$w/r/locks" | grep -qE '^[0-9a-f]{64}$' && break; sleep 0.05; done
+  kill -9 "$p"; wait "$p" 2>/dev/null
+  ! restic cat config --repo "$w/r" >/dev/null 2>&1 || return 1        # really locked
+  HOME="$h" PATH="$w/bin:$PATH" RESTIC_PASSWORD_FILE="$w/pw" \
+    "$h/.dot/backup.sh" "$w/r" --no-prune >/dev/null 2>&1 </dev/null
+}
+check "backup.sh: recovers from a stale exclusive lock" bk_backup_clears_stale_lock
+
+# Venvs are found by their pyvenv.cfg, not only by name — but never a project root that
+# happens to hold one (`python -m venv .`).
+bk_cleanup_venv_by_marker() {
+  local w="$BK_TMP/venvs"
+  mkv() { mkdir -p "$1/bin" "$1/lib"; printf 'home = /usr/bin\n' > "$1/pyvenv.cfg"; touch "$1/bin/activate"; }
+  mkv "$w/a/train_venv"; mkv "$w/proj"; echo '[project]' > "$w/proj/pyproject.toml"; echo src > "$w/proj/main.py"
+  "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1
+  [ ! -e "$w/a/train_venv" ] && [ -f "$w/proj/main.py" ]
+}
+check "cleanup.sh: removes odd-named venvs, keeps a project root" bk_cleanup_venv_by_marker
+
+# tar skips sockets, so counting them made the member check refuse such trees.
+bk_archive_tree_with_socket() {
+  local w="$BK_TMP/sock"; mkdir -p "$w/d"; echo x > "$w/d/f"
+  python3 -c "import socket,sys;socket.socket(socket.AF_UNIX).bind(sys.argv[1])" "$w/d/s.sock" || return 1
+  ( cd "$w" && "$HOME/.dot/archive.sh" --no-cleanup -k d >/dev/null 2>&1 ) && [ -f "$w/d.tar.zst" ]
+}
+check "archive.sh: archives a tree containing a socket" bk_archive_tree_with_socket
+
+# The exclude file once listed beru's authoritative archive, its Claude transcript
+# mirror (the only copy of most sessions) and Firefox's backup profiles as "derived"
+# or "dead", going by their names. Pin that none of them is excluded.
+bk_excludes_keep_irreplaceable() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/keep" h="$BK_TMP/keep/h" p out
+  export RESTIC_PASSWORD=testpw
+  local keep=(.beru/index/raw/2026/07/19/sess-a.ndjson .beru/claude-mirror/projects/x.jsonl
+              .beru/beru.db Dropbox/keepass.kdbx .zsh_history
+              .mozilla/_firefox-cleanup-20260712-175119/prefs.js "Desktop/Old Firefox Data/p")
+  for p in "${keep[@]}" .beru/index/raw/tokens.db .rustup/x; do
+    mkdir -p "$h/$(dirname "$p")"; echo x > "$h/$p"; done
+  restic init --repo "$w/r" -q || return 1
+  HOME="$h" restic backup "$h" --repo "$w/r" --exclude-file "$HOME/.dot/restic-excludes" -q || return 1
+  out="$(restic ls latest --repo "$w/r" 2>/dev/null)"
+  for p in "${keep[@]}"; do grep -qxF "$h/$p" <<< "$out" || return 1; done
+  # ...while the provably-derivable entries are still excluded
+  ! grep -qE '/(tokens\.db|\.rustup/x)$' <<< "$out"
+}
+check "restic-excludes: never drops the beru archive, transcripts, keepass, history" bk_excludes_keep_irreplaceable
+
+# cleanup.sh must not delete a target/ a cargo build is writing into.
+bk_cleanup_skips_busy_target() {
+  local w="$BK_TMP/busy" p
+  mkdir -p "$w/busy/target/debug" "$w/idle/target/debug"
+  for p in busy idle; do echo '[package]' > "$w/$p/Cargo.toml"; : > "$w/$p/target/debug/.cargo-lock"; done
+  ( flock "$w/busy/target/debug/.cargo-lock" sleep 15 ) </dev/null >/dev/null 2>&1 &
+  sleep 0.5
+  "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1
+  [ -d "$w/busy/target" ] && [ ! -e "$w/idle/target" ]
+}
+check "cleanup.sh: skips a target/ held by a running cargo build" bk_cleanup_skips_busy_target
+
+# In-place restore must not overwrite the running restore.sh, but must still restore
+# the rest of ~/.dot (--packages reads its manifests from there). Checked as a dry run.
+bk_inplace_excludes_only_self() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/inplace" out
+  mkdir -p "$w/h/.dot/backup"; cp "$HOME/.dot/restore.sh" "$w/h/.dot/"; echo pkg > "$w/h/.dot/backup/apt-manual.txt"
+  export RESTIC_PASSWORD=testpw
+  restic init --repo "$w/r" -q && restic backup "$w/h" --repo "$w/r" --tag home -q || return 1
+  out="$(HOME="$w/h" "$w/h/.dot/restore.sh" "$w/r" --home-only -t / -n 2>&1)" || return 1
+  grep -qE "(unchanged|restored|updated) +$w/h/.dot/backup/apt-manual.txt" <<< "$out" &&
+    ! grep -qE "(unchanged|restored|updated) +$w/h/.dot/restore.sh" <<< "$out"
+}
+check "restore.sh -t /: excludes only itself, keeps the manifests" bk_inplace_excludes_only_self
+
+# One snapshot ID cannot mean both snapshots; -s without a half used to restore the
+# same tree twice, the second time as root, and report both as restored.
+bk_snapshot_id_requires_half() {
+  bash -c '! "$HOME/.dot/restore.sh" /nonexistent-repo -s deadbeef -y >/dev/null 2>&1'
+}
+check "restore.sh: -s requires --home-only or --system-only" bk_snapshot_id_requires_half
+
+# --packages has no chroot: it changes the RUNNING system whatever --target says.
+bk_packages_requires_root_target() {
+  bash -c '! "$HOME/.dot/restore.sh" /nonexistent-repo --packages -t /tmp/nope -y >/dev/null 2>&1'
+}
+check "restore.sh: --packages refused unless target is /" bk_packages_requires_root_target
+
+# The exclude file must not remove the inline --exclude flags: ~/.cache carries no
+# CACHEDIR.TAG, so those flags are the only thing keeping ~128 GiB out of the snapshot.
+check "backup.sh: still excludes ~/.cache inline" \
+  bash -c 'grep -q -- "--exclude \"\$HOME/.cache\"" "$HOME/.dot/backup.sh"'
+check "restic-excludes: no trailing-comment patterns" \
+  bash -c '! grep -nE "^[^#].*[^ ] +#" "$HOME/.dot/restic-excludes"'
+
+# install.sh must not take input from restore.sh's staging directory.
+check "install.sh: does not read from restore/ staging" \
+  bash -c '! grep -vE "^\s*#" "$HOME/.dot/install.sh" | grep -q "DOT_DIR}/restore/"'
+
 # ─── RESULTS ─────────────────────────────────────────────
 echo ""
 echo "=============================="

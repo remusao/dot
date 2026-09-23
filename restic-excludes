@@ -1,0 +1,64 @@
+# restic --exclude-file, wired into backup.sh's home snapshot.
+#
+# ADDITIVE. The inline --exclude flags in backup.sh still do the work for ~/.cache,
+# which carries no CACHEDIR.TAG of its own (only 4 of its ~70 subdirs do) and is
+# therefore NOT covered by --exclude-caches. Do not delete those inline flags.
+#
+# Syntax notes, both learned the hard way:
+#   - A line is a comment only if it STARTS with '#'. A trailing comment becomes part
+#     of the pattern and silently matches nothing.
+#   - Patterns go through os.Expand: $HOME is expanded (so this file survives a new
+#     username or home path), and a literal '$' must be written '$$'.
+#
+# Not listed here on purpose:
+#   ~/.cache, ~/.npm/_cacache, ~/.cargo/registry, ~/.cargo/git
+#       already excluded (inline flag / valid CACHEDIR.TAG)
+#   ~/Dropbox
+#       the daemon has been dead since 2025-05-07, so this is the ONLY copy of
+#       keepass.kdbx. It must stay in the backup.
+#   ~/.zsh_history
+#       99k irreplaceable entries. The repo passphrase in it is fixed by rotating
+#       the key, not by dropping the file.
+#   ~/.beru/beru.db
+#       live data, not cache. Excluding it silently would mean no backup at all.
+
+# --- Provably derivable (the owning project says so) ---
+# beru's SPEC: tokens.db is a cache over the raw archive, "rm tokens.db is a supported
+# recovery". It is also a live WAL database being backfilled, so a copy would be torn.
+# NOT the rest of ~/.beru/index: index/raw/<date>/*.ndjson (~555k files) is beru's
+# authoritative, lossless archive — the source of truth everything else is rebuilt from.
+$HOME/.beru/index/raw/tokens.db*
+
+# --- Regenerable toolchain state (reinstalled by update.sh / the package manager) ---
+# Checked: .pyenv holds only built interpreters (no virtualenvs), .nvm only node +
+# npm/corepack/playwright, go/pkg/mod is Go's module cache, .debug is perf's
+# build-id cache.
+$HOME/.rustup
+$HOME/go/pkg/mod
+$HOME/.pyenv
+$HOME/.nvm
+$HOME/.debug
+
+# --- This toolchain's own scratch ---
+# ~/.dot/restore is restore.sh's staging dir. Backing it up means snapshotting a
+# copy of a previous snapshot, and it has held root-owned /etc trees that made the
+# next home backup fail with permission errors.
+$HOME/.dot/restore
+$HOME/.dot/logs
+
+# --- Deliberately NOT excluded: large, but possibly the only copy. Your call. ---
+# Each of these was once listed above as "derived" or "dead" on the strength of its
+# name, and each turned out to be something else. Uncomment only what you have
+# checked yourself.
+#
+#   65 GB  $HOME/.beru/index/raw/vectors.lmdb
+#          beru's retired dense index, kept on purpose as a rollback target
+#          (README: "temporary — expect a follow-up that drops both").
+#   99 GB  $HOME/.beru/backups
+#   47 GB  $HOME/.beru/beru.db.m5-preindex-bak
+#          pre-migration copies of beru.db taken 2026-04-22.
+#          $HOME/.beru/claude-mirror  — NEVER: the only surviving copy of ~72% of
+#          your Claude Code transcripts (Claude Code deletes originals after 30 days).
+#          $HOME/.mozilla/_firefox-cleanup-*  — the safety copy firefox/cleanup.sh
+#          takes before it modifies profiles.
+#          $HOME/Desktop/Old Firefox Data  — Firefox's pre-Refresh profile backup.
