@@ -441,11 +441,23 @@ sudo ufw --force enable
 ok "UFW firewall (deny incoming, allow outgoing)"
 
 # ── Kernel hardening (sysctl) ────────────────────────────────────────────
+# This used to copy ${DOT_DIR}/restore/etc/sysctl.d/*.conf into /etc — i.e. it read
+# its input from restore.sh's staging directory. Two things wrong with that: the
+# staged files are whatever the last restore happened to write (restore an old
+# snapshot and the next install.sh silently reconfigures the running kernel from
+# it), and restore/ is gitignored, so on a fresh clone the glob matched nothing and
+# the step reported ok while doing nothing. All ten of those files turned out to be
+# dpkg-owned package defaults anyway. The settings this repo actually owns are
+# declared here, in the repo.
 info "Applying kernel hardening..."
-for conf in "${DOT_DIR}/restore/etc/sysctl.d/"*.conf; do
-    [[ -f "$conf" && ! -L "$conf" ]] || continue
-    sudo install -m 644 "$conf" "/etc/sysctl.d/$(basename "$conf")"
-done
+sudo tee /etc/sysctl.d/40-max-user-watches.conf > /dev/null << 'SYSCTL'
+# Raised for file-watching dev tools (LSPs, bundlers, test runners).
+fs.inotify.max_user_watches=524288
+SYSCTL
+sudo tee /etc/sysctl.d/60-inotify.conf > /dev/null << 'SYSCTL'
+# Raised for the number of concurrent inotify consumers.
+fs.inotify.max_user_instances=1024
+SYSCTL
 sudo sysctl --system > /dev/null 2>&1
 ok "Kernel hardening (sysctl)"
 

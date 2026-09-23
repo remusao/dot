@@ -69,7 +69,7 @@ Options:
 
 Output format: .tar.zst (zstd with xxhash integrity checksum)
 EOF
-    exit 0
+    exit "${1:-0}"
 }
 
 TARGET=""
@@ -91,9 +91,19 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate compression level
-if [[ ! "$COMPRESSION_LEVEL" =~ ^[0-9]+$ ]] || (( COMPRESSION_LEVEL < 1 || COMPRESSION_LEVEL > 19 )); then
+# Validate compression level. Matched explicitly rather than with (( )): a leading zero
+# makes bash parse the value as octal, so `019` errored out of the arithmetic and then
+# short-circuited past this check.
+if [[ ! "$COMPRESSION_LEVEL" =~ ^([1-9]|1[0-9])$ ]]; then
     printf '%sError: compression level must be an integer 1-19 (got: %s)%s\n' "$RED" "$COMPRESSION_LEVEL" "$NC" >&2
+    exit 1
+fi
+
+# tar honours TAR_OPTIONS from the environment, so a stray --exclude there would omit
+# files from an archive whose source this script then deletes. Refuse to guess.
+if [[ -n "${TAR_OPTIONS:-}" ]]; then
+    printf '%sError: TAR_OPTIONS is set (%s). Unset it — it silently changes what gets archived.%s\n' \
+        "$RED" "$TAR_OPTIONS" "$NC" >&2
     exit 1
 fi
 
@@ -107,33 +117,59 @@ log() {
     printf '%s[%s]%s %s\n' "$CYAN" "$(date '+%H:%M:%S')" "$NC" "$1"
 }
 
+# Disk usage in bytes. `head -1` and the numeric guard are load-bearing: du prints
+# `<size>\t<path>`, and a path containing a newline yields extra lines that cut passes
+# through verbatim. That string reaches the arithmetic comparisons below, where bash
+# expands command substitutions inside array subscripts before reporting a syntax
+# error — i.e. a directory *name* becomes arbitrary code.
 get_size_bytes() {
+    local out
     if [[ -d "$1" ]]; then
-        du -sb "$1" 2>/dev/null | cut -f1
+        out="$(du -sB1 -- "$1" 2>/dev/null | head -1 | cut -f1)"
     elif [[ -f "$1" ]]; then
-        stat --printf='%s' "$1" 2>/dev/null
+        out="$(stat --printf='%s' -- "$1" 2>/dev/null)"
     else
-        echo 0
+        out=0
     fi
-}
-
-get_size_human() {
-    du -sh "$1" 2>/dev/null | cut -f1
+    [[ "$out" =~ ^[0-9]+$ ]] || out=0
+    printf '%s' "$out"
 }
 
 human_bytes() {
     numfmt --to=iec-i --suffix=B "$1" 2>/dev/null || echo "${1}B"
 }
 
-# Check available disk space in bytes for the filesystem containing a path
-available_space() {
-    df --output=avail -B1 "$(dirname "$1")" 2>/dev/null | tail -1 | tr -d ' '
+get_size_human() {
+    human_bytes "$(get_size_bytes "$1")"
 }
 
-# Fully verify an archive by decompressing every byte through both zstd and tar layers
+# Check available disk space in bytes for the filesystem containing a path
+available_space() {
+    local out
+    out="$(df --output=avail -B1 -- "$(dirname -- "$1")" 2>/dev/null | tail -1 | tr -d ' ')"
+    [[ "$out" =~ ^[0-9]+$ ]] || out=""
+    printf '%s' "$out"
+}
+
+# Decompress every byte through both layers. Catches zstd frame damage and mid-member
+# tar truncation — but NOT truncation landing on a member boundary, which tar accepts
+# as a clean end-of-archive. count_members() below is what closes that gap.
 verify_archive() {
     local archive="$1"
     tar -I zstd -xOf "$archive" > /dev/null 2>&1
+}
+
+# Number of entries tar sees in an archive.
+count_members() {
+    tar -I zstd -tf "$1" 2>/dev/null | wc -l
+}
+
+# Number of filesystem entries under a directory, counted the way tar counts them
+# (the directory itself plus everything below it). Sockets are left out because tar
+# skips them ("socket ignored") — counting them made any tree holding a stale socket
+# fail the comparison and refuse to archive.
+count_tree_entries() {
+    find "$1" -mindepth 0 ! -type s -printf '.' 2>/dev/null | wc -c
 }
 
 # --- Mode 1: Archive a directory ---
@@ -169,28 +205,12 @@ archive_directory() {
     printf ' Log: %s\n' "$LOG_FILE"
     printf '%s============================================================%s\n\n' "$BOLD" "$NC"
 
-    # Step 1: Cleanup
-    if $DO_CLEANUP; then
-        log "Step 1: Cleaning build artifacts..."
-        if [[ -x "$CLEANUP_SCRIPT" ]]; then
-            local cleanup_args=("--dir" "$target")
-            if $DRY_RUN; then
-                cleanup_args+=("--dry-run")
-            fi
-            "$CLEANUP_SCRIPT" "${cleanup_args[@]}"
-            echo
-        else
-            log "  Warning: cleanup.sh not found at $CLEANUP_SCRIPT, skipping"
-        fi
-    else
-        log "Step 1: Cleanup skipped (--no-cleanup)"
-    fi
-
-    # Measure post-cleanup size
-    local clean_size clean_human
-    clean_size="$(get_size_bytes "$target")"
-    clean_human="$(get_size_human "$target")"
-    log "Size after cleanup: $clean_human (was $before_human)"
+    # Cleanup is deliberately NOT run before the archive exists. It deletes
+    # irreversibly, and every failure path below says "keeping original" — which was a
+    # lie if cleanup had already mutated the tree. It now runs in Step 5, after the
+    # archive is written and verified, and only when the source is about to go anyway.
+    local clean_size
+    clean_size="$before_size"
 
     # Check disk space
     local avail
@@ -201,15 +221,21 @@ archive_directory() {
         return 1
     fi
 
-    # Step 2: Create archive
-    log "Step 2: Creating archive (zstd level $COMPRESSION_LEVEL, $(nproc) threads)..."
+    # Step 1: Create archive
+    log "Step 1: Creating archive (zstd level $COMPRESSION_LEVEL, $(nproc) threads)..."
+
+    local src_entries
+    src_entries="$(count_tree_entries "$target")"
 
     if $DRY_RUN; then
         log "  [DRY-RUN] Would create: $archive"
     else
         PARTIAL_OUTPUT="$archive"
 
-        tar -C "$parent_dir" -cf - "$dir_name" \
+        # --acls/--xattrs/--sparse are all opt-in in GNU tar; without them a round trip
+        # silently drops ACLs, extended attributes and sparseness, and the source is
+        # deleted below. --format=posix is implied by those flags; stated for clarity.
+        tar -C "$parent_dir" --format=posix --acls --xattrs --sparse -cf - -- "$dir_name" \
             | zstd "-$COMPRESSION_LEVEL" -T0 --check -o "$archive" --quiet
         local pipe_status=("${PIPESTATUS[@]}")
 
@@ -236,15 +262,30 @@ archive_directory() {
             return 1
         fi
 
-        # Step 3: Verify
-        log "Step 3: Verifying archive integrity (full decompression)..."
+        # Step 2: Verify
+        log "Step 2: Verifying archive integrity (full decompression)..."
         if ! verify_archive "$archive"; then
             printf '%sError: Archive verification FAILED! Removing corrupt archive, keeping original.%s\n' "$RED" "$NC" >&2
             rm -f -- "$archive"
             PARTIAL_OUTPUT=""
             return 1
         fi
-        log "  Verification passed"
+
+        # Decompression alone cannot detect truncation on a member boundary — tar reads
+        # that as a clean end-of-archive and exits 0. Compare counts before deleting.
+        local arc_entries
+        arc_entries="$(count_members "$archive")"
+        if [[ "$arc_entries" -ne "$src_entries" ]]; then
+            printf '%sError: Archive holds %s entries but the source has %s. Keeping both.%s\n' \
+                "$RED" "$arc_entries" "$src_entries" "$NC" >&2
+            rm -f -- "$archive"
+            PARTIAL_OUTPUT=""
+            return 1
+        fi
+        log "  Verification passed ($arc_entries entries)"
+
+        # Get the archive onto stable storage before the only other copy is destroyed.
+        sync -f -- "$archive" 2>/dev/null || sync
 
         # Mark archive as complete — trap will no longer delete it
         PARTIAL_OUTPUT=""
@@ -258,12 +299,18 @@ archive_directory() {
             ratio="N/A"
         fi
 
-        # Step 4: Remove original
+        # Step 3: Remove original. Cleanup only runs here, on the way out, when the
+        # source is being discarded anyway and the archive is already verified.
         if $KEEP_ORIGINAL; then
-            log "Step 4: Keeping original (--keep)"
+            log "Step 3: Keeping original (--keep); cleanup skipped so the kept tree matches the archive"
         else
-            log "Step 4: Removing original directory..."
-            rm -rf -- "$target"
+            if $DO_CLEANUP && [[ -x "$CLEANUP_SCRIPT" ]]; then
+                log "Step 3: Cleaning build artifacts before removal..."
+                "$CLEANUP_SCRIPT" --dir "$target" || \
+                    log "  Warning: cleanup.sh reported failures; continuing"
+            fi
+            log "Step 3: Removing original directory..."
+            rm -rf --one-file-system -- "$target"
             log "  Original removed"
         fi
 
@@ -271,8 +318,7 @@ archive_directory() {
         printf '\n%s============================================================%s\n' "$BOLD" "$NC"
         printf '%s Summary%s\n' "$BOLD" "$NC"
         printf '  Original:   %s\n' "$before_human"
-        printf '  Cleaned:    %s\n' "$clean_human"
-        printf '  Archived:   %s (%s%% of cleaned)\n' "$archive_human" "$ratio"
+        printf '  Archived:   %s (%s%% of original)\n' "$archive_human" "$ratio"
         printf '  Saved:      %s\n' "$(human_bytes $((before_size - archive_size)))"
         printf '  Output:     %s\n' "$archive"
         printf '%s============================================================%s\n' "$BOLD" "$NC"
@@ -311,9 +357,17 @@ recompress_archive() {
 
     local output="$base.tar.zst"
 
+    # A pre-existing output is not evidence of a good conversion — it may be a partial
+    # left by a SIGKILLed run. Verify it before letting it shadow the source, and
+    # signal the skip distinctly (2) so batch_recompress can count it.
     if [[ -f "$output" ]]; then
-        log "  Skipping (already exists): $output"
-        return 0
+        if verify_archive "$output"; then
+            log "  Skipping (already exists, verified): $(basename "$output")"
+            return 2
+        fi
+        printf '  %s[ERROR]%s Existing %s is corrupt — refusing to overwrite or skip. Remove it by hand.\n' \
+            "$RED" "$NC" "$(basename "$output")"
+        return 1
     fi
 
     local source_size source_human
@@ -367,16 +421,43 @@ recompress_archive() {
         return 1
     fi
 
+    # Member-count parity between the two archives — the same boundary-truncation gap
+    # verify_archive cannot see, and here the source is about to be deleted.
+    local src_members dst_members
+    src_members="$($decompressor "$source" 2>/dev/null | tar -tf - 2>/dev/null | wc -l)"
+    dst_members="$(count_members "$output")"
+    if [[ "$dst_members" -ne "$src_members" ]]; then
+        printf '  %s[ERROR]%s Member mismatch (%s vs %s): %s (keeping original)\n' \
+            "$RED" "$NC" "$dst_members" "$src_members" "$(basename "$output")"
+        rm -f -- "$output"
+        PARTIAL_OUTPUT=""
+        return 1
+    fi
+
+    local output_size
+    output_size="$(get_size_bytes "$output")"
+
+    # Recompression that grows the file has failed at its only purpose. Keep both and
+    # let the caller decide rather than deleting the source for a worse copy.
+    if [[ "$output_size" -ge "$source_size" ]]; then
+        printf '  %s[SKIP]%s     %9s  %s would be no smaller than the original (%s) — keeping the original\n' \
+            "$YELLOW" "$NC" "$(human_bytes "$output_size")" "$(basename "$output")" "$source_human"
+        rm -f -- "$output"
+        PARTIAL_OUTPUT=""
+        return 2
+    fi
+
+    sync -f -- "$output" 2>/dev/null || sync
     PARTIAL_OUTPUT=""
 
     local output_human
-    output_human="$(get_size_human "$output")"
+    output_human="$(human_bytes "$output_size")"
 
     if ! $KEEP_ORIGINAL; then
         rm -f -- "$source"
-        printf '  %s[DONE]%s    %6s  %s (was %s)\n' "$GREEN" "$NC" "$output_human" "$(basename "$output")" "$source_human"
+        printf '  %s[DONE]%s    %9s  %s (was %s)\n' "$GREEN" "$NC" "$output_human" "$(basename "$output")" "$source_human"
     else
-        printf '  %s[DONE]%s    %6s  %s (was %s, kept original)\n' "$GREEN" "$NC" "$output_human" "$(basename "$output")" "$source_human"
+        printf '  %s[DONE]%s    %9s  %s (was %s, kept original)\n' "$GREEN" "$NC" "$output_human" "$(basename "$output")" "$source_human"
     fi
 
     return 0
@@ -417,51 +498,46 @@ batch_recompress() {
     log "Found $total archive(s) to process"
     echo
 
-    local processed=0 skipped=0 failed=0 total_saved=0
+    local seen=0 converted=0 skipped=0 failed=0 total_saved=0
 
+    # recompress_archive returns 0 = converted, 2 = skipped, 1 = failed. Inferring the
+    # skip from "does the output exist" was wrong in both directions: a skip returned 0
+    # and landed in the success branch, so Skipped was always 0 and the savings figure
+    # was computed against a file this run never wrote.
     for file in "${files[@]}"; do
-        processed=$((processed + 1))
-        printf '%s[%d/%d]%s ' "$CYAN" "$processed" "$total" "$NC"
+        seen=$((seen + 1))
+        printf '%s[%d/%d]%s ' "$CYAN" "$seen" "$total" "$NC"
 
-        local old_size
+        local old_size rc
         old_size="$(get_size_bytes "$file")"
 
-        if recompress_archive "$file"; then
-            # Calculate savings
-            local base
-            case "$file" in
-                *.tar.bz2) base="${file%.tar.bz2}" ;;
-                *.tar.gz)  base="${file%.tar.gz}" ;;
-                *.tgz)     base="${file%.tgz}" ;;
-            esac
-            local new_file="$base.tar.zst"
-            if [[ -f "$new_file" ]]; then
-                local new_size
-                new_size="$(get_size_bytes "$new_file")"
-                if [[ "$old_size" -gt "$new_size" ]]; then
-                    total_saved=$((total_saved + old_size - new_size))
+        recompress_archive "$file"; rc=$?
+
+        case $rc in
+            0)
+                converted=$((converted + 1))
+                local base
+                case "$file" in
+                    *.tar.bz2) base="${file%.tar.bz2}" ;;
+                    *.tar.gz)  base="${file%.tar.gz}" ;;
+                    *.tgz)     base="${file%.tgz}" ;;
+                esac
+                if [[ -f "$base.tar.zst" ]]; then
+                    local new_size
+                    new_size="$(get_size_bytes "$base.tar.zst")"
+                    [[ "$old_size" -gt "$new_size" ]] && total_saved=$((total_saved + old_size - new_size))
                 fi
-            fi
-        else
-            # Check if it was a skip (output already exists) or a real failure
-            local base
-            case "$file" in
-                *.tar.bz2) base="${file%.tar.bz2}" ;;
-                *.tar.gz)  base="${file%.tar.gz}" ;;
-                *.tgz)     base="${file%.tgz}" ;;
-            esac
-            if [[ -f "$base.tar.zst" ]]; then
-                skipped=$((skipped + 1))
-            else
-                failed=$((failed + 1))
-            fi
-        fi
+                ;;
+            2) skipped=$((skipped + 1)) ;;
+            *) failed=$((failed + 1)) ;;
+        esac
     done
+    local processed=$converted
 
     printf '\n%s============================================================%s\n' "$BOLD" "$NC"
     printf '%s Batch Summary%s\n' "$BOLD" "$NC"
-    printf '  Processed:  %d / %d\n' "$((processed - skipped - failed))" "$total"
-    printf '  Skipped:    %d (already .tar.zst)\n' "$skipped"
+    printf '  Converted:  %d / %d\n' "$processed" "$total"
+    printf '  Skipped:    %d (already .tar.zst, or no smaller)\n' "$skipped"
     if [[ $failed -gt 0 ]]; then
         printf '  %sFailed:     %d%s\n' "$RED" "$failed" "$NC"
     fi
@@ -470,6 +546,8 @@ batch_recompress() {
     fi
     printf '  Log:        %s\n' "$LOG_FILE"
     printf '%s============================================================%s\n' "$BOLD" "$NC"
+
+    [[ $failed -eq 0 ]]
 }
 
 # --- Mode 4: Extract a .tar.zst archive ---
@@ -492,13 +570,37 @@ extract_archive() {
     dir_name="$(basename "$archive" .tar.zst)"
     output_dir="$parent_dir/$dir_name"
 
-    if [[ -d "$output_dir" ]]; then
+    # The filename does not constrain the archive's contents. Extracting straight into
+    # $parent_dir on the assumption that it does let an archive named foo.tar.zst
+    # holding bar/ merge over a live bar/ — and then deleted the archive. Read the real
+    # top-level member and refuse anything that doesn't match.
+    local members top
+    members="$(tar -I zstd -tf "$archive" 2>/dev/null | sed 's|/.*||' | sort -u)"
+    if [[ -z "$members" ]]; then
+        printf '%sError: cannot list '\''%s'\'' — corrupt or not a tar.zst%s\n' "$RED" "$archive" "$NC" >&2
+        return 1
+    fi
+    if [[ "$(printf '%s\n' "$members" | wc -l)" -ne 1 ]]; then
+        printf '%sError: archive has multiple top-level entries; refusing to extract into %s%s\n' \
+            "$RED" "$parent_dir" "$NC" >&2
+        printf '%s\n' "$members" | sed 's/^/    /' >&2
+        return 1
+    fi
+    top="$members"
+    if [[ "$top" != "$dir_name" ]]; then
+        printf '%sError: '\''%s'\'' contains '\''%s'\'', not '\''%s'\''. Refusing — extracting would write outside the expected path.%s\n' \
+            "$RED" "$(basename "$archive")" "$top" "$dir_name" "$NC" >&2
+        return 1
+    fi
+
+    if [[ -e "$output_dir" ]]; then
         printf '%sError: '\''%s'\'' already exists%s\n' "$RED" "$output_dir" "$NC" >&2
         return 1
     fi
 
-    local archive_human
-    archive_human="$(get_size_human "$archive")"
+    local archive_human archive_size
+    archive_size="$(get_size_bytes "$archive")"
+    archive_human="$(human_bytes "$archive_size")"
 
     printf '\n%s============================================================%s\n' "$BOLD" "$NC"
     printf '%s Extract: %s%s\n' "$BOLD" "$dir_name" "$NC"
@@ -514,16 +616,41 @@ extract_archive() {
         return 0
     fi
 
-    log "Extracting ($archive_human compressed)..."
-    PARTIAL_OUTPUT="$output_dir"
+    # Space check: the uncompressed size, which for a sparse-heavy archive can be
+    # thousands of times the compressed size.
+    local avail
+    avail="$(available_space "$output_dir")"
+    if [[ -n "$avail" && "$avail" -lt "$archive_size" ]]; then
+        printf '%sError: Not enough disk space to extract (have %s)%s\n' \
+            "$RED" "$(human_bytes "$avail")" "$NC" >&2
+        return 1
+    fi
 
-    if ! tar -I zstd -xf "$archive" -C "$parent_dir"; then
+    log "Extracting ($archive_human compressed)..."
+
+    # Extract into a private staging dir, then publish with a rename. A failure leaves
+    # an obviously-partial name instead of a plausible one, and never touches
+    # $output_dir until the extraction has fully succeeded.
+    local stage
+    stage="$(mktemp -d "$parent_dir/.extract.XXXXXX")" || return 1
+    PARTIAL_OUTPUT="$stage"
+
+    # --acls --xattrs -p on extract too: without them tar restores the archive's
+    # metadata into nothing, and setuid/setgid bits and the umask silently alter modes.
+    if ! tar -I zstd -xpf "$archive" --acls --xattrs -C "$stage"; then
         printf '%sError: extraction failed%s\n' "$RED" "$NC" >&2
-        rm -rf -- "$output_dir"
+        rm -rf -- "$stage"
         PARTIAL_OUTPUT=""
         return 1
     fi
 
+    if ! mv -- "$stage/$top" "$output_dir"; then
+        printf '%sError: could not publish '\''%s'\''%s\n' "$RED" "$output_dir" "$NC" >&2
+        rm -rf -- "$stage"
+        PARTIAL_OUTPUT=""
+        return 1
+    fi
+    rmdir -- "$stage" 2>/dev/null
     PARTIAL_OUTPUT=""
 
     local output_human
@@ -545,13 +672,14 @@ extract_archive() {
 }
 
 # --- Main dispatch ---
+# `exit $?` at the end: without it the script's status is whichever printf ran last.
 if [[ -n "$RECOMPRESS_ALL" ]]; then
     batch_recompress "$RECOMPRESS_ALL"
 elif $EXTRACT; then
     extract_archive "$TARGET"
 elif [[ -z "${TARGET:-}" ]]; then
     printf '%sError: no target specified%s\n' "$RED" "$NC" >&2
-    usage
+    usage 1
 elif [[ -d "$TARGET" ]]; then
     archive_directory "$TARGET"
 elif [[ -f "$TARGET" ]]; then
@@ -569,3 +697,4 @@ else
     printf '%sError: '\''%s'\'' not found%s\n' "$RED" "$TARGET" "$NC" >&2
     exit 1
 fi
+exit $?
