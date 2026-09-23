@@ -9,6 +9,8 @@
 #
 # Manifests are fetched at install time, not pinned in lock.sh: bump.sh rewrites
 # only the *_VERSION line, so a pinned digest would go stale on the first bump.
+# The exception is verify_sha256_pinned, for an upstream that publishes neither
+# and a version bump.sh does not touch.
 
 # curl_fetch <url> <dest> -- hardened download. Not --retry-all-errors: that
 # retries 4xx too, so a bad version pin would burn three backoffs before
@@ -39,6 +41,21 @@ verify_sha256() {
 
   if [ "$want" != "$got" ]; then
     printf 'verify_sha256: %s failed\n  want %s\n  got  %s\n' "$name" "$want" "$got" >&2
+    return 1
+  fi
+}
+
+# verify_sha256_pinned <file> <sha256> -- check <file> against a digest pinned in
+# lock.sh. For upstreams that publish no manifest and no signature: GitHub has
+# computed a SHA-256 for every release asset at upload since June 2025, but a
+# digest refetched beside the payload only repeats what TLS said. Pinning the
+# one value that was reviewed is what makes a later asset swap visible.
+verify_sha256_pinned() {
+  local got
+  got=$(sha256sum <"$1" | cut -d' ' -f1)
+
+  if [ "$2" != "$got" ]; then
+    printf 'verify_sha256_pinned: %s failed\n  want %s\n  got  %s\n' "$1" "$2" "$got" >&2
     return 1
   fi
 }
@@ -105,15 +122,15 @@ verify_pgp_clearsigned() {
 }
 
 # verify_pgp_detached <file> <file.asc> <key.asc> <fpr> -- verify a detached
-# signature over <file>. Used for restic.
+# signature over <file>. Used for restic and kitty's release tarball.
 verify_pgp_detached() {
   _verify_pgp "$3" "$4" "$1" --verify "$2" "$1"
 }
 
 # verify_git_tag <tag> <key.asc> <fpr> -- verify a signed tag in the CWD repo,
-# for kitty and alacritty, which build from a clone rather than an asset. git
-# drives gpg itself, so this cannot go through _verify_pgp; same pinned keyring,
-# same VALIDSIG bind.
+# for alacritty, which builds from a clone rather than an asset. git drives gpg
+# itself, so this cannot go through _verify_pgp; same pinned keyring, same
+# VALIDSIG bind.
 verify_git_tag() {
   local tag="$1" key="$2" fpr="$3"
 

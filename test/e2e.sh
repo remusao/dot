@@ -151,6 +151,139 @@ check "mypy installed" test -x "$HOME/.virtualenvs/neovim3/bin/mypy"
 check "pyright installed" test -x "$HOME/.virtualenvs/neovim3/bin/pyright"
 check "neovim3 venv on pinned python" bash -c "'$HOME/.virtualenvs/neovim3/bin/python' -V | grep -q '${PYTHON_VERSION}'"
 
+# ─── KITTY ───────────────────────────────────────────────
+# --version answers from a compile-time constant, so it cannot see a half
+# install. The other two are the build steps that need a toolchain noble does
+# not ship -- slangc for the shaders, a pinned sphinx for the man pages -- and
+# each leaves the binary in place when it fails.
+section "kitty"
+check "kitty ${KITTY_VERSION}" bash -c "'${HOME}/.local/bin/kitty' --version | grep -q '${KITTY_VERSION}'"
+check "kitty shaders compiled" bash -c "ls '${HOME}/.local/lib/kitty/shaders/'*.spv >/dev/null"
+check "kitty man page" test -f "$HOME/.local/share/man/man1/kitty.1"
+
+# The checks above need a full source build to say anything, so the rest of this
+# section drives its prerequisites directly: slang.sh against a fake HOME with
+# curl broken -- an unreachable network is what makes "it did not download"
+# provable -- plus the pins and properties the build then depends on.
+KT_TMP="$(mktemp -d)"
+KT_DOT="$HOME/.dot"
+mkdir -p "$KT_TMP/bin"
+# Records that it was reached, then fails: both halves are assertions below.
+printf '#!/bin/sh\necho "$@" >> "$KT_CURL_MARKER"\nexit 1\n' > "$KT_TMP/bin/curl"
+chmod +x "$KT_TMP/bin/curl"
+
+kt_run_slang() { # <fake-home>
+  HOME="$1" KT_CURL_MARKER="$1/curl-called" PATH="$KT_TMP/bin:$PATH" \
+    bash -c ". '$KT_DOT/lock.sh'; . '$KT_DOT/nuggets/utilities/slang.sh'"
+}
+kt_fetched() { [ -e "$1/curl-called" ]; }
+# No .local/bin: creating it is the nugget's job on a machine install.sh has
+# not set up yet, and ln would abort the whole run without it.
+kt_stub_slang_tree() { # <fake-home> <version it reports> [extra stderr line]
+  mkdir -p "$1/.local/share/slang/bin"
+  {
+    echo '#!/bin/sh'
+    echo '# STUB'
+    [ -n "${3:-}" ] && printf 'echo %s >&2\n' "$3"
+    printf 'echo %s >&2\n' "$2"
+  } > "$1/.local/share/slang/bin/slangc"
+  chmod +x "$1/.local/share/slang/bin/slangc"
+}
+kt_slang_intact() { # <fake-home> -- nothing downloaded, symlink usable
+  grep -q STUB "$1/.local/share/slang/bin/slangc"
+}
+
+# slangc answers -version on stderr: read stdout instead and this sees "",
+# refetches 24MB every run, and fails closed on a machine that is offline.
+kt_slang_current_is_noop() {
+  local h="$KT_TMP/current"
+  kt_stub_slang_tree "$h" "$SLANG_VERSION"
+  kt_run_slang "$h" || return 1
+  ! kt_fetched "$h" && kt_slang_intact "$h" &&
+    [ "$(readlink "$h/.local/bin/slangc")" = "$h/.local/share/slang/bin/slangc" ]
+}
+check "slang.sh: a current tree needs no network, and creates the bin symlink" kt_slang_current_is_noop
+
+# Matched as a whole line, not as the whole output: one deprecation notice on
+# stderr would otherwise mean "stale" forever.
+kt_slang_tolerates_noise() {
+  local h="$KT_TMP/noisy"
+  kt_stub_slang_tree "$h" "$SLANG_VERSION" "warning: something on stderr"
+  kt_run_slang "$h" && ! kt_fetched "$h"
+}
+check "slang.sh: a noisy -version is still recognised as current" kt_slang_tolerates_noise
+
+# The other half. The stub reports the pin with a digit appended, so this also
+# pins the -x: 2026.14.10 must not satisfy a 2026.14.1 pin. A failed refetch
+# must not take the working tree with it either.
+kt_slang_stale_refetches() {
+  local h="$KT_TMP/stale" staging
+  kt_stub_slang_tree "$h" "${SLANG_VERSION}0"
+  ! kt_run_slang "$h" || return 1
+  # An unmatched glob stays literal, so [ -e ] on it is the "nothing left" case.
+  staging=("$h"/.local/share/.slang.*)
+  kt_fetched "$h" && kt_slang_intact "$h" && [ ! -e "${staging[0]}" ]
+}
+check "slang.sh: a stale tree refetches, and keeps the old tree when that fails" kt_slang_stale_refetches
+
+# Fails closed: a tree that cannot answer at all must refetch, not abort the run
+# at the version check with the compiler still broken.
+kt_slang_broken_tree_refetches() {
+  local h="$KT_TMP/broken"
+  mkdir -p "$h/.local/share/slang/bin"
+  printf '#!/bin/sh\nexit 1\n' > "$h/.local/share/slang/bin/slangc"
+  chmod +x "$h/.local/share/slang/bin/slangc"
+  ! kt_run_slang "$h" || return 1
+  kt_fetched "$h"
+}
+check "slang.sh: an unrunnable tree refetches rather than aborting" kt_slang_broken_tree_refetches
+
+# slang publishes no signature, so SLANG_SHA256 is the only thing standing
+# between a swapped asset and a compiler that runs as this user.
+kt_pinned_digest_rejects_other_bytes() {
+  local f="$KT_TMP/payload" d
+  echo payload > "$f"
+  d=$(sha256sum < "$f" | cut -d' ' -f1)
+  [[ "$SLANG_SHA256" =~ ^[0-9a-f]{64}$ ]] || return 1
+  ( . "$KT_DOT/nuggets/lib/verify.sh" && verify_sha256_pinned "$f" "$d" ) || return 1
+  ! ( . "$KT_DOT/nuggets/lib/verify.sh" && verify_sha256_pinned "$f" "${d:0:63}0" ) 2>/dev/null
+}
+check "verify_sha256_pinned: accepts the pinned digest, rejects any other" kt_pinned_digest_rejects_other_bytes
+
+# bump.sh auto-bumps any pin whose last comment URL is a github.com one. slang
+# must not be: it ships breaking changes between the releases kitty tests.
+kt_slang_pin_is_manual() {
+  local url
+  url=$(awk '/^export /{ if ($0 ~ /^export SLANG_VERSION=/) { print u; exit }; u="" }
+             /^# https?:\/\//{ u = $2 }' "$KT_DOT/lock.sh")
+  [ -n "$url" ] && [[ "$url" != *github.com/* ]]
+}
+check "lock.sh: SLANG_VERSION is slaved to kitty, not auto-bumped" kt_slang_pin_is_manual
+
+# kitty resolves slangc through PATH, so the nugget installing it has to run first.
+check "update.sh: slang.sh is sourced before kitty.sh" bash -c '
+  s=$(grep -n "utilities/slang\.sh" "$HOME/.dot/update.sh" | head -1 | cut -d: -f1)
+  k=$(grep -n "utilities/kitty\.sh" "$HOME/.dot/update.sh" | head -1 | cut -d: -f1)
+  [ -n "$s" ] && [ -n "$k" ] && [ "$s" -lt "$k" ]'
+
+# The source of a build that runs as this user, and the reason it needs no
+# sphinx: an unsigned tarball, an unchecked slang tarball, or noble sphinx
+# creeping back into the apt list, each undo part of this.
+check "kitty.sh: the release tarball is signature-checked" bash -c '
+  grep -q "verify_pgp_detached" "$HOME/.dot/nuggets/utilities/kitty.sh"'
+kt_slang_digest_precedes_extract() {
+  local f="$KT_DOT/nuggets/utilities/slang.sh" v t
+  v=$(grep -n 'verify_sha256_pinned' "$f" | head -1 | cut -d: -f1)
+  t=$(grep -n 'tar -xzf' "$f" | head -1 | cut -d: -f1)
+  [ -n "$v" ] && [ -n "$t" ] && [ "$v" -lt "$t" ]
+}
+check "slang.sh: the digest is checked before the tarball is unpacked" kt_slang_digest_precedes_extract
+check "no distro sphinx in the kitty build deps" bash -c '
+  ! grep -hvE "^\s*#" "$HOME/.dot/nuggets/utilities/kitty.sh" "$HOME/.dot/install.sh" |
+    grep -q "python3-sphinx"'
+
+rm -rf "$KT_TMP"
+
 # ─── VERSION MANAGERS ────────────────────────────────────
 section "pyenv + Python"
 check "pyenv dir" test -d "$HOME/.pyenv"
@@ -227,6 +360,10 @@ check "rclone ${DOTFILES_RCLONE_VERSION}" bash -c "'${HOME}/.local/bin/rclone' v
 check "restic ${RESTIC_VERSION}" bash -c "'${HOME}/.local/bin/restic' version | grep -q '${RESTIC_VERSION}'"
 check "cosign ${COSIGN_VERSION}" bash -c "'${HOME}/.local/bin/cosign' version --json | grep -q '${COSIGN_VERSION}'"
 check "lua-language-server ${LUA_LANGUAGE_SERVER_VERSION}" bash -c "'${HOME}/.local/share/lua-language-server/bin/lua-language-server' --version | grep -q '${LUA_LANGUAGE_SERVER_VERSION}'"
+# Through the symlink on purpose: that is how kitty resolves slangc, and it only
+# works while $ORIGIN still reaches the extracted tree's lib/. -version answers
+# on stderr, hence the redirect; -Fxq is the predicate the nugget uses.
+check "slangc ${SLANG_VERSION}" bash -c "'${HOME}/.local/bin/slangc' -version 2>&1 | grep -Fxq -- '${SLANG_VERSION}'"
 # musl and glibc builds report the same version; only linkage tells them apart,
 # and fd/bat have no ldd guard in their nugget to self-heal.
 for b in fd bat delta stylua; do

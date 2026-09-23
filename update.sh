@@ -17,6 +17,9 @@ export PATH="${HOME}/.local/bin:${HOME}/.pyenv/bin:${PATH}"
 # Symbols Nerd Font (required by kitty's source build at package time)
 . ./nuggets/utilities/nerd-fonts-symbols.sh
 
+# slangc, likewise: kitty 0.49+ compiles its shaders with it at package time
+. ./nuggets/utilities/slang.sh
+
 # Terminal (from source, native CPU optimization)
 . ./nuggets/utilities/kitty.sh
 

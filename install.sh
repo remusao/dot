@@ -365,8 +365,8 @@ ALL_PKGS=(
   libxcb-image0-dev libxcb-xkb-dev libxcb-render0-dev
   libgl1-mesa-dev libegl1-mesa-dev libwayland-dev wayland-protocols
   libsimde-dev golang-go
-  python3-sphinx python3-sphinx-copybutton python3-sphinx-inline-tabs
-  python3-sphinxext-opengraph furo
+  # No python3-sphinx: kitty's docs come prebuilt in the signed release tarball
+  # kitty.sh now builds from, and noble's sphinx is too old to build them anyway.
   google-perftools
   tk-dev xz-utils
   fonts-inconsolata fonts-powerline fonts-dejavu fontconfig
