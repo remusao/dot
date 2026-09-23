@@ -22,6 +22,10 @@ else
 fi
 
 if [ "${NEEDS_BUILD}" = "1" ]; then
+  # No sphinx: the release tarball below ships docs/_build, so setup.py never
+  # runs `make docs`. It could not anyway -- kitty 0.49's docs/conf.py wants
+  # docutils >= 0.21 and sphinx_design, and noble's sphinx caps docutils below
+  # 0.21. slangc comes from nuggets/utilities/slang.sh, sourced ahead of this.
   sudo apt-get install --yes \
     build-essential pkg-config python3 python3-dev \
     libharfbuzz-dev libcairo2-dev libdbus-1-dev libxxhash-dev \
@@ -31,9 +35,7 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
     libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev \
     libxcb-image0-dev libxcb-xkb-dev libxcb-render0-dev \
     libgl1-mesa-dev libegl1-mesa-dev libwayland-dev wayland-protocols \
-    libsimde-dev golang-go gnupg \
-    python3-sphinx python3-sphinx-copybutton python3-sphinx-inline-tabs \
-    python3-sphinxext-opengraph furo
+    libsimde-dev golang-go gnupg xz-utils
 
   # Resolved here because the build subshell cds into its temp dir.
   KITTY_KEY=$(readlink -f "$(dirname "${BASH_SOURCE[0]}")/../lib/keys/kovidgoyal.asc")
@@ -41,15 +43,23 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
   (
     TEMP=$(mktemp -d)
     trap 'rm -rf "$TEMP"' EXIT
-    git clone --depth=1 --branch "v${KITTY_VERSION}" \
-      https://github.com/kovidgoyal/kitty.git "${TEMP}/src"
-    cd "${TEMP}/src"
+
+    # The release tarball rather than a git clone: it ships docs/_build, so
+    # setup.py skips `make docs` and still installs the same 71 man pages
+    # sphinx would have produced. The signature covers these exact bytes,
+    # where verify_git_tag covered a ref.
+    rel="https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}"
+    curl_fetch "${rel}/kitty-${KITTY_VERSION}.tar.xz" "${TEMP}/kitty.tar.xz"
+    curl_fetch "${rel}/kitty-${KITTY_VERSION}.tar.xz.sig" "${TEMP}/kitty.tar.xz.sig"
 
     # TLS only proves we reached github: a hijacked account or terminating
-    # proxy could still hand us C and Go we then compile as us. Tags are signed
-    # by Kovid Goyal; the key is pinned here so no second host is trusted.
-    verify_git_tag "v${KITTY_VERSION}" "${KITTY_KEY}" \
-      3CE1780F78DD88DF45194FD706BC317B515ACE7C
+    # proxy could still hand us C and Go we then compile as us. Releases are
+    # signed by Kovid Goyal; the key is pinned here so no second host is trusted.
+    verify_pgp_detached "${TEMP}/kitty.tar.xz" "${TEMP}/kitty.tar.xz.sig" \
+      "${KITTY_KEY}" 3CE1780F78DD88DF45194FD706BC317B515ACE7C
+
+    tar -xJf "${TEMP}/kitty.tar.xz" -C "${TEMP}"
+    cd "${TEMP}/kitty-${KITTY_VERSION}"
 
     # Native CPU optimization for Strix Halo (Zen 5, AVX-512 supported).
     export CFLAGS="-O3 -march=native -mtune=native -flto -pipe -fno-plt"

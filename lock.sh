@@ -13,7 +13,7 @@ export PYTHON_VERSION="3.12.14"
 
 # Not PYENV_VERSION: pyenv reads that to pick the active Python, and zshrc sources this file everywhere.
 # https://github.com/pyenv/pyenv/releases/latest
-export PYENV_RELEASE="v2.8.5"
+export PYENV_RELEASE="v2.8.6"
 
 # Not RUSTUP_VERSION: live rustup env var, makes `rustup self update` refuse to move.
 # https://github.com/rust-lang/rustup/tags
@@ -23,13 +23,13 @@ export RUSTUP_PIN="1.29.1" # bootstrap only; `rustup self update` moves past it
 export RIPGREP_VERSION="15.2.0"
 
 # crates.io: sccache
-export SCCACHE_VERSION="0.17.0"
+export SCCACHE_VERSION="0.18.0"
 
 # https://github.com/hadolint/hadolint/releases/latest (asset: ^hadolint-linux-x86_64$ ^checksums\.sha256$)
 export HADOLINT_VERSION="v2.15.1"
 
 # https://github.com/nvm-sh/nvm/releases/latest
-export NVM_VERSION="v0.40.7"
+export NVM_VERSION="v0.40.8"
 
 # https://github.com/restic/restic/releases/latest (asset: _linux_amd64\.bz2$ ^SHA256SUMS$)
 export RESTIC_VERSION="0.19.1"
@@ -44,7 +44,7 @@ export FIREJAIL_VERSION="0.9.80"
 export OBSIDIAN_VERSION="1.13.7"
 
 # https://github.com/ByteNess/aws-vault/releases/latest (asset: ^aws-vault-linux-amd64$ ^aws-vault_sha256_checksums\.txt$)
-export AWS_VAULT_VERSION="v7.13.6"
+export AWS_VAULT_VERSION="v7.14.0"
 
 # Verifier for sops' sigstore-signed checksum manifest (nuggets/utilities/cosign.sh).
 # https://github.com/sigstore/cosign/releases/latest (asset: ^cosign-linux-amd64$ ^cosign_checksums\.txt$)
@@ -81,13 +81,13 @@ export TREE_SITTER_CLI_VERSION="0.27.0"
 export EZA_VERSION="0.23.5"
 
 # crates.io: du-dust
-export DU_DUST_VERSION="1.2.5"
+export DU_DUST_VERSION="1.2.6"
 
 # crates.io: difftastic
-export DIFFTASTIC_VERSION="0.70.0"
+export DIFFTASTIC_VERSION="0.71.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest (asset: _linux_x86_64\.tar\.gz$ ^checksums\.txt$)
-export LAZYGIT_VERSION="0.65.0"
+export LAZYGIT_VERSION="0.65.1"
 
 # https://github.com/facebook/watchman/releases/latest (asset: linux\.zip$)
 export WATCHMAN_VERSION="2026.07.27.00"
@@ -120,7 +120,7 @@ export SNIXEMBED_VERSION="0.3.3"
 export SNIXEMBED_COMMIT="6025cc7257d3f8cc245a538b8e2c4d117d9e4bed"
 
 # https://github.com/junegunn/fzf/releases/latest (asset: _amd64\.deb$ _checksums\.txt$)
-export FZF_VERSION="0.74.3"
+export FZF_VERSION="0.74.4"
 
 # https://github.com/sharkdp/fd/releases/latest (asset: -x86_64-unknown-linux-gnu\.tar\.gz$)
 export FD_VERSION="10.5.0"
@@ -138,13 +138,25 @@ export GIT_LFS_VERSION="v3.8.0"
 export HYPERFINE_VERSION="1.20.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.48.2"
+export KITTY_VERSION="0.49.0"
+
+# Shader compiler kitty 0.49+ needs to build, and to compile custom shaders at
+# runtime (nuggets/utilities/slang.sh, sourced before kitty.sh). Deliberately not
+# auto-bumped: slang ships breaking language changes in ordinary releases and
+# kitty only tests the one version it pins, so this tracks the "slang" entry in
+# bypy/sources.json for the pinned KITTY_VERSION -- bump the two together.
+# https://raw.githubusercontent.com/kovidgoyal/kitty/master/bypy/sources.json
+export SLANG_VERSION="2026.14.1"
+
+# Digest GitHub computed for the asset slang.sh downloads; upstream signs
+# nothing. Slaved to SLANG_VERSION: .assets[].digest in the releases API.
+export SLANG_SHA256="07cf4274f5f1f976d75554cc5c1cc4bd993a9a92442a7726fa701aa457183a26"
 
 # https://github.com/LuaLS/lua-language-server/releases/latest (asset: -linux-x64\.tar\.gz$)
 export LUA_LANGUAGE_SERVER_VERSION="3.19.1"
 
 # https://github.com/rui314/mold/releases/latest (asset: -x86_64-linux\.tar\.gz$)
-export MOLD_VERSION="2.42.0"
+export MOLD_VERSION="2.42.1"
 
 # https://github.com/mvdan/sh/releases/latest (shfmt) (asset: _linux_amd64$)
 export SHFMT_VERSION="v3.14.1"
