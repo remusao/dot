@@ -173,7 +173,8 @@ node\_modules, Python venvs, caches) from dev repositories.
 ```bash
 ./cleanup.sh                      # default: ~/dev/repositories
 ./cleanup.sh -d ~/projects        # custom directory
-./cleanup.sh -s                   # also clean system caches (~/.cache/{sccache,pip,uv}, ...)
+./cleanup.sh -s                   # also clean system caches (~/.cache/{sccache,pip,uv}, ~/.cargo/registry, ...)
+                                  #   and untracked repo-local .cache/ dirs
 ./cleanup.sh -g                   # git gc on all repos
 ./cleanup.sh -a                   # --system-caches + --git-gc
 ./cleanup.sh -n                   # dry run
@@ -183,8 +184,9 @@ It reclaims **disk**, and mostly not backup space — measure before assuming
 otherwise. `--exclude-caches` already skips ~83% of what this deletes, because
 cargo, uv and ruff drop a `CACHEDIR.TAG` in their own cache directories. Measured on
 this machine: `cleanup.sh` frees ~300 GiB of disk but only ~15 GiB of repository
-bytes, and `-s`'s targets are **all** already outside the snapshot, so that flag
-saves exactly zero backup space.
+bytes, and `-s`'s targets under `$HOME` are **all** already outside the snapshot, so
+that flag saves next to zero backup space (only the untagged parts of repo-local
+`.cache/` dirs count).
 
 If a build directory is missing its tag, tagging it beats deleting it:
 
@@ -195,9 +197,15 @@ printf 'Signature: 8a477f597d28d172789f06886806bc55\n' > some/target/CACHEDIR.TA
 `backup.sh -c` runs this **after** a verified snapshot, never before — it used to run
 first, so a mistyped repository path deleted ~300 GiB and then backed up nothing.
 
-Protected from deletion: anything git-tracked, any directory containing a nested
-checkout, and — on any git error — everything, since an empty `git ls-files` from a
-*failed* command is indistinguishable from "untracked".
+Protected from deletion: anything holding git-tracked files, a `target/` a running
+cargo build holds a lock on, a venv with any top-level entry a venv tool doesn't create
+(so `python -m venv .` in a work dir is kept; one created over existing `bin/` or `lib/`
+dirs is not detected), symlinks, `.git/` internals, anything holding a mount point, and
+— on any git error (including a repo git refuses) or unreadable subtree — everything.
+The generic names (`dist/`, `build/`, `_site/`, `vendor/`, `.cache/`) must also be
+inside a git work tree and hold no nested checkout; being untracked is enough, so an
+un-`git add`ed `vendor/` **is** deleted. `-d` refuses `/`, `$HOME`, its parents and its
+dot-dirs. Requires `fd`.
 
 ### archive.sh
 
@@ -207,7 +215,6 @@ Compress directories to `.tar.zst` archives with integrity verification.
 ./archive.sh ~/old-project                    # archive a directory
 ./archive.sh ~/old-project -k                 # keep original after archiving
 ./archive.sh ~/old-project -l 15              # zstd level 1-19 (default: 9)
-./archive.sh ~/old-project --no-cleanup       # skip artifact cleanup step
 ./archive.sh old-backup.tar.bz2              # re-compress to zstd
 ./archive.sh --recompress-all ~/archives/    # batch re-compress all archives
 ./archive.sh ~/old-project -n                # dry run
@@ -253,7 +260,7 @@ Compress directories to `.tar.zst` archives with integrity verification.
 ├── update.sh           # build/update dev tools
 ├── backup.sh           # encrypted incremental backup
 ├── restore.sh          # restore from backup
-├── cleanup.sh          # pre-backup artifact cleanup
+├── cleanup.sh          # disk reclaim: regenerable build artifacts
 ├── archive.sh          # directory compression
 ├── lock.sh             # tool version locks
 ├── zshrc               # shell config

@@ -500,7 +500,7 @@ bk_archive_no_code_exec() {
   mkdir -p "$w"
   d="$(printf 'q\nCOMPRESSION_LEVEL[$(touch %s/PWNED)]' "$w")"
   mkdir -p "$w/$d"; echo x > "$w/$d/f"
-  "$HOME/.dot/archive.sh" --no-cleanup "$w/$d" >/dev/null 2>&1 || true
+  "$HOME/.dot/archive.sh" "$w/$d" >/dev/null 2>&1 || true
   [ ! -e "$w/PWNED" ]
 }
 check "archive.sh: a directory name cannot execute code" bk_archive_no_code_exec
@@ -561,7 +561,7 @@ bk_archive_roundtrip_fidelity() {
   mkdir -p "$w/proj/sub"; echo hi > "$w/proj/f.txt"
   chmod 2755 "$w/proj/sub"; truncate -s 20M "$w/proj/sparse.img"
   command -v setfacl >/dev/null 2>&1 && setfacl -m u:nobody:r "$w/proj/f.txt"
-  ( cd "$w" && "$HOME/.dot/archive.sh" --no-cleanup proj >/dev/null 2>&1 &&
+  ( cd "$w" && "$HOME/.dot/archive.sh" proj >/dev/null 2>&1 &&
     "$HOME/.dot/archive.sh" -x proj.tar.zst >/dev/null 2>&1 ) || return 1
   [ "$(stat -c%a "$w/proj/sub")" = "2755" ] &&
   [ "$(stat -c%b "$w/proj/sparse.img")" -eq 0 ] &&
@@ -640,7 +640,7 @@ check "cleanup.sh: removes odd-named venvs, keeps a project root" bk_cleanup_ven
 bk_archive_tree_with_socket() {
   local w="$BK_TMP/sock"; mkdir -p "$w/d"; echo x > "$w/d/f"
   python3 -c "import socket,sys;socket.socket(socket.AF_UNIX).bind(sys.argv[1])" "$w/d/s.sock" || return 1
-  ( cd "$w" && "$HOME/.dot/archive.sh" --no-cleanup -k d >/dev/null 2>&1 ) && [ -f "$w/d.tar.zst" ]
+  ( cd "$w" && "$HOME/.dot/archive.sh" -k d >/dev/null 2>&1 ) && [ -f "$w/d.tar.zst" ]
 }
 check "archive.sh: archives a tree containing a socket" bk_archive_tree_with_socket
 

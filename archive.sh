@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# archive.sh - Clean, compress, and archive a directory or re-compress an existing archive
+# archive.sh - Compress and archive a directory or re-compress an existing archive
 #
 # Usage:
 #   archive.sh <directory>              Archive a directory to .tar.zst
@@ -12,15 +12,12 @@
 #   -k, --keep             Keep original after archiving/extracting
 #   -x, --extract          Extract a .tar.zst archive to directory
 #   -l, --level LEVEL      zstd compression level 1-19 (default: 9)
-#   --no-cleanup           Skip artifact cleanup step (for directories)
 #   --recompress-all DIR   Batch re-compress all .tar.bz2/.tar.gz in DIR
 #   -h, --help             Show help
 
 set -uo pipefail
 
 # --- Constants ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLEANUP_SCRIPT="$SCRIPT_DIR/cleanup.sh"
 LOG_DIR="$HOME/.dot/logs"
 BOLD=$'\033[1m'
 RED=$'\033[0;31m'
@@ -33,7 +30,6 @@ NC=$'\033[0m'
 DRY_RUN=false
 KEEP_ORIGINAL=false
 COMPRESSION_LEVEL=9
-DO_CLEANUP=true
 RECOMPRESS_ALL=""
 EXTRACT=false
 PARTIAL_OUTPUT=""   # Tracked for signal-trap cleanup
@@ -63,7 +59,6 @@ Options:
   -k, --keep             Keep original after archiving/extracting
   -x, --extract          Extract a .tar.zst archive to directory
   -l, --level LEVEL      zstd compression level 1-19 (default: 9)
-  --no-cleanup           Skip artifact cleanup step (for directories)
   --recompress-all DIR   Batch re-compress all .tar.bz2/.tar.gz in DIR
   -h, --help             Show this help
 
@@ -79,7 +74,6 @@ while [[ $# -gt 0 ]]; do
         -k|--keep)          KEEP_ORIGINAL=true; shift ;;
         -x|--extract)       EXTRACT=true; shift ;;
         -l|--level)         COMPRESSION_LEVEL="${2:?--level requires an argument}"; shift 2 ;;
-        --no-cleanup)       DO_CLEANUP=false; shift ;;
         --recompress-all)   RECOMPRESS_ALL="${2:?--recompress-all requires a directory}"; shift 2 ;;
         -h|--help)          usage ;;
         -*)                 printf '%sUnknown option: %s%s\n' "$RED" "$1" "$NC" >&2; exit 1 ;;
@@ -205,19 +199,12 @@ archive_directory() {
     printf ' Log: %s\n' "$LOG_FILE"
     printf '%s============================================================%s\n\n' "$BOLD" "$NC"
 
-    # Cleanup is deliberately NOT run before the archive exists. It deletes
-    # irreversibly, and every failure path below says "keeping original" — which was a
-    # lie if cleanup had already mutated the tree. It now runs in Step 5, after the
-    # archive is written and verified, and only when the source is about to go anyway.
-    local clean_size
-    clean_size="$before_size"
-
     # Check disk space
     local avail
     avail="$(available_space "$archive")"
-    if [[ -n "$avail" && "$avail" -lt "$clean_size" ]]; then
+    if [[ -n "$avail" && "$avail" -lt "$before_size" ]]; then
         printf '%sError: Not enough disk space. Need ~%s, have %s%s\n' \
-            "$RED" "$(human_bytes "$clean_size")" "$(human_bytes "$avail")" "$NC" >&2
+            "$RED" "$(human_bytes "$before_size")" "$(human_bytes "$avail")" "$NC" >&2
         return 1
     fi
 
@@ -293,22 +280,18 @@ archive_directory() {
         local archive_size archive_human ratio
         archive_size="$(get_size_bytes "$archive")"
         archive_human="$(get_size_human "$archive")"
-        if [[ "$clean_size" -gt 0 ]]; then
-            ratio="$(awk "BEGIN { printf \"%.1f\", ($archive_size / $clean_size) * 100 }")"
+        if [[ "$before_size" -gt 0 ]]; then
+            ratio="$(awk "BEGIN { printf \"%.1f\", ($archive_size / $before_size) * 100 }")"
         else
             ratio="N/A"
         fi
 
-        # Step 3: Remove original. Cleanup only runs here, on the way out, when the
-        # source is being discarded anyway and the archive is already verified.
+        # Step 3: Remove original. No cleanup.sh pass first: everything it would
+        # delete goes with the rm below anyway. Cleaning *before* tar is not an option
+        # either — it mutates the source before the archive is verified.
         if $KEEP_ORIGINAL; then
-            log "Step 3: Keeping original (--keep); cleanup skipped so the kept tree matches the archive"
+            log "Step 3: Keeping original (--keep)"
         else
-            if $DO_CLEANUP && [[ -x "$CLEANUP_SCRIPT" ]]; then
-                log "Step 3: Cleaning build artifacts before removal..."
-                "$CLEANUP_SCRIPT" --dir "$target" || \
-                    log "  Warning: cleanup.sh reported failures; continuing"
-            fi
             log "Step 3: Removing original directory..."
             rm -rf --one-file-system -- "$target"
             log "  Original removed"

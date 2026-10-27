@@ -9,23 +9,45 @@
 #
 # Options:
 #   -n, --dry-run        Show what would be deleted without deleting
-#   -s, --system-caches  Also clean system caches (~/.cache/pip, etc.)
+#   -s, --system-caches  Also clean system caches (~/.cache/pip, etc.) and repo .cache/ dirs
 #   -g, --git-gc         Run git gc on all repos
 #   -a, --all            Enable --system-caches + --git-gc
 #   -d, --dir DIR        Target a specific directory (default: ~/dev/repositories)
 #   -h, --help           Show help
 
+# shellcheck disable=SC2317  # handlers are invoked indirectly, by scan()
 set -uo pipefail
 
 # --- Constants ---
 DEFAULT_ROOT="$HOME/dev/repositories"
 LOG_DIR="$HOME/.dot/logs"
+LOG_KEEP=30
 BOLD=$'\033[1m'
 RED=$'\033[0;31m'
 GREEN=$'\033[0;32m'
 YELLOW=$'\033[0;33m'
 CYAN=$'\033[0;36m'
 NC=$'\033[0m'
+
+# Directories are renamed to <name>.$TRASH_SUFFIX.<pid> before deletion; leftovers of an
+# interrupted run are deleted on sight, so the suffix must never collide with a real name.
+TRASH_SUFFIX="cleanup-sh-trash"
+TRASH_GLOB="*.$TRASH_SUFFIX.[0-9]*"
+
+# Phase 1 directory names (fd globs). Phase 1 never descends into them and Phase 2 never
+# looks inside them. .cache is only removed by -s (Phase 3).
+P1_DIRS=(
+    target node_modules venv .venv deploy-venv
+    __pycache__ .mypy_cache .pytest_cache .ruff_cache .tox .nox .eggs .hypothesis htmlcov
+    '*.egg-info' '.aider.tags.cache.*'
+    .nx .next .nuxt .svelte-kit .turbo .parcel-cache .angular .sass-cache
+    .terraform .direnv .stack-work dist-newstyle .dart_tool zig-cache .zig-cache zig-out
+    .cache
+)
+P1_FILES=(pyvenv.cfg '*.pyc' .coverage '.coverage.*')
+# Never walked: git internals (a branch vendor/x is a .git/refs/heads/vendor/ dir) and
+# installed packages or crate sources, where generic names belong to dependencies.
+WALK_EXCLUDES=(--exclude .git --exclude site-packages --exclude dist-packages --exclude .cargo)
 
 # --- Defaults ---
 DRY_RUN=false
@@ -34,6 +56,8 @@ GIT_GC=false
 TARGET_DIR="$DEFAULT_ROOT"
 TOTAL_REMOVED=0
 FAILURES=0
+declare -A GONE=()      # paths removed this run (or that would be, in dry-run)
+REPO_CACHES=()          # repo-local .cache/ dirs, for Phase 3
 
 # --- Argument parsing ---
 usage() {
@@ -44,13 +68,18 @@ Disk reclaim: remove regenerable build artifacts from dev repositories.
 
 Options:
   -n, --dry-run        Show what would be deleted without deleting
-  -s, --system-caches  Also clean system caches (~/.cache/pip, etc.)
+  -s, --system-caches  Also clean system caches (~/.cache/pip, etc.) and repo .cache/ dirs
   -g, --git-gc         Run git gc on all repos
   -a, --all            Enable --system-caches + --git-gc
   -d, --dir DIR        Target a specific directory (default: ~/dev/repositories)
   -h, --help           Show this help
 EOF
     exit 0
+}
+
+die() {
+    printf '%sError: %s%s\n' "$RED" "$1" "$NC" >&2
+    exit 1
 }
 
 while [[ $# -gt 0 ]]; do
@@ -61,54 +90,85 @@ while [[ $# -gt 0 ]]; do
         -a|--all)      SYSTEM_CACHES=true; GIT_GC=true; shift ;;
         -d|--dir)      TARGET_DIR="${2:?--dir requires an argument}"; shift 2 ;;
         -h|--help)     usage ;;
-        *)             printf '%sUnknown option: %s%s\n' "$RED" "$1" "$NC" >&2; exit 1 ;;
+        *)             die "unknown option: $1" ;;
     esac
 done
 
-if [[ ! -d "$TARGET_DIR" ]]; then
-    printf '%sError: '\''%s'\'' is not a directory%s\n' "$RED" "$TARGET_DIR" "$NC" >&2
-    exit 1
+# fd, not find: one pruned walk of ~/dev/repositories takes 1.7 s vs 45 s.
+for cmd in fd git; do
+    command -v "$cmd" >/dev/null 2>&1 || die "$cmd is required"
+done
+
+# Git must answer about the repository on disk: not one inherited from the caller (a
+# hook's GIT_DIR), and with pathspec magic enabled (GIT_LITERAL_PATHSPECS would make
+# every ":(literal)" lookup miss, so tracked directories would read as untracked).
+# shellcheck disable=SC2046  # word splitting intended
+unset $(git rev-parse --local-env-vars) GIT_LITERAL_PATHSPECS GIT_GLOB_PATHSPECS \
+    GIT_NOGLOB_PATHSPECS GIT_ICASE_PATHSPECS GIT_CEILING_DIRECTORIES
+
+[[ -d "$TARGET_DIR" ]] || die "'$TARGET_DIR' is not a directory"
+# $(readlink) would drop a trailing newline and silently target a sibling directory.
+[[ "$TARGET_DIR" != *$'\n'* ]] || die "refusing a directory name containing a newline"
+
+# Resolve symlinks: fd does not descend through a symlinked starting point.
+TARGET_DIR="$(readlink -f -- "$TARGET_DIR")" || die "cannot resolve '$TARGET_DIR'"
+
+# /, $HOME and its dot-dirs hold installed tools the rules below would match (pipx/uv
+# tool venvs, global npm packages, editor plugins), not repositories.
+home_real="$(readlink -f -- "$HOME")"
+if [[ "$TARGET_DIR" == / || "$home_real" == "$TARGET_DIR" || "$home_real" == "$TARGET_DIR"/* \
+      || "$TARGET_DIR" == "$home_real"/.* ]]; then
+    die "refusing to clean '$TARGET_DIR' (/, \$HOME, a parent of it, or a dot-dir in it)"
 fi
 
-# Resolve symlinks: find(1) in default -P mode will not descend through a symlinked
-# starting point, so `-d <symlink>` would silently scan nothing and exit 0.
-TARGET_DIR="$(readlink -f -- "$TARGET_DIR")" || {
-    printf '%sError: cannot resolve '\''%s'\''%s\n' "$RED" "$TARGET_DIR" "$NC" >&2
-    exit 1
-}
+# Every mount point (findmnt -r escapes them as \xNN). rm --one-file-system only compares
+# device numbers, so it would delete through a same-device bind mount inside a candidate.
+mapfile -t MOUNTS < <(findmnt -rn -o TARGET | while IFS= read -r m; do printf '%b\n' "$m"; done)
 
 # --- Logging setup ---
 mkdir -p "$LOG_DIR"
+
+# One run at a time: two runs would rename and delete the same trees.
+exec {LOCK_FD}>"$LOG_DIR/cleanup.lock"
+flock -n "$LOCK_FD" || die "another cleanup.sh is running"
+
+# Keep the newest LOG_KEEP logs, this run's included. Timestamped names sort by age.
+printf '%s\0' "$LOG_DIR"/cleanup-*.log | sort -zr | tail -zn +"$LOG_KEEP" | xargs -0r rm -f --
 LOG_FILE="$LOG_DIR/cleanup-$(date '+%Y-%m-%dT%H%M%S').log"
 
-# Tee all output to both terminal and log file
+# Tee all output to both terminal and log file; tee is waited for at exit.
 exec > >(tee -a "$LOG_FILE") 2>&1
+TEE_PID=$!
 
 # --- Helper functions ---
 log() {
     printf '%s[%s]%s %s\n' "$CYAN" "$(date '+%H:%M:%S')" "$NC" "$1"
 }
 
+warn() {
+    printf '  %s[WARN]%s %s\n' "$RED" "$NC" "$1"
+    FAILURES=$((FAILURES + 1))
+}
+
+rel() {
+    printf '%s' "${1#"$TARGET_DIR"/}"
+}
+
 log_remove() {
-    local size="$1" path="$2"
     if $DRY_RUN; then
-        printf '  %s[DRY-RUN]%s %6s  %s\n' "$YELLOW" "$NC" "$size" "$path"
+        printf '  %s[DRY-RUN]%s %9s  %s\n' "$YELLOW" "$NC" "$1" "$2"
     else
-        printf '  %s[REMOVE]%s  %6s  %s\n' "$RED" "$NC" "$size" "$path"
+        printf '  %s[REMOVE]%s  %9s  %s\n' "$RED" "$NC" "$1" "$2"
     fi
 }
 
 log_skip() {
-    local path="$1" reason="$2"
-    printf '  %s[SKIP]%s          %s  (%s)\n' "$GREEN" "$NC" "$path" "$reason"
+    printf '  %s[SKIP]%s               %s  (%s)\n' "$GREEN" "$NC" "$1" "$2"
 }
 
-# Disk usage in bytes. `head -1` and the numeric guard are load-bearing: du prints
-# `<size>\t<path>`, and a path containing a newline yields extra lines that cut passes
-# through verbatim. That string reaches $(( )) below, where bash expands command
-# substitutions inside array subscripts before reporting a syntax error — i.e. a
-# directory *name* becomes arbitrary code. -B1 (not -b) so the total matches what the
-# deletion actually reclaims.
+# Disk usage in bytes. head -1 and the numeric guard are load-bearing: a path with a
+# newline makes du print extra lines, and a non-number reaching $(( )) can execute code
+# embedded in a directory name. -B1 so the total matches what deletion reclaims.
 get_size_bytes() {
     local out
     out="$(du -sB1 -- "$1" 2>/dev/null | head -1 | cut -f1)"
@@ -120,355 +180,294 @@ human_bytes() {
     numfmt --to=iec-i --suffix=B "$1" 2>/dev/null || echo "${1}B"
 }
 
-get_size_human() {
-    human_bytes "$(get_size_bytes "$1")"
-}
-
-# Remove a directory. One du traversal, not two. TOTAL_REMOVED is credited only after
-# the delete actually succeeds, so the summary cannot claim space it did not reclaim.
-safe_remove() {
-    local dir="$1"
-    if [[ ! -d "$dir" ]]; then return 0; fi
-
-    local size_bytes rel_path
-    size_bytes="$(get_size_bytes "$dir")"
-    rel_path="${dir#"$TARGET_DIR"/}"
-
-    log_remove "$(human_bytes "$size_bytes")" "$rel_path"
-
-    if $DRY_RUN; then
-        TOTAL_REMOVED=$((TOTAL_REMOVED + size_bytes))
-        return 0
-    fi
-
-    # Rename first so a partially-deleted tree is never left under the original name,
-    # where the next run's `find` would no longer match it. Same parent, so this is a
-    # plain rename; ${dir}.cleanup.$$ is reaped below and by reap_orphans() on entry.
-    local tmp_name="${dir}.cleanup.$$"
-    if mv -- "$dir" "$tmp_name" 2>/dev/null; then
-        if rm -rf -- "$tmp_name"; then
-            TOTAL_REMOVED=$((TOTAL_REMOVED + size_bytes))
-            return 0
-        fi
-    elif rm -rf -- "$dir"; then
-        TOTAL_REMOVED=$((TOTAL_REMOVED + size_bytes))
-        return 0
-    fi
-
-    printf '  %s[WARN]%s Failed to remove: %s\n' "$RED" "$NC" "$rel_path"
-    FAILURES=$((FAILURES + 1))
+# True if $1, or a directory above it, was removed this run.
+already_removed() {
+    local p="$1"
+    while [[ "$p" == "$TARGET_DIR"/* ]]; do
+        [[ -n "${GONE[$p]+x}" ]] && return 0
+        p="${p%/*}"
+    done
     return 1
 }
 
-# Remove a single file.
-safe_remove_file() {
-    local file="$1"
-    if [[ ! -f "$file" ]]; then return 0; fi
-
-    local size_bytes rel_path
-    size_bytes="$(stat --printf='%s' -- "$file" 2>/dev/null)" || size_bytes=0
-    [[ "$size_bytes" =~ ^[0-9]+$ ]] || size_bytes=0
-    rel_path="${file#"$TARGET_DIR"/}"
-
-    log_remove "$(human_bytes "$size_bytes")" "$rel_path"
-
-    if $DRY_RUN; then
-        TOTAL_REMOVED=$((TOTAL_REMOVED + size_bytes))
-        return 0
-    fi
-
-    if rm -f -- "$file"; then
-        TOTAL_REMOVED=$((TOTAL_REMOVED + size_bytes))
-        return 0
-    fi
-
-    printf '  %s[WARN]%s Failed to remove: %s\n' "$RED" "$NC" "$rel_path"
-    FAILURES=$((FAILURES + 1))
+# True if $1 is, or contains, a mount point.
+holds_mount() {
+    local m
+    for m in "${MOUNTS[@]}"; do
+        [[ "$m" == "$1" || "$m" == "$1"/* ]] && return 0
+    done
     return 1
 }
 
-# Reap orphans left by a previous run that died between the rename and the delete.
-# Nothing else ever matches these names again, so without this they persist forever
-# and get backed up.
-reap_orphans() {
-    local n=0 d
-    while IFS= read -r -d '' d; do
-        if $DRY_RUN; then
-            printf '  %s[DRY-RUN]%s orphan from an interrupted run: %s\n' \
-                "$YELLOW" "$NC" "${d#"$TARGET_DIR"/}"
-        else
-            rm -rf -- "$d" 2>/dev/null || FAILURES=$((FAILURES + 1))
+# Delete a file or directory and credit its size. Symlinks are kept: a target/ symlink to
+# a shared build dir is configuration. A directory under TARGET_DIR is renamed first, so
+# a build started after the in-use check gets a fresh one; it is measured and deleted
+# under the TRASH_GLOB name, which the next run removes if this delete is interrupted.
+# If the rename fails, nothing is deleted in place.
+remove() {
+    local path="$1" victim="$1" size
+    if [[ -L "$path" ]]; then
+        log_skip "$(rel "$path")" "symlink"
+        return 0
+    fi
+    [[ -e "$path" ]] || return 0
+    if holds_mount "$path"; then
+        log_skip "$(rel "$path")" "mount point inside"
+        return 0
+    fi
+
+    # shellcheck disable=SC2053  # $TRASH_GLOB is a glob on purpose
+    if ! $DRY_RUN && [[ -d "$path" && "$path" == "$TARGET_DIR"/* && "${path##*/}" != $TRASH_GLOB ]]; then
+        victim="$path.$TRASH_SUFFIX.$$"
+        if ! mv -T --no-copy -- "$path" "$victim"; then
+            warn "Failed to remove: $(rel "$path")"
+            return 1
         fi
-        n=$((n + 1))
-    done < <(find "$TARGET_DIR" -depth -type d -name '*.cleanup.[0-9]*' -print0 2>/dev/null)
-    [[ $n -gt 0 ]] && log "  Reaped $n orphaned .cleanup.* director$([[ $n -eq 1 ]] && echo y || echo ies)"
-    return 0
+    fi
+    size="$(get_size_bytes "$victim")"
+    log_remove "$(human_bytes "$size")" "$(rel "$path")"
+
+    if ! $DRY_RUN && ! rm -rf --one-file-system -- "$victim"; then
+        warn "Failed to remove: $(rel "$path")"
+        return 1
+    fi
+    GONE["$path"]=1
+    TOTAL_REMOVED=$((TOTAL_REMOVED + size))
 }
 
-# Answer "is this path precious?" — true means don't delete. Fails CLOSED: any git
-# error (a corrupt .git/index still lets rev-parse succeed, then ls-files exits 128)
-# is treated as tracked, because empty output from a *failed* command is
-# indistinguishable from empty output meaning "untracked".
-is_git_tracked() {
-    local dir="$1"
-    local repo_root dir_name
-    repo_root="$(dirname "$dir")"
-    dir_name="$(basename "$dir")"
-
-    if ! git -C "$repo_root" rev-parse --git-dir >/dev/null 2>&1; then
-        # Not in a git repo — assume precious, don't delete
-        return 0
+# Git's view of directory $1: tracked, untracked, outside (no repository) or error. Fails
+# closed: when git refuses a repository that is there (dubious ownership, a worktree
+# whose main repo moved), a .git above $1 makes the answer error, never outside.
+git_status() {
+    local parent="${1%/*}" inside d
+    inside="$(git -C "$parent" rev-parse --is-inside-work-tree 2>/dev/null)"
+    if [[ -z "$inside" ]]; then
+        d="$parent"
+        while [[ -n "$d" ]]; do
+            if [[ -e "$d/.git" ]]; then
+                echo error
+                return
+            fi
+            d="${d%/*}"
+        done
+        echo outside
+    elif [[ "$inside" != true ]]; then
+        echo error
+    else
+        git -C "$parent" ls-files --error-unmatch -- ":(literal)${1##*/}/" >/dev/null 2>&1
+        case $? in
+            0) echo tracked ;;
+            1) echo untracked ;;
+            *) echo error ;;
+        esac
     fi
-
-    # A nested checkout anywhere inside is its own history, unrecoverable from the
-    # parent — e.g. a hand-cloned vendor/foo in a repo that gitignores vendor/.
-    if [[ -n "$(find "$dir" -name '.git' -print -quit 2>/dev/null)" ]]; then
-        return 0
-    fi
-
-    local tracked status
-    tracked="$(git -C "$repo_root" ls-files -- "$dir_name/" 2>/dev/null)"
-    status=$?
-    if [[ $status -ne 0 ]]; then
-        return 0    # git failed — fail closed
-    fi
-    [[ -n "$tracked" ]]
 }
 
-# True if any cargo profile lock under this target dir is currently held.
+# Delete $1 unless git says it holds tracked files, or cannot say.
+remove_untracked() {
+    case "$(git_status "$1")" in
+        outside|untracked) remove "$1" ;;
+        tracked)           log_skip "$(rel "$1")" "git-tracked files inside" ;;
+        *)                 log_skip "$(rel "$1")" "git error" ;;
+    esac
+}
+
+# Rule for generic names (Phase 2, repo .cache): untracked inside a work tree, holding
+# no nested checkout (its own history, unrecoverable from the parent).
+remove_unless_kept() {
+    local reason="" nested
+    case "$(git_status "$1")" in
+        outside)   reason="not in a git work tree" ;;
+        tracked)   reason="git-tracked" ;;
+        untracked)
+            # find fails on an unreadable subtree, which may hide a checkout.
+            if ! nested="$(find "$1" \( -name .git -o -name .hg -o -name .svn -o -name .jj \) \
+                    -print -quit 2>/dev/null)"; then
+                reason="unreadable inside"
+            elif [[ -n "$nested" ]]; then
+                reason="contains a nested checkout"
+            fi ;;
+        *)         reason="git error" ;;
+    esac
+    if [[ -n "$reason" ]]; then
+        log_skip "$(rel "$1")" "$reason"
+    else
+        remove "$1"
+    fi
+}
+
+# True if a cargo build holds a lock under target dir $1, or the locks cannot all be
+# found (an unreadable subdirectory may hide one). cargo 1.99 locks
+# <profile>/.cargo{,-build,-artifact}-lock; cross builds nest that under <triple>/.
 target_in_use() {
-    local lock
-    for lock in "$1"/*/.cargo-lock; do
-        [[ -f "$lock" ]] || continue
+    local locks lock
+    mapfile -d '' locks < <(find "$1" -maxdepth 3 -type f -name '.cargo*lock' -print0 2>/dev/null)
+    wait "$!" || return 0
+    for lock in "${locks[@]}"; do
         flock -n "$lock" true 2>/dev/null || return 0
     done
     return 1
 }
 
-# A directory that is a virtualenv and nothing else. `python -m venv .` in a project
-# root puts pyvenv.cfg right next to the source, so a pyvenv.cfg alone is not enough:
-# refuse anything that also looks like a project or a repository.
-is_plain_venv() {
-    local d="$1" m
-    [[ -f "$d/pyvenv.cfg" || -f "$d/bin/activate" ]] || return 1
-    [[ -e "$d/bin/python" || -e "$d/bin/activate" || -d "$d/lib" ]] || return 1
-    for m in .git pyproject.toml setup.py setup.cfg package.json Cargo.toml requirements.txt src; do
-        [[ -e "$d/$m" ]] && return 1
+# A virtualenv and nothing else: every top-level entry is one that venv, virtualenv or uv
+# creates. `python -m venv .` in a work directory puts pyvenv.cfg next to the user's files.
+is_plain_venv() (
+    shopt -s nullglob dotglob
+    [[ -f "$1/pyvenv.cfg" ]] || exit 1
+    for e in "$1"/*; do
+        case "${e##*/}" in
+            pyvenv.cfg|bin|lib|lib64|include|share|etc|Scripts|.gitignore|.lock|CACHEDIR.TAG|\
+            LICENSE.txt|pip-selfcheck.json) ;;
+            *) exit 1 ;;
+        esac
     done
-    return 0
+)
+
+remove_venv() {
+    if is_plain_venv "$1"; then
+        remove_untracked "$1"
+    else
+        log_skip "$(rel "$1")" "not a standalone Python venv"
+    fi
 }
 
-# Check if parent dir has any of the given project marker files.
-has_project_file() {
-    local parent="$1"
-    shift
-    for f in "$@"; do
-        if [[ -f "$parent/$f" ]]; then
-            return 0
-        fi
+is_p1_dir() {
+    local g
+    for g in "${P1_DIRS[@]}"; do
+        # shellcheck disable=SC2053  # $g is a glob on purpose
+        [[ "$1" == $g ]] && return 0
     done
     return 1
 }
 
+has_project_file() {
+    local parent="$1" f
+    shift
+    for f in "$@"; do
+        [[ -f "$parent/$f" ]] && return 0
+    done
+    return 1
+}
+
+# fd glob matching any of the arguments.
+any_of() {
+    local IFS=,
+    printf '{%s}' "$*"
+}
+
+# Call handler $1 on each path under TARGET_DIR matching fd options "${@:2}", parent-first
+# and skipping anything already removed. -u: hidden and ignored files too; -s:
+# case-sensitive. fd's trailing '/' on directories is stripped, and a pyvenv.cfg (only
+# Phase 1 matches it) becomes its venv directory, sorting it ahead of its contents. A
+# failed fd, or one that could not read part of the tree (it still exits 0), is a
+# failure: an incomplete scan would otherwise report success.
+scan() {
+    local handler="$1" in pid p errors
+    shift
+    errors="$(mktemp)"
+    exec {in}< <(fd -u -s -g -0 --one-file-system --show-errors "$@" "$TARGET_DIR" 2>"$errors" \
+                 | sed -z -e 's#/$##' -e 's#/pyvenv\.cfg$##' | LC_ALL=C sort -z)
+    pid=$!
+    while IFS= read -r -d '' -u "$in" p; do
+        already_removed "$p" || "$handler" "$p"
+    done
+    exec {in}<&-
+    wait "$pid" || warn "scan failed: fd exited non-zero"
+    if [[ -s "$errors" ]]; then
+        sed 's/^/  /' "$errors"
+        warn "scan incomplete: fd could not read the paths above"
+    fi
+    rm -f -- "$errors"
+}
+
 # --- Phase 1: Always-safe removals ---
-clean_always_safe() {
-    local root="$1"
-
-    log "Phase 1: Always-safe build artifacts"
-
-    # Rust target/ (only with sibling Cargo.toml), skipping any a build is using right
-    # now: deleting under a running cargo just breaks that build. cargo holds an flock
-    # on <profile>/.cargo-lock for the duration, so a failed non-blocking flock means
-    # the directory is in use.
-    log "  Scanning Rust target/ directories..."
-    while IFS= read -r -d '' cargo; do
-        local parent="${cargo%/Cargo.toml}"
-        if [[ -d "$parent/target" ]]; then
-            if target_in_use "$parent/target"; then
-                log_skip "${parent#"$root"/}/target" "in use by a running cargo build"
-            else
-                safe_remove "$parent/target"
-            fi
-        fi
-    done < <(find "$root" -type f -name 'Cargo.toml' -not -path '*/target/*' -print0 2>/dev/null)
-
-    # Node node_modules/ (prune to skip nested)
-    log "  Scanning node_modules/ directories..."
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d -name 'node_modules' -prune -print0 2>/dev/null)
-
-    # Python venvs: the conventional names, plus any directory holding a pyvenv.cfg
-    # (venv-e2e, train_venv, ... — 16 GB of those were missed by name alone). One
-    # traversal: named dirs are pruned so their own pyvenv.cfg isn't reported twice.
-    log "  Scanning Python virtual environments..."
-    while IFS= read -r -d '' hit; do
-        local dir="$hit"
-        [[ "$(basename "$hit")" == pyvenv.cfg ]] && dir="$(dirname "$hit")"
-        if is_plain_venv "$dir"; then
-            safe_remove "$dir"
-        else
-            log_skip "${dir#"$root"/}" "not a standalone Python venv"
-        fi
-    done < <(find "$root" \( -type d \( -name node_modules -o -name target \) -prune \) -o \
-                          \( -type d \( -name 'venv' -o -name '.venv' -o -name 'deploy-venv' \) -prune -print0 \) -o \
-                          \( -type f -name pyvenv.cfg -print0 \) 2>/dev/null)
-
-    # Python caches and tool caches (directories)
-    log "  Scanning Python and tool caches..."
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d \( \
-        -name '__pycache__' -o \
-        -name '.mypy_cache' -o \
-        -name '.pytest_cache' -o \
-        -name '.ruff_cache' -o \
-        -name '.tox' -o \
-        -name '.nox' -o \
-        -name '.eggs' -o \
-        -name '.hypothesis' -o \
-        -name 'htmlcov' -o \
-        -name '.ipynb_checkpoints' \
-    \) -print0 2>/dev/null)
-
-    # *.egg-info directories
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d -name '*.egg-info' -print0 2>/dev/null)
-
-    # .coverage files
-    while IFS= read -r -d '' file; do
-        safe_remove_file "$file"
-    done < <(find "$root" -type f -name '.coverage' -print0 2>/dev/null)
-
-    # Stray .pyc files — only those NOT under a __pycache__, which the sweep above has
-    # already taken. Without the -path filter this is a full-tree traversal that finds
-    # nothing in a real run, while in --dry-run it reports every .pyc in the tree as
-    # "stray" (412k of them here, all of them inside __pycache__) and inflates the count.
-    local pyc_count=0
-    while IFS= read -r -d '' file; do
-        if ! $DRY_RUN; then
-            rm -f -- "$file" 2>/dev/null || FAILURES=$((FAILURES + 1))
-        fi
-        pyc_count=$((pyc_count + 1))
-    done < <(find "$root" -type f -name '*.pyc' -not -path '*/__pycache__/*' -print0 2>/dev/null)
-    if [[ $pyc_count -gt 0 ]]; then
-        if $DRY_RUN; then
-            log "  Found $pyc_count stray .pyc files"
-        else
-            log "  Removed $pyc_count stray .pyc files"
-        fi
+clean_p1_path() {
+    local p="$1" name="${1##*/}" sub
+    if [[ -L "$p" ]]; then
+        log_skip "$(rel "$p")" "symlink"
+        return
+    fi
+    if [[ -f "$p" ]]; then
+        case "$name" in
+            *.pyc|.coverage|.coverage.*) remove "$p" ;;
+        esac
+        return
     fi
 
-    # AI/IDE tool caches
-    log "  Scanning tool and framework caches..."
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d -name '.aider.tags.cache.*' -print0 2>/dev/null)
+    # shellcheck disable=SC2254  # $TRASH_GLOB is a glob on purpose
+    case "$name" in
+        target)
+            # Rust only, and not while a build is using it.
+            [[ -f "${p%/*}/Cargo.toml" ]] || return
+            if target_in_use "$p"; then
+                log_skip "$(rel "$p")" "in use by a cargo build, or unreadable"
+            else
+                remove_untracked "$p"
+            fi ;;
+        venv|.venv|deploy-venv)
+            remove_venv "$p" ;;
+        .nx)
+            # Caches only: an Nx standalone install commits .nx/installation and nxw.js.
+            for sub in "$p"/{cache,workspace-data} "$p"/$TRASH_GLOB; do
+                [[ -d "$sub" ]] && remove_untracked "$sub"
+            done ;;
+        .cache)
+            REPO_CACHES+=("$p") ;;
+        $TRASH_GLOB)
+            remove "$p" ;;
+        *)
+            if is_p1_dir "$name"; then
+                remove_untracked "$p"
+            elif [[ -f "$p/pyvenv.cfg" && "$p" != "$TARGET_DIR" ]]; then
+                remove_venv "$p"    # venv under another name (venv-e2e, train_venv, ...)
+            fi ;;
+    esac
+}
 
-    # Framework build caches
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d \( \
-        -name '.nx' -o \
-        -name '.next' -o \
-        -name '.nuxt' -o \
-        -name '.svelte-kit' -o \
-        -name '.turbo' -o \
-        -name '.parcel-cache' -o \
-        -name '.angular' -o \
-        -name '.sass-cache' \
-    \) -print0 2>/dev/null)
-
-    # IaC caches
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d -name '.terraform' -print0 2>/dev/null)
-
-    # direnv
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d -name '.direnv' -print0 2>/dev/null)
-
-    # Haskell
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d \( -name '.stack-work' -o -name 'dist-newstyle' \) -print0 2>/dev/null)
-
-    # Dart, Zig
-    while IFS= read -r -d '' dir; do
-        safe_remove "$dir"
-    done < <(find "$root" -type d \( -name '.dart_tool' -o -name 'zig-cache' -o -name 'zig-out' \) -print0 2>/dev/null)
+clean_always_safe() {
+    log "Phase 1: Always-safe build artifacts"
+    scan clean_p1_path --prune "${WALK_EXCLUDES[@]}" \
+        "$(any_of "${P1_DIRS[@]}" "${P1_FILES[@]}" "$TRASH_GLOB")"
 }
 
 # --- Phase 2: Conditional removals ---
+# Generic names: each needs a project file beside it (except vendor/), then the
+# remove_unless_kept rule.
+clean_p2_path() {
+    local dir="$1" parent="${1%/*}" reason=""
+    case "$dir" in
+        */registry/src/*|*/git/checkouts/*) return ;;   # crate sources (any CARGO_HOME)
+    esac
+    case "${dir##*/}" in
+        dist)   has_project_file "$parent" package.json Cargo.toml \
+                    || reason="no known project file" ;;
+        build)  has_project_file "$parent" package.json Cargo.toml setup.py pyproject.toml \
+                    CMakeLists.txt Makefile build.gradle || reason="no known build system" ;;
+        _site)  has_project_file "$parent" _config.yml Gemfile package.json \
+                    || reason="no site generator config" ;;
+        vendor) ;;
+        *)      return ;;
+    esac
+    if [[ -n "$reason" ]]; then
+        log_skip "$(rel "$dir")" "$reason"
+    else
+        remove_unless_kept "$dir"
+    fi
+}
+
 clean_conditional() {
-    local root="$1"
-
     log "Phase 2: Conditional artifacts (checking git tracking)"
-
-    # dist/ — only if not git-tracked and has project marker
-    log "  Scanning dist/ directories..."
-    while IFS= read -r -d '' dir; do
-        local parent
-        parent="$(dirname "$dir")"
-        if is_git_tracked "$dir"; then
-            log_skip "${dir#"$root"/}" "git-tracked"
-        elif has_project_file "$parent" package.json Cargo.toml; then
-            safe_remove "$dir"
-        else
-            log_skip "${dir#"$root"/}" "no known project file"
-        fi
-    done < <(find "$root" -type d -name 'dist' -not -path '*/node_modules/*' -print0 2>/dev/null)
-
-    # build/ — only if not git-tracked and has build-system marker
-    log "  Scanning build/ directories..."
-    while IFS= read -r -d '' dir; do
-        local parent
-        parent="$(dirname "$dir")"
-        if is_git_tracked "$dir"; then
-            log_skip "${dir#"$root"/}" "git-tracked"
-        elif has_project_file "$parent" package.json Cargo.toml setup.py pyproject.toml CMakeLists.txt Makefile build.gradle; then
-            safe_remove "$dir"
-        else
-            log_skip "${dir#"$root"/}" "no known build system"
-        fi
-    done < <(find "$root" -type d -name 'build' -not -path '*/node_modules/*' -print0 2>/dev/null)
-
-    # _site/ — static site generator output. The git gate is not optional here: this was
-    # the one Phase-2 rule without it, and it deleted committed _site/ trees.
-    log "  Scanning _site/ directories..."
-    while IFS= read -r -d '' dir; do
-        local parent
-        parent="$(dirname "$dir")"
-        if is_git_tracked "$dir"; then
-            log_skip "${dir#"$root"/}" "git-tracked"
-        elif has_project_file "$parent" _config.yml Gemfile package.json; then
-            safe_remove "$dir"
-        else
-            log_skip "${dir#"$root"/}" "no site generator config"
-        fi
-    done < <(find "$root" -type d -name '_site' -not -path '*/node_modules/*' -print0 2>/dev/null)
-
-    # vendor/ — only if not git-tracked. No -maxdepth: the old limit of 3 reached exactly
-    # one directory here while ~1000 real vendor/ dirs sat deeper, so the rule was inert.
-    # is_git_tracked() also refuses anything containing its own .git (nested checkout).
-    log "  Scanning vendor/ directories..."
-    while IFS= read -r -d '' dir; do
-        if is_git_tracked "$dir"; then
-            log_skip "${dir#"$root"/}" "git-tracked"
-        else
-            safe_remove "$dir"
-        fi
-    done < <(find "$root" -type d -name 'vendor' -not -path '*/node_modules/*' -print0 2>/dev/null)
+    local excludes=("${WALK_EXCLUDES[@]}") g
+    for g in "${P1_DIRS[@]}" "$TRASH_GLOB"; do
+        excludes+=(--exclude "$g")
+    done
+    scan clean_p2_path -t d "${excludes[@]}" '{dist,build,_site,vendor}'
 }
 
 # --- Phase 3: System caches ---
-# NOTE: this reclaims DISK, not backup size. Every path below is already outside the
-# snapshot — the ones under ~/.cache via backup.sh's --exclude, and ~/.npm/_cacache via
-# its own CACHEDIR.TAG + --exclude-caches. Running this before a backup buys zero
-# repository bytes and costs a full sccache/pip/HF re-download. backup.sh -c does not
-# pass -s, and must not.
+# Reclaims disk, not backup size: ~/.cache is excluded by backup.sh, and ~/.npm/_cacache
+# and ~/.cargo/registry carry a CACHEDIR.TAG. Costs a full re-download, so backup.sh -c
+# does not pass -s, and must not.
 clean_system_caches() {
     log "Phase 3: System caches (disk reclaim only — saves no backup space)"
 
@@ -477,70 +476,66 @@ clean_system_caches() {
         return
     fi
 
+    # huggingface by subdir: `huggingface-cli login` keeps its token in the parent.
     local caches=(
         "$HOME/.cache/sccache"
         "$HOME/.cache/pip"
         "$HOME/.cache/pip-tools"
         "$HOME/.cache/uv"
         "$HOME/.npm/_cacache"
-        "$HOME/.cache/huggingface"
+        "$HOME/.cache/huggingface/hub"
+        "$HOME/.cache/huggingface/xet"
+        "$HOME/.cache/huggingface/datasets"
+        "$HOME/.cache/huggingface/modules"
         "$HOME/.cache/yarn"
         "$HOME/.cache/pnpm"
         "$HOME/.cache/ms-playwright"
+        "$HOME/.cache/google-chrome-headless"
+        "$HOME/.cache/puccinialin"
         "$HOME/.cache/node-gyp"
         "$HOME/.cache/node"
         "$HOME/.cache/go-build"
     )
 
-    for cache in "${caches[@]}"; do
-        if [[ -d "$cache" ]]; then
-            local size_bytes
-            size_bytes="$(get_size_bytes "$cache")"
+    # Running builds read crate sources. Not git/db: it can hold the only copy of a
+    # Cargo.lock-pinned commit that was force-pushed away upstream.
+    local cargo_home="${CARGO_HOME:-$HOME/.cargo}"
+    if pgrep -x cargo >/dev/null 2>&1; then
+        log_skip "$cargo_home/{registry,git}" "cargo is running"
+    else
+        caches+=("$cargo_home"/registry/{cache,src} "$cargo_home/git/checkouts")
+    fi
 
-            if $DRY_RUN; then
-                printf '  %s[DRY-RUN]%s %9s  %s\n' "$YELLOW" "$NC" "$(human_bytes "$size_bytes")" "$cache"
-                TOTAL_REMOVED=$((TOTAL_REMOVED + size_bytes))
-            else
-                printf '  %s[REMOVE]%s  %9s  %s\n' "$RED" "$NC" "$(human_bytes "$size_bytes")" "$cache"
-                if rm -rf -- "$cache"; then
-                    TOTAL_REMOVED=$((TOTAL_REMOVED + size_bytes))
-                else
-                    printf '  %s[WARN]%s Failed to remove: %s\n' "$RED" "$NC" "$cache"
-                    FAILURES=$((FAILURES + 1))
-                fi
-            fi
-        fi
+    local path
+    for path in "${caches[@]}"; do
+        remove "$path"
+    done
+    for path in "${REPO_CACHES[@]}"; do
+        already_removed "$path" || remove_unless_kept "$path"
     done
 }
 
 # --- Phase 4: Git GC ---
+# No --prune=now: git-gc(1) warns it risks corruption under concurrent writers, and the
+# default two-week grace period still reclaims the space. Matching .git directories
+# skips worktrees (.git file); they share their parent's object store.
+gc_repo() {
+    local repo="${1%/*}"
+    if $DRY_RUN; then
+        printf '  %s[DRY-RUN]%s git gc: %s\n' "$YELLOW" "$NC" "$(rel "$repo")"
+    else
+        printf '  %s[GC]%s      git gc: %s\n' "$CYAN" "$NC" "$(rel "$repo")"
+        git -C "$repo" gc --quiet || warn "git gc failed: $(rel "$repo")"
+    fi
+}
+
 run_git_gc() {
     log "Phase 4: Git GC"
-
     if ! $GIT_GC; then
         log "  Skipped (use --git-gc or --all to enable)"
         return
     fi
-
-    # No --prune=now: git-gc(1) warns it "increases the risk of corruption if another
-    # process is writing to the repository concurrently", and this runs unattended over
-    # dozens of repos. The default two-week grace period still reclaims the space.
-    # -type d only matches real repos; worktrees have a .git *file* and are gc'd via
-    # their parent, which shares the object store.
-    while IFS= read -r -d '' gitdir; do
-        local repo
-        repo="$(dirname "$gitdir")"
-        local rel_path="${repo#"$TARGET_DIR"/}"
-        if $DRY_RUN; then
-            printf '  %s[DRY-RUN]%s git gc: %s\n' "$YELLOW" "$NC" "$rel_path"
-        else
-            printf '  %s[GC]%s      git gc: %s\n' "$CYAN" "$NC" "$rel_path"
-            git -C "$repo" gc --quiet 2>/dev/null || {
-                printf '  %s[WARN]%s git gc failed: %s\n' "$RED" "$NC" "$rel_path"
-                FAILURES=$((FAILURES + 1))
-            }
-        fi
-    done < <(find "$TARGET_DIR" -maxdepth 4 -type d -name '.git' -print0 2>/dev/null)
+    scan gc_repo -t d --prune --max-depth 4 --exclude node_modules --exclude target .git
 }
 
 # --- Main ---
@@ -558,10 +553,9 @@ main() {
     printf ' Log: %s\n' "$LOG_FILE"
     printf '%s============================================================%s\n\n' "$BOLD" "$NC"
 
-    reap_orphans
-    clean_always_safe "$TARGET_DIR"
+    clean_always_safe
     echo
-    clean_conditional "$TARGET_DIR"
+    clean_conditional
     echo
     clean_system_caches
     echo
@@ -585,10 +579,12 @@ main() {
     printf '  Log: %s\n' "$LOG_FILE"
     printf '%s============================================================%s\n' "$BOLD" "$NC"
 
-    # An exit status callers can act on. Without this the script could only ever
-    # exit 0, so backup.sh checking it would be a no-op.
+    # Non-zero on any failure; backup.sh checks it.
     [[ $FAILURES -eq 0 ]]
 }
 
 main
-exit $?
+rc=$?
+exec >&- 2>&-       # EOF to tee, then wait so the log is complete before we return
+wait "$TEE_PID" 2>/dev/null
+exit "$rc"
