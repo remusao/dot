@@ -246,6 +246,9 @@ bindsym $mod+r mode "resize"
 # Desktop services
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork --color 475263 --ignore-empty-password --show-failed-attempts
 exec --no-startup-id /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1
+# Snapshot Claude sessions + layout for `claude_sessions.py --restore` after a reboot.
+# Periodic, not at shutdown: by then every claude has exited and unregistered.
+exec --no-startup-id sh -c 'while :; do python3 ~/.dot/claude_sessions.py --save; sleep 120; done'
 exec --no-startup-id xrandr --dpi 130
 
 # Idle auto-lock (5 minutes)
