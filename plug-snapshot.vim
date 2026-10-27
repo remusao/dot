@@ -5,7 +5,7 @@
 
 silent! let g:plugs['ale'].commit = 'd0ea94323207abcdee717d76bb57b38d46055664'
 silent! let g:plugs['blink.cmp'].commit = '78336bc89ee5365633bcf754d93df01678b5c08f'
-silent! let g:plugs['copilot.lua'].commit = 'd521d3959f81f4fa58870ed329754f1dd5057511'
+silent! let g:plugs['copilot.lua'].commit = 'f76a0a281de089e27b605ec8017093f1aab73b07'
 silent! let g:plugs['friendly-snippets'].commit = '6cd7280adead7f586db6fccbd15d2cac7e2188b9'
 silent! let g:plugs['fzf'].commit = '6765f464a60e39afc20775f54f7ba40896bf1b81'
 silent! let g:plugs['fzf.vim'].commit = 'd2a59a992a2455f609c0fde2ebd84427ea8f919a'
