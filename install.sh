@@ -432,6 +432,40 @@ fi
 sudo systemctl enable paretosecurity.socket
 ok "Pareto Security"
 
+# ── Tailscale: TPM-sealed state ──────────────────────────────────────────
+# --encrypt-state seals /var/lib/tailscale/tailscaled.state with a TPM-held key,
+# so copies of it (restic backups, disk images) can't impersonate this node
+# elsewhere. tailscaled migrates the plaintext file on first start (and back if
+# the flag is dropped), but exits at startup if no TPM is reachable -- hence the
+# guard (it tries /dev/tpmrm0 then /dev/tpm0). If the TPM is ever cleared or the
+# board replaced: delete the state file and `tailscale up` again.
+# This repo owns FLAGS outright; add any other tailscaled flags here.
+TAILSCALED_FLAGS='FLAGS="--encrypt-state"'
+if [ -f /etc/default/tailscaled ] && { [ -e /dev/tpmrm0 ] || [ -e /dev/tpm0 ]; }; then
+  if ! grep -qxF "$TAILSCALED_FLAGS" /etc/default/tailscaled; then
+    tailscaled_defaults_old=$(cat /etc/default/tailscaled)
+    if grep -q '^FLAGS=' /etc/default/tailscaled; then
+      sudo sed -i "s|^FLAGS=.*|${TAILSCALED_FLAGS}|" /etc/default/tailscaled
+    else
+      echo "$TAILSCALED_FLAGS" | sudo tee -a /etc/default/tailscaled > /dev/null
+    fi
+    # $FLAGS is only read at service start; `tailscale down/up` won't apply it.
+    # Type=notify, so restart fails if the TPM is present but unusable. Roll back
+    # rather than leave the node offline (and abort the install via set -e).
+    if systemctl is-active --quiet tailscaled && ! sudo systemctl restart tailscaled; then
+      printf '%s\n' "$tailscaled_defaults_old" | sudo tee /etc/default/tailscaled > /dev/null
+      sudo systemctl restart tailscaled
+      err "tailscaled failed with --encrypt-state; reverted (journalctl -u tailscaled)"
+    else
+      ok "Tailscale state encryption configured"
+    fi
+  else
+    ok "Tailscale state encryption configured"
+  fi
+else
+  info "Skipping Tailscale state encryption (no TPM or tailscaled not installed)"
+fi
+
 # ── UFW Firewall (Pareto compliance) ─────────────────────────────────────
 info "Configuring UFW firewall..."
 # UFW defaults: deny incoming, allow outgoing. Outgoing SSH to servers always works.
