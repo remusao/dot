@@ -1,8 +1,8 @@
-# https://nodejs.org/dist/index.json -- LTS line only (24.x).
+# https://nodejs.org/dist/index.json -- LTS line only (26.x).
 # Do not repoint at nodejs/node: releases/latest there is Current, not LTS.
-export NODEJS_VERSION="26.12.1"
+export NODEJS_VERSION="26.13.1"
 
-# https://registry.npmjs.org/npm -- dist-tags.latest; npm/cli is a monorepo, so its releases are not npm versions.
+# https://registry.npmjs.org/npm -- newest release older than 7 days (~/.npmrc's min-release-age refuses newer); npm/cli is a monorepo, so its releases are not npm versions.
 export NPM_VERSION="12.2.1"
 
 # https://github.com/neovim/neovim/releases/latest
@@ -13,11 +13,11 @@ export PYTHON_VERSION="3.12.16"
 
 # Not PYENV_VERSION: pyenv reads that to pick the active Python, and zshrc sources this file everywhere.
 # https://github.com/pyenv/pyenv/releases/latest
-export PYENV_RELEASE="v2.8.14"
+export PYENV_RELEASE="v2.8.15"
 
 # Not RUSTUP_VERSION: live rustup env var, makes `rustup self update` refuse to move.
 # https://github.com/rust-lang/rustup/tags
-export RUSTUP_PIN="1.29.2" # bootstrap only; `rustup self update` moves past it
+export RUSTUP_PIN="1.29.3" # bootstrap only; `rustup self update` moves past it
 
 # crates.io: ripgrep
 export RIPGREP_VERSION="15.2.0"
@@ -29,22 +29,22 @@ export SCCACHE_VERSION="0.19.0"
 export HADOLINT_VERSION="v2.15.1"
 
 # https://github.com/nvm-sh/nvm/releases/latest
-export NVM_VERSION="v0.40.8"
+export NVM_VERSION="v0.41.0"
 
 # https://github.com/restic/restic/releases/latest (asset: _linux_amd64\.bz2$ ^SHA256SUMS$)
 export RESTIC_VERSION="0.19.1"
 
 # https://github.com/rclone/rclone/releases/latest (asset: -linux-amd64\.zip$ ^SHA256SUMS$)
-export DOTFILES_RCLONE_VERSION="v1.75.2"
+export DOTFILES_RCLONE_VERSION="v1.76.0"
 
 # https://github.com/netblue30/firejail/releases/latest (asset: ^firejail_[0-9.]+_1_amd64\.deb$ ^firejail-[0-9.]+\.asc$)
-export FIREJAIL_VERSION="0.9.80"
+export FIREJAIL_VERSION="0.9.82.2"
 
 # https://github.com/obsidianmd/obsidian-releases/releases/latest (asset: amd64\.deb$)
-export OBSIDIAN_VERSION="1.14.5"
+export OBSIDIAN_VERSION="1.15.0"
 
 # https://github.com/ByteNess/aws-vault/releases/latest (asset: ^aws-vault-linux-amd64$ ^aws-vault_sha256_checksums\.txt$)
-export AWS_VAULT_VERSION="v7.17.2"
+export AWS_VAULT_VERSION="v7.17.7"
 
 # Verifier for sops' sigstore-signed checksum manifest (nuggets/utilities/cosign.sh).
 # https://github.com/sigstore/cosign/releases/latest (asset: ^cosign-linux-amd64$ ^cosign_checksums\.txt$)
@@ -54,7 +54,7 @@ export COSIGN_VERSION="v3.1.4"
 export SOPS_VERSION="v3.13.3"
 
 # crates.io: cargo-audit
-export CARGO_AUDIT_VERSION="0.22.2"
+export CARGO_AUDIT_VERSION="0.23.0"
 
 # crates.io: cargo-deny
 export CARGO_DENY_VERSION="0.20.2"
@@ -63,7 +63,7 @@ export CARGO_DENY_VERSION="0.20.2"
 export CARGO_FUZZ_VERSION="0.13.2"
 
 # crates.io: flamegraph
-export FLAMEGRAPH_VERSION="0.6.14"
+export FLAMEGRAPH_VERSION="0.6.15"
 
 # crates.io: loc
 export LOC_VERSION="0.5.0"
@@ -75,22 +75,22 @@ export OXIPNG_VERSION="10.2.1"
 export TOKEI_VERSION="15.0.0"
 
 # crates.io: tree-sitter-cli
-export TREE_SITTER_CLI_VERSION="0.27.1"
+export TREE_SITTER_CLI_VERSION="0.27.2"
 
 # crates.io: eza
 export EZA_VERSION="0.23.5"
 
 # crates.io: du-dust
-export DU_DUST_VERSION="1.2.6"
+export DU_DUST_VERSION="1.2.7"
 
 # crates.io: difftastic
-export DIFFTASTIC_VERSION="0.71.0"
+export DIFFTASTIC_VERSION="0.72.0"
 
 # https://github.com/jesseduffield/lazygit/releases/latest (asset: _linux_x86_64\.tar\.gz$ ^checksums\.txt$)
-export LAZYGIT_VERSION="0.66.2"
+export LAZYGIT_VERSION="0.66.3"
 
 # https://github.com/facebook/watchman/releases/latest (asset: linux\.zip$)
-export WATCHMAN_VERSION="2026.07.27.00"
+export WATCHMAN_VERSION="2026.11.09.00"
 
 # https://github.com/alacritty/alacritty/releases/latest
 export ALACRITTY_VERSION="0.17.0"
@@ -120,10 +120,10 @@ export SNIXEMBED_VERSION="0.3.3"
 export SNIXEMBED_COMMIT="6025cc7257d3f8cc245a538b8e2c4d117d9e4bed"
 
 # https://github.com/junegunn/fzf/releases/latest (asset: _amd64\.deb$ _checksums\.txt$)
-export FZF_VERSION="0.74.5"
+export FZF_VERSION="0.75.0"
 
 # https://github.com/sharkdp/fd/releases/latest (asset: -x86_64-unknown-linux-gnu\.tar\.gz$)
-export FD_VERSION="10.5.0"
+export FD_VERSION="10.5.2"
 
 # https://github.com/sharkdp/bat/releases/latest (asset: -x86_64-unknown-linux-gnu\.tar\.gz$)
 export BAT_VERSION="0.26.1"
@@ -138,7 +138,7 @@ export GIT_LFS_VERSION="v3.8.1"
 export HYPERFINE_VERSION="2.0.0"
 
 # https://github.com/kovidgoyal/kitty/releases/latest
-export KITTY_VERSION="0.49.2"
+export KITTY_VERSION="0.50.0"
 
 # Shader compiler kitty 0.49+ needs to build, and to compile custom shaders at
 # runtime (nuggets/utilities/slang.sh, sourced before kitty.sh). Deliberately not

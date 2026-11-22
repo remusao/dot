@@ -35,9 +35,11 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
 
     # `install` unlinks before writing, unlike cp's O_TRUNC: the binary loads
     # these libs by absolute path, so they must never be rewritten under a live
-    # process. Unguarded on purpose -- a failed lib copy must fail the run.
+    # process. A failed lib copy must fail the run; an empty lib/ is not one:
+    # v2026.11.09.00 ships none (its binary links only libc/libstdc++).
     sudo install -m 755 "${tmp}"/watchman-*/bin/* /usr/local/bin/
-    sudo install -m 644 "${tmp}"/watchman-*/lib/* /usr/local/lib/
+    libs=("${tmp}"/watchman-*/lib/*)
+    if [ -e "${libs[0]}" ]; then sudo install -m 644 "${libs[@]}" /usr/local/lib/; fi
 
     printf '%s\n' "${WATCHMAN_VERSION}" | sudo tee "${WATCHMAN_STAMP}" >/dev/null
   )
