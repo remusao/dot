@@ -46,6 +46,7 @@ INPLACE_EXCLUDES=(
     /boot                # older snapshots captured it: an old initramfs has the old UUID baked in
     /etc/lvm/backup      # the OLD volume group's metadata; a later vgcfgrestore would use it
     /etc/lvm/archive
+    /usr/lib/os-release  # captured only for the release check below; owned by base-files
 )
 
 # --- Defaults ---
@@ -93,6 +94,8 @@ copy across by hand. Nothing on the live system is touched.
         never restored, because they carry the old machine's identity:
           /etc/crypttab  /etc/fstab  /etc/machine-id  /var/lib/tailscale
           /boot  /etc/lvm/backup  /etc/lvm/archive  (and this script itself)
+        The system half and --packages are refused in place when the backup was
+        taken on another OS release (e.g. 24.04 -> 26.04): stage it instead.
 
 Environment:
   RESTIC_PASSWORD          Repository password
@@ -105,8 +108,8 @@ Examples:
   restore.sh /mnt/external/repo --home-only           Stage home only
   restore.sh /mnt/external/repo -s abc123 --home-only Stage one specific snapshot
   restore.sh /mnt/external/repo -n                    Dry run
-  restore.sh /mnt/external/repo -t /                  Restore IN PLACE (overwrites)
-  restore.sh /mnt/external/repo -t / --packages       ... and reinstall packages
+  restore.sh /mnt/external/repo --home-only -t /      Restore home IN PLACE (new install)
+  restore.sh /mnt/external/repo -t / --packages       Everything in place, same release only
 EOF
     exit "${1:-0}"
 }
@@ -300,6 +303,42 @@ d=json.load(sys.stdin)
 sys.exit(0 if d and '$tag' in (d[0].get('tags') or []) else 1)" 2>/dev/null
 }
 
+# "ID VERSION_ID" of the OS a system snapshot was taken on, e.g. "ubuntu 24.04".
+# Snapshots older than the /usr/lib/os-release capture print nothing.
+snapshot_release() {
+    local id="$1" out=""
+    # Root-written packs on a POSIX drive are unreadable to the user: retry with sudo
+    # (not in a dry run, which then reports an unknown release).
+    if ! out="$(restic dump --repo "$REPO" "$id" /usr/lib/os-release 2>/dev/null)" && ! $DRY_RUN; then
+        out="$(sudo_restic dump --repo "$REPO" "$id" /usr/lib/os-release)" || out=""
+    fi
+    os_release_id <<< "$out"
+}
+
+# "ID VERSION_ID" from os-release text on stdin. Parsed, not sourced: the snapshot
+# copy is data.
+os_release_id() {
+    awk -F= '$1=="ID"||$1=="VERSION_ID" {gsub(/^["\047]|["\047]$/,"",$2); v[$1]=$2}
+             END {if (v["VERSION_ID"]!="") printf "%s %s", v["ID"], v["VERSION_ID"]}'
+}
+
+# Overwriting a running system with another release's /etc (apt sources, grub.d,
+# initramfs-tools, systemd units) or its package list mixes two releases on one
+# machine. Fail closed when the snapshot's release is different or unknown.
+check_same_release() {
+    local id="$1" snap host
+    snap="$(snapshot_release "$id")"
+    host="$(os_release_id < /etc/os-release)"
+    [[ -n "$snap" && "$snap" == "$host" ]] && return 0
+    printf '%sError: refusing an in-place system/package restore: the backup is from "%s", this machine runs "%s".%s\n' \
+        "$RED" "${snap:-unknown release}" "$host" "$NC" >&2
+    $DRY_RUN && [[ -z "$snap" ]] &&
+        printf 'A dry run does not use sudo; if the repository has root-owned files, re-run without -n.\n' >&2
+    printf 'Restore home in place (--home-only -t /), stage the system half\n' >&2
+    printf '(--system-only -t /var/tmp/sysrestore) and copy across only what you need.\n' >&2
+    return 1
+}
+
 show_snapshot_contents() {
     local tag="$1" id="$2"
     log "Preview of $tag snapshot (${id:0:8}):"
@@ -427,8 +466,8 @@ install_packages() {
         log "  Warning: $backup_dir/apt-manual.txt not found"
     fi
 
-    # Snap packages. The manifest is "name<TAB>channel"; older two-column-less files
-    # still work. --classic is retried only when snap actually asks for it, rather
+    # Snap packages. One name per line; older manifests add a TAB channel column,
+    # which is still honoured. --classic is retried only when snap actually asks for it, rather
     # than blindly, and stderr is kept so failures are diagnosable.
     if [[ -f "$backup_dir/snap-packages.txt" ]] && command -v snap >/dev/null 2>&1; then
         local snap_count snap_failed=()
@@ -481,25 +520,29 @@ print_reminders() {
         printf '\n%sStaged, not applied.%s Nothing on this system was changed.\n' "$BOLD" "$NC"
         printf '  Inspect and copy across by hand:  %s%s%s\n' "$CYAN" "$TARGET" "$NC"
         printf '  The tree mirrors absolute paths, e.g. %s%s%s\n' "$CYAN" "$TARGET$HOME/..." "$NC"
-        printf '  When you are done:  %srm -rf %s%s  (it is excluded from backups,\n' "$CYAN" "$TARGET" "$NC"
-        printf '  but a stale copy of /etc here still holds old WiFi PSKs).\n'
+        printf '  When you are done:  %ssudo rm -rf %s%s  (a staged /etc holds WiFi PSKs\n' "$CYAN" "$TARGET" "$NC"
+        printf '  and keys). On a NEW release, never copy /etc/apt, grub, initramfs, systemd units\n'
+        printf '  or /usr/local across; take only your own files (netplan, hosts, cups, ...).\n'
         return
     fi
 
     printf '\n%sPost-restore reminders (in-place):%s\n' "$BOLD" "$NC"
     if ! $HOME_ONLY; then
         printf '  - %sNOT restored on purpose:%s /etc/crypttab, /etc/fstab, /etc/machine-id,\n' "$YELLOW" "$NC"
-        printf '    /var/lib/tailscale — they name the OLD machine. Reconcile by hand if needed;\n'
-        printf '    for crypttab prefer %ssudo cryptsetup luksUUID --uuid <old-uuid> <dev>%s over\n' "$CYAN" "$NC"
-        printf '    editing it, and never %sluksHeaderRestore%s onto a freshly-encrypted disk —\n' "$CYAN" "$NC"
-        printf '    that replaces the new volume key and makes the new filesystem unreadable.\n'
-        printf '  - Bootloader, from inside a chroot with /dev /proc /sys /sys/firmware/efi/efivars\n'
-        printf '    bind-mounted and /boot + /boot/efi mounted:\n'
+        printf '    /var/lib/tailscale — they name the OLD machine. The installer wrote correct\n'
+        printf '    ones for the new disk: leave them, do not change the LUKS UUID, and never\n'
+        printf '    %sluksHeaderRestore%s onto a freshly-encrypted disk — that replaces the new\n' "$CYAN" "$NC"
+        printf '    volume key and makes the new filesystem unreadable.\n'
+        printf '  - Only if you partitioned by hand instead of running the installer: bootloader,\n'
+        printf '    from a chroot with /dev /proc /sys /sys/firmware/efi/efivars bind-mounted and\n'
+        printf '    /boot + /boot/efi mounted:\n'
         printf '      %ssudo grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ubuntu%s\n' "$CYAN" "$NC"
         printf '      %ssudo update-grub && sudo update-initramfs -u -k all%s\n' "$CYAN" "$NC"
         printf '    Requires shim-signed, cryptsetup-initramfs and lvm2 installed IN THE TARGET.\n'
-        printf '  - Secure Boot is enabled: re-enrol the MOK (%s/var/lib/shim-signed/mok%s) or DKMS\n' "$CYAN" "$NC"
-        printf '    modules will not load. Needs a physical console at MOK Manager.\n'
+        printf '  - Secure Boot: DKMS modules are signed with the key in %s/var/lib/shim-signed/mok%s.\n' "$CYAN" "$NC"
+        printf '    If %smokutil --list-enrolled%s no longer shows it (keys reset), enrol it again\n' "$CYAN" "$NC"
+        printf '    with %ssudo mokutil --import /var/lib/shim-signed/mok/MOK.der%s and confirm at\n' "$CYAN" "$NC"
+        printf '    MOK Manager on the next boot (physical console).\n'
         printf '  - %ssudo netplan apply%s to activate restored WiFi connections\n' "$CYAN" "$NC"
         printf '  - %ssudo systemctl enable wifi-suspend-fix.service wifi-pre-suspend.service%s\n' "$CYAN" "$NC"
     fi
@@ -568,6 +611,14 @@ main() {
     if [[ -z "$home_id" && -z "$system_id" ]]; then
         printf '%sError: no snapshots found to restore%s\n' "$RED" "$NC" >&2
         exit 1
+    fi
+
+    # The release is read from a system snapshot: the selected one, or the latest as
+    # a proxy for the release the package manifest was written on.
+    if $IN_PLACE && { [[ -n "$system_id" ]] || $INSTALL_PACKAGES; }; then
+        local rel_id="$system_id"
+        [[ -z "$rel_id" ]] && rel_id="$(SNAPSHOT='' resolve_snapshot system)"
+        check_same_release "$rel_id" || exit 1
     fi
 
     # Confirmation (skip in dry-run)

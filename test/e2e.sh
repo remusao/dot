@@ -534,12 +534,43 @@ bk_cleanup_preserves() {
       git init -q nested && cd nested && echo W > w.txt && git add -A && git commit -qm w
   ) >/dev/null 2>&1
   echo GARBAGE > "$w/s1/.git/index"
+  : > "$w/s2/vendor/CACHEDIR.TAG"   # no signature: not a cache, so no waiver
   "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1 || true
   # git-tracked _site survives even with a corrupt index (is_git_tracked fails closed),
   # and a nested checkout inside an ignored vendor/ is never deleted.
   [ -f "$w/s1/_site/index.html" ] && [ -f "$w/s2/vendor/nested/w.txt" ]
 }
 check "cleanup.sh: keeps tracked _site and nested checkouts" bk_cleanup_preserves
+
+# Untracked is not enough: a build/vendor dir holding files git would show is kept.
+bk_cleanup_keeps_unignored() {
+  local w="$BK_TMP/unignored"
+  mkdir -p "$w"; ( cd "$w"
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t \
+           GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+    git init -q p && cd p && echo '{}' > package.json && printf 'dist/\n' > .gitignore &&
+      git add -A && git commit -qm i && mkdir vendor dist && echo mine > vendor/patched.c &&
+      echo built > dist/out.js
+  ) >/dev/null 2>&1
+  "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1 || true
+  [ -f "$w/p/vendor/patched.c" ] && [ ! -e "$w/p/dist" ]
+}
+check "cleanup.sh: keeps unignored vendor/, deletes ignored dist/" bk_cleanup_keeps_unignored
+
+# ...but a signed CACHEDIR.TAG still marks checkouts under it as tool-managed.
+bk_cleanup_signed_cache_waives() {
+  local w="$BK_TMP/signedtag"
+  mkdir -p "$w"; ( cd "$w"
+    export GIT_CONFIG_GLOBAL=/dev/null GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t \
+           GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t
+    git init -q p && cd p && printf 'vendor/\n' > .gitignore && git add -A && git commit -qm i &&
+      mkdir -p vendor/git/checkouts && git init -q vendor/git/checkouts/dep &&
+      printf 'Signature: 8a477f597d28d172789f06886806bc55' > vendor/CACHEDIR.TAG
+  ) >/dev/null 2>&1
+  "$HOME/.dot/cleanup.sh" --dir "$w" >/dev/null 2>&1 || true
+  [ ! -e "$w/p/vendor" ]
+}
+check "cleanup.sh: a signed CACHEDIR.TAG waives the nested-checkout guard" bk_cleanup_signed_cache_waives
 
 # archive.sh -x used to trust the filename and merge over an unrelated live directory.
 bk_extract_refuses_mismatch() {
@@ -590,6 +621,11 @@ bk_backup_restore_roundtrip() {
   diff -r --no-dereference "$h/data" "$w/out$h/data" >/dev/null 2>&1
 }
 check "backup.sh -> restore.sh: round trip preserves content" bk_backup_restore_roundtrip
+
+# root's system snapshot must stay readable to the user's check/prune (restic copies the
+# config's group read bit to new files; setgid dirs give them our group).
+check "backup.sh -i: a local repo is group-accessible" bash -c \
+  'r="$1"; [ -n "$(find "$r/config" -perm -g=r)" ] && [ -z "$(find "$r" -type d ! -perm -g=s)" ]' _ "$BK_TMP/rt/repo"
 
 # A bare-metal restore runs on a reinstalled machine whose hostname need not match
 # the one that took the backup. Filtering on $(hostname) alone used to find nothing.
@@ -651,19 +687,19 @@ bk_excludes_keep_irreplaceable() {
   command -v restic >/dev/null 2>&1 || return 1
   local w="$BK_TMP/keep" h="$BK_TMP/keep/h" p out
   export RESTIC_PASSWORD=testpw
-  local keep=(.beru/index/raw/2026/07/19/sess-a.ndjson .beru/claude-mirror/projects/x.jsonl
+  local keep=(.beru/claude-mirror/projects/x.jsonl
               .beru/beru.db Dropbox/keepass.kdbx .zsh_history
               .mozilla/_firefox-cleanup-20260712-175119/prefs.js "Desktop/Old Firefox Data/p")
-  for p in "${keep[@]}" .beru/index/raw/tokens.db .rustup/x; do
+  for p in "${keep[@]}" .beru/index/raw/2026/07/19/sess-a.ndjson .rustup/x; do
     mkdir -p "$h/$(dirname "$p")"; echo x > "$h/$p"; done
   restic init --repo "$w/r" -q || return 1
   HOME="$h" restic backup "$h" --repo "$w/r" --exclude-file "$HOME/.dot/restic-excludes" -q || return 1
   out="$(restic ls latest --repo "$w/r" 2>/dev/null)"
   for p in "${keep[@]}"; do grep -qxF "$h/$p" <<< "$out" || return 1; done
-  # ...while the provably-derivable entries are still excluded
-  ! grep -qE '/(tokens\.db|\.rustup/x)$' <<< "$out"
+  # ...while the excluded ones (index/raw: a lossy copy of claude-mirror) stay out
+  ! grep -qE '/(sess-a\.ndjson|\.rustup/x)$' <<< "$out"
 }
-check "restic-excludes: never drops the beru archive, transcripts, keepass, history" bk_excludes_keep_irreplaceable
+check "restic-excludes: never drops transcripts, keepass, history" bk_excludes_keep_irreplaceable
 
 # cleanup.sh must not delete a target/ a cargo build is writing into.
 bk_cleanup_skips_busy_target() {
@@ -703,6 +739,55 @@ bk_packages_requires_root_target() {
   bash -c '! "$HOME/.dot/restore.sh" /nonexistent-repo --packages -t /tmp/nope -y >/dev/null 2>&1'
 }
 check "restore.sh: --packages refused unless target is /" bk_packages_requires_root_target
+
+# Another release's /etc (apt sources, grub.d, initramfs) must never be restored in
+# place: in-place system restores require the snapshot's os-release to match ours.
+bk_release_snapshot() { # <repo> <os-release text or empty>
+  export RESTIC_PASSWORD=testpw
+  restic init --repo "$1" -q || return 1
+  if [ -n "$2" ]; then
+    printf '%s\n' "$2" | restic backup --repo "$1" -q --tag system --stdin --stdin-filename /usr/lib/os-release
+  else
+    echo x | restic backup --repo "$1" -q --tag system --stdin --stdin-filename /etc/hostname
+  fi
+}
+bk_inplace_refuses_other_release() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/rel" out; mkdir -p "$w"
+  bk_release_snapshot "$w/r1" 'ID=ubuntu
+VERSION_ID="0.01"' || return 1
+  bk_release_snapshot "$w/r2" "" || return 1
+  out="$("$HOME/.dot/restore.sh" "$w/r1" --system-only -t / -n 2>&1)" && return 1
+  grep -q 'refusing an in-place' <<< "$out" || return 1
+  out="$("$HOME/.dot/restore.sh" "$w/r2" --system-only -t / -n 2>&1)" && return 1
+  grep -q 'unknown release' <<< "$out" || return 1
+  # staging stays allowed, whatever the release
+  "$HOME/.dot/restore.sh" "$w/r1" --system-only -t "$w/out" -n >/dev/null 2>&1
+}
+check "restore.sh -t /: refuses a system snapshot from another release" bk_inplace_refuses_other_release
+
+bk_inplace_allows_same_release() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/samerel"; mkdir -p "$w"
+  bk_release_snapshot "$w/r" "$(cat /etc/os-release)" || return 1
+  "$HOME/.dot/restore.sh" "$w/r" --system-only -t / -n >/dev/null 2>&1
+}
+check "restore.sh -t /: allows a system snapshot from this release" bk_inplace_allows_same_release
+
+# -n must not rewrite the manifests in ~/.dot/backup.
+bk_dry_run_writes_no_manifests() {
+  command -v restic >/dev/null 2>&1 || return 1
+  local w="$BK_TMP/dry" h="$BK_TMP/dry/home" out
+  mkdir -p "$h/.dot" "$w/bin"; echo x > "$h/f"
+  printf '#!/usr/bin/env bash\nwhile [[ "${1:-}" == --preserve-env=* || "${1:-}" == -* ]]; do shift; done\nexec "$@"\n' > "$w/bin/sudo"
+  chmod +x "$w/bin/sudo"
+  cp -a "$HOME/.dot/backup.sh" "$h/.dot/"
+  export RESTIC_PASSWORD=testpw
+  restic init --repo "$w/r" -q || return 1
+  out="$(cd "$h/.dot" && HOME="$h" PATH="$w/bin:$PATH" ./backup.sh "$w/r" -n 2>&1 </dev/null)"
+  grep -q 'DRY-RUN\] Would export package lists' <<< "$out" && [ ! -e "$h/.dot/backup/apt-manual.txt" ]
+}
+check "backup.sh -n: does not rewrite the package manifests" bk_dry_run_writes_no_manifests
 
 # The exclude file must not remove the inline --exclude flags: ~/.cache carries no
 # CACHEDIR.TAG, so those flags are the only thing keeping ~128 GiB out of the snapshot.

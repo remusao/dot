@@ -10,8 +10,9 @@
 # Options:
 #   -n, --dry-run        Show what would be deleted without deleting
 #   -s, --system-caches  Also clean system caches (~/.cache/pip, etc.) and repo .cache/ dirs
+#   -D, --docker         Also prune unused Docker images, build cache and cache volumes
 #   -g, --git-gc         Run git gc on all repos
-#   -a, --all            Enable --system-caches + --git-gc
+#   -a, --all            Enable --system-caches + --git-gc (not --docker)
 #   -d, --dir DIR        Target a specific directory (default: ~/dev/repositories)
 #   -h, --help           Show help
 
@@ -52,6 +53,7 @@ WALK_EXCLUDES=(--exclude .git --exclude site-packages --exclude dist-packages --
 # --- Defaults ---
 DRY_RUN=false
 SYSTEM_CACHES=false
+DOCKER=false
 GIT_GC=false
 TARGET_DIR="$DEFAULT_ROOT"
 TOTAL_REMOVED=0
@@ -69,8 +71,9 @@ Disk reclaim: remove regenerable build artifacts from dev repositories.
 Options:
   -n, --dry-run        Show what would be deleted without deleting
   -s, --system-caches  Also clean system caches (~/.cache/pip, etc.) and repo .cache/ dirs
+  -D, --docker         Also prune unused Docker images, build cache and cache volumes
   -g, --git-gc         Run git gc on all repos
-  -a, --all            Enable --system-caches + --git-gc
+  -a, --all            Enable --system-caches + --git-gc (not --docker)
   -d, --dir DIR        Target a specific directory (default: ~/dev/repositories)
   -h, --help           Show this help
 EOF
@@ -86,6 +89,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -n|--dry-run)  DRY_RUN=true; shift ;;
         -s|--system-caches) SYSTEM_CACHES=true; shift ;;
+        -D|--docker)   DOCKER=true; shift ;;
         -g|--git-gc)   GIT_GC=true; shift ;;
         -a|--all)      SYSTEM_CACHES=true; GIT_GC=true; shift ;;
         -d|--dir)      TARGET_DIR="${2:?--dir requires an argument}"; shift 2 ;;
@@ -235,11 +239,12 @@ remove() {
     TOTAL_REMOVED=$((TOTAL_REMOVED + size))
 }
 
-# Git's view of directory $1: tracked, untracked, outside (no repository) or error. Fails
+# Git's view of directory $1: tracked, ignored (untracked, all of it gitignored),
+# unignored (untracked files git would show), outside (no repository) or error. Fails
 # closed: when git refuses a repository that is there (dubious ownership, a worktree
 # whose main repo moved), a .git above $1 makes the answer error, never outside.
 git_status() {
-    local parent="${1%/*}" inside d
+    local parent="${1%/*}" inside d out
     inside="$(git -C "$parent" rev-parse --is-inside-work-tree 2>/dev/null)"
     if [[ -z "$inside" ]]; then
         d="$parent"
@@ -256,37 +261,71 @@ git_status() {
     else
         git -C "$parent" ls-files --error-unmatch -- ":(literal)${1##*/}/" >/dev/null 2>&1
         case $? in
-            0) echo tracked ;;
-            1) echo untracked ;;
-            *) echo error ;;
+            0) echo tracked; return ;;
+            1) ;;
+            *) echo error; return ;;
         esac
+        if ! out="$(git -C "$parent" ls-files --others --exclude-standard --directory \
+                        --no-empty-directory -- ":(literal)${1##*/}/" 2>/dev/null)"; then
+            echo error
+        elif [[ -n "$out" ]]; then
+            echo unignored
+        else
+            echo ignored
+        fi
     fi
 }
 
-# Delete $1 unless git says it holds tracked files, or cannot say.
+# Delete $1 unless git says it holds tracked or non-ignored files, or cannot say.
 remove_untracked() {
     case "$(git_status "$1")" in
-        outside|untracked) remove "$1" ;;
+        outside|ignored)   remove "$1" ;;
         tracked)           log_skip "$(rel "$1")" "git-tracked files inside" ;;
+        unignored)         log_skip "$(rel "$1")" "untracked files not gitignored" ;;
         *)                 log_skip "$(rel "$1")" "git error" ;;
     esac
 }
 
-# Rule for generic names (Phase 2, repo .cache): untracked inside a work tree, holding
-# no nested checkout (its own history, unrecoverable from the parent).
+# True if $1 holds a CACHEDIR.TAG with the spec's signature (bford.info/cachedir):
+# a bare file of that name proves nothing.
+is_cache_dir() {
+    [[ -f "$1/CACHEDIR.TAG" && ! -L "$1/CACHEDIR.TAG" &&
+       "$(head -c 43 "$1/CACHEDIR.TAG" 2>/dev/null)" == "Signature: 8a477f597d28d172789f06886806bc55" ]]
+}
+
+# Prints why $1 must be kept if it holds a VCS checkout outside a cache, or nothing.
+# Checkouts under a directory tagged with CACHEDIR.TAG are tool-managed (cargo's
+# git/checkouts, uv's git-v*/checkouts); any other is its own history, unrecoverable from
+# the parent. Fails closed: find fails on an unreadable subtree, which may hide one.
+checkout_reason() {
+    local hits hit d
+    mapfile -d '' hits < <(find "$1" \( -name .git -o -name .hg -o -name .svn -o -name .jj \) \
+                               -prune -print0 2>/dev/null)
+    if ! wait "$!"; then
+        echo "unreadable inside"
+        return
+    fi
+    for hit in "${hits[@]}"; do
+        d="${hit%/*}"
+        while [[ "$d" == "$1"/* ]] && ! is_cache_dir "$d"; do
+            d="${d%/*}"
+        done
+        if ! is_cache_dir "$d"; then
+            echo "contains a nested checkout"
+            return
+        fi
+    done
+}
+
+# Rule for generic names (Phase 2, repo .cache): gitignored inside a work tree, holding
+# no nested checkout (see checkout_reason).
 remove_unless_kept() {
-    local reason="" nested
+    local reason=""
     case "$(git_status "$1")" in
         outside)   reason="not in a git work tree" ;;
         tracked)   reason="git-tracked" ;;
-        untracked)
-            # find fails on an unreadable subtree, which may hide a checkout.
-            if ! nested="$(find "$1" \( -name .git -o -name .hg -o -name .svn -o -name .jj \) \
-                    -print -quit 2>/dev/null)"; then
-                reason="unreadable inside"
-            elif [[ -n "$nested" ]]; then
-                reason="contains a nested checkout"
-            fi ;;
+        unignored) reason="untracked files not gitignored" ;;
+        ignored)   reason="$(checkout_reason "$1")" ;;
         *)         reason="git error" ;;
     esac
     if [[ -n "$reason" ]]; then
@@ -515,7 +554,60 @@ clean_system_caches() {
     done
 }
 
-# --- Phase 4: Git GC ---
+# --- Phase 4: Docker ---
+# Unused images (re-pulled or rebuilt on demand), the build cache, and unused volumes that
+# are anonymous or named like a cargo build cache (*-target, *-tgt). Other named volumes
+# (redis, prometheus, ...) are never touched. Docker reports its own sizes, in its own
+# units, so they are not part of the summary total.
+removable_volume() {
+    case "$1" in
+        *-target|*-target-*|*-tgt) return 0 ;;
+    esac
+    [[ "$1" =~ ^[0-9a-f]{64}$ ]]
+}
+
+clean_docker() {
+    log "Phase 4: Docker (sizes as reported by docker, not in the total)"
+    if ! $DOCKER; then
+        log "  Skipped (use --docker to enable)"
+        return
+    fi
+    if ! docker info >/dev/null 2>&1; then
+        log_skip "docker" "daemon not reachable"
+        return
+    fi
+
+    local -A unused=()
+    local name size type reclaimable out
+    while IFS= read -r name; do
+        unused["$name"]=1
+    done < <(docker volume ls -q --filter dangling=true)
+    while IFS='|' read -r name size; do
+        if [[ -z "${unused[$name]+x}" ]] || ! removable_volume "$name"; then
+            continue
+        fi
+        log_remove "$size" "docker volume $name"
+        $DRY_RUN || docker volume rm "$name" >/dev/null || warn "Failed to remove docker volume: $name"
+    done < <(docker system df -v --format '{{range .Volumes}}{{.Name}}|{{.Size}}{{println}}{{end}}')
+
+    if $DRY_RUN; then
+        while IFS='|' read -r type reclaimable; do
+            case "$type" in
+                Images|"Build Cache") log_remove "${reclaimable%% *}" "docker ${type,,} (unused)" ;;
+            esac
+        done < <(docker system df --format '{{.Type}}|{{.Reclaimable}}')
+        return
+    fi
+    for type in image builder; do
+        if out="$(docker "$type" prune -a -f 2>&1)"; then
+            printf '  %s[REMOVE]%s  docker %s prune: %s\n' "$RED" "$NC" "$type" "$(tail -1 <<<"$out")"
+        else
+            warn "docker $type prune failed: $(tail -1 <<<"$out")"
+        fi
+    done
+}
+
+# --- Phase 5: Git GC ---
 # No --prune=now: git-gc(1) warns it risks corruption under concurrent writers, and the
 # default two-week grace period still reclaims the space. Matching .git directories
 # skips worktrees (.git file); they share their parent's object store.
@@ -530,7 +622,7 @@ gc_repo() {
 }
 
 run_git_gc() {
-    log "Phase 4: Git GC"
+    log "Phase 5: Git GC"
     if ! $GIT_GC; then
         log "  Skipped (use --git-gc or --all to enable)"
         return
@@ -558,6 +650,8 @@ main() {
     clean_conditional
     echo
     clean_system_caches
+    echo
+    clean_docker
     echo
     run_git_gc
 

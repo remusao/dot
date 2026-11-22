@@ -22,13 +22,6 @@
 #   ~/.beru/beru.db
 #       live data, not cache. Excluding it silently would mean no backup at all.
 
-# --- Provably derivable (the owning project says so) ---
-# beru's SPEC: tokens.db is a cache over the raw archive, "rm tokens.db is a supported
-# recovery". It is also a live WAL database being backfilled, so a copy would be torn.
-# NOT the rest of ~/.beru/index: index/raw/<date>/*.ndjson (~555k files) is beru's
-# authoritative, lossless archive — the source of truth everything else is rebuilt from.
-$HOME/.beru/index/raw/tokens.db*
-
 # --- Regenerable toolchain state (reinstalled by update.sh / the package manager) ---
 # Checked: .pyenv holds only built interpreters (no virtualenvs), .nvm only node +
 # npm/corepack/playwright, go/pkg/mod is Go's module cache, .debug is perf's
@@ -38,6 +31,10 @@ $HOME/go/pkg/mod
 $HOME/.pyenv
 $HOME/.nvm
 $HOME/.debug
+# pnpm's content-addressed store and npx's package cache: both carry no CACHEDIR.TAG
+# and are refetched on demand (5.4G and 1.9G here).
+$HOME/.local/share/pnpm/store
+$HOME/.npm/_npx
 
 # --- This toolchain's own scratch ---
 # ~/.dot/restore is restore.sh's staging dir. Backing it up means snapshotting a
@@ -46,14 +43,28 @@ $HOME/.debug
 $HOME/.dot/restore
 $HOME/.dot/logs
 
+# --- Large data excluded by choice ---
+# ~6M small files: would dominate restore time.
+$HOME/k3tot/replay_cache
+# Service data is downloadable again (~220 GB). Also drops tracked files under these
+# dirs from the working tree: after a restore, `git restore` them per repo.
+$HOME/dev/**/services/**/data
+$HOME/Downloads/*.iso
+$HOME/.config/google-chrome-headless
+$HOME/761d612b7d81800f-evaluations-backu2
+# beru's raw capture archive (82 GB): owner's call; beru.db and claude-mirror stay.
+$HOME/.beru/index/raw
+# Eval run outputs in agent worktrees (~40 GB, ~2.7M files). Tracked files: `git restore`.
+$HOME/dev/repositories/*/*/.claude/worktrees/*/tools/ask-provider-eval/runs*
+$HOME/dev/repositories/*/*/.claude/worktrees/*/tools/ask-eval/runs
+# cleanup.sh's trash: half-deleted build output, may hold unreadable root-owned files.
+$HOME/dev/**/*.cleanup-sh-trash.*
+
 # --- Deliberately NOT excluded: large, but possibly the only copy. Your call. ---
 # Each of these was once listed above as "derived" or "dead" on the strength of its
 # name, and each turned out to be something else. Uncomment only what you have
 # checked yourself.
 #
-#   65 GB  $HOME/.beru/index/raw/vectors.lmdb
-#          beru's retired dense index, kept on purpose as a rollback target
-#          (README: "temporary — expect a follow-up that drops both").
 #   99 GB  $HOME/.beru/backups
 #   47 GB  $HOME/.beru/beru.db.m5-preindex-bak
 #          pre-migration copies of beru.db taken 2026-04-22.

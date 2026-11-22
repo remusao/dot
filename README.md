@@ -77,18 +77,19 @@ onto a fresh install would not boot.
 | Snapshot | Paths | Tag |
 |---|---|---|
 | Home | `~/` minus caches (`--exclude-caches` + the inline `--exclude`s + `restic-excludes`) | `home` |
-| System | `/usr/local/`, `/etc/{fstab,hosts,hostname,default/grub,grub.d,initramfs-tools,sudoers.d,ssh,lvm,systemd/system,sysctl.d,udev/rules.d,modprobe.d,netplan}/`, `/etc/apt/{sources.list.d,keyrings,apt.conf.d,preferences.d,trusted.gpg.d}/`, `/var/lib/{tailscale,dkms,shim-signed/mok}/` + conditional: `/etc/tlp.conf`, `/etc/crypttab`, `/etc/cryptsetup-initramfs/`, `/etc/X11/xorg.conf.d/` | `system` |
+| System | `/usr/local/`, `/etc/{fstab,hosts,hostname,default/grub,grub.d,initramfs-tools,sudoers.d,ssh,lvm,systemd/system,sysctl.d,udev/rules.d,modprobe.d,netplan}/`, `/etc/apt/{sources.list.d,keyrings,apt.conf.d,preferences.d,trusted.gpg.d}/`, `/var/lib/{tailscale,dkms,shim-signed/mok}/`, `/usr/lib/os-release` + conditional: `/etc/tlp.conf`, `/etc/crypttab`, `/etc/cryptsetup-initramfs/`, `/etc/X11/xorg.conf.d/`, `/etc/default/earlyoom`, `/etc/{ufw,cups}/` | `system` |
 
 `restic-excludes` is **additive** — it supplements the inline `--exclude` flags, it
 does not replace them. `~/.cache` has no `CACHEDIR.TAG`, so the inline flag is the
 only thing keeping ~128 GiB out of every snapshot.
 
 Exported to `~/.dot/backup/` on each run (written via temp file + rename, so a failed
-export never leaves an empty manifest behind):
+export never leaves an empty manifest behind; `-n` leaves them alone):
 
 - `apt-manual.txt` — explicitly installed apt packages
-- `snap-packages.txt` — snap name + channel
+- `snap-packages.txt` — snap names (channels are release-specific and truncated)
 - `flatpak-apps.txt` — flatpak app + origin remote
+- `uv-tools.txt` — `uv tool` names (their venvs carry `CACHEDIR.TAG`, so are not in the snapshot)
 - `system-topology.txt` — lsblk/blkid/findmnt/efibootmgr/enabled units
 - `repo-ids` — the pinned repository identity for each location
 
@@ -123,12 +124,12 @@ copy across what you want by hand. `-t /` is the opt-in in-place mode.
 ./restore.sh /mnt/external/backup -n
 
 # In-place, overwriting the running system
-./restore.sh /mnt/external/backup -t /
-./restore.sh /mnt/external/backup -t / --packages
+./restore.sh /mnt/external/backup --home-only -t /   # any release
+./restore.sh /mnt/external/backup -t / --packages    # same OS release only
 ```
 
-When you're done with a staging restore, delete it: `rm -rf ~/.dot/restore`. It is
-excluded from backups, but a stale copy of `/etc` there still holds old WiFi PSKs.
+When you're done with a staging restore, delete it: `sudo rm -rf ~/.dot/restore` (the
+system half is root-owned). It is excluded from backups, but a staged `/etc` holds WiFi PSKs.
 
 **Which host.** Snapshots are selected for this machine's hostname, or — on a
 reinstalled machine with a new hostname — the only host in the repository. If the
@@ -137,7 +138,11 @@ repository holds several hosts, pick one with `--host NAME`.
 **Guards.** One snapshot ID cannot denote both snapshots, so `-s` requires
 `--home-only` or `--system-only`, and the resolved ID is checked to actually carry
 that tag. `--packages` is refused unless the target is `/`, because there is no
-chroot — it changes the *running* system's packages whatever `--target` says.
+chroot — it changes the *running* system's packages whatever `--target` says. In place,
+the system half and `--packages` are refused unless the system snapshot's
+`/usr/lib/os-release` matches this machine's `ID`/`VERSION_ID` (unknown counts as a
+mismatch): another release's apt sources, grub scripts and package list must not land
+on this one.
 Without a terminal the script exits non-zero rather than dying on a bash error; use
 `-y` for unattended runs.
 
@@ -149,16 +154,17 @@ the new bytes). The rest of `~/.dot` *is* restored — `--packages` needs its ma
 
 **Post-restore steps (in-place only):**
 
-- Reconcile `/etc/crypttab` by hand. Prefer `sudo cryptsetup luksUUID --uuid <old-uuid> <dev>`
-  over editing it. **Never** `luksHeaderRestore` an old header onto a freshly-encrypted
+- Leave the installer's `/etc/crypttab`, `/etc/fstab` and LUKS UUID alone: they match the
+  new disk. **Never** `luksHeaderRestore` an old header onto a freshly-encrypted
   disk — the volume key is random per header, so that makes the new filesystem unreadable.
-- Bootloader, from a chroot with `/dev /proc /sys /sys/firmware/efi/efivars /run` bind-mounted
+- Only if you partitioned by hand instead of running the installer: bootloader, from a chroot with `/dev /proc /sys /sys/firmware/efi/efivars /run` bind-mounted
   and `/boot` + `/boot/efi` mounted:
   `sudo grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=ubuntu`,
   then `sudo update-grub && sudo update-initramfs -u -k all`.
   Needs `shim-signed`, `cryptsetup-initramfs` and `lvm2` installed **in the target**.
-- Secure Boot is enabled: re-enrol the MOK (`/var/lib/shim-signed/mok`) or DKMS modules
-  won't load. Needs a physical console at MOK Manager.
+- Secure Boot: DKMS modules are signed with `/var/lib/shim-signed/mok`. If
+  `mokutil --list-enrolled` no longer shows that key, `sudo mokutil --import
+  /var/lib/shim-signed/mok/MOK.der` and confirm at MOK Manager on the next boot.
 - `sudo netplan apply` — activate restored WiFi connections
 - `sudo systemctl enable wifi-suspend-fix.service wifi-pre-suspend.service`
 - Verify `~/.ssh/` permissions (700 for dir, 600 for private keys)
@@ -175,8 +181,10 @@ node\_modules, Python venvs, caches) from dev repositories.
 ./cleanup.sh -d ~/projects        # custom directory
 ./cleanup.sh -s                   # also clean system caches (~/.cache/{sccache,pip,uv}, ~/.cargo/registry, ...)
                                   #   and untracked repo-local .cache/ dirs
+./cleanup.sh -D                   # prune unused docker images, build cache, and
+                                  #   anonymous / *-target volumes (data volumes kept)
 ./cleanup.sh -g                   # git gc on all repos
-./cleanup.sh -a                   # --system-caches + --git-gc
+./cleanup.sh -a                   # --system-caches + --git-gc (not --docker)
 ./cleanup.sh -n                   # dry run
 ```
 
@@ -203,8 +211,9 @@ cargo build holds a lock on, a venv with any top-level entry a venv tool doesn't
 dirs is not detected), symlinks, `.git/` internals, anything holding a mount point, and
 — on any git error (including a repo git refuses) or unreadable subtree — everything.
 The generic names (`dist/`, `build/`, `_site/`, `vendor/`, `.cache/`) must also be
-inside a git work tree and hold no nested checkout; being untracked is enough, so an
-un-`git add`ed `vendor/` **is** deleted. `-d` refuses `/`, `$HOME`, its parents and its
+inside a git work tree and hold no nested checkout (checkouts under a `CACHEDIR.TAG` directory, like cargo's and
+uv's, are tool-managed and don't count). Untracked is not enough: everything inside must be
+gitignored, so an un-`git add`ed, unignored `vendor/` is kept. `-d` refuses `/`, `$HOME`, its parents and its
 dot-dirs. Requires `fd`.
 
 ### archive.sh
@@ -220,29 +229,65 @@ Compress directories to `.tar.zst` archives with integrity verification.
 ./archive.sh ~/old-project -n                # dry run
 ```
 
-## Migration to a New Laptop
+## Migration to a New Install (e.g. Ubuntu 24.04 -> 26.04)
 
-1. **On the current machine:**
+Home comes back in place; the system snapshot is reference material only, because
+another release's `/etc` must not overwrite this one (`restore.sh` refuses).
 
-   ```bash
-   export RESTIC_PASSWORD="your-strong-passphrase"  # save in password manager
-   ./backup.sh /mnt/external/backup -i -c           # init + cleanup + backup
-   ```
-
-2. **On the new machine:**
+1. **Before the wipe** (old machine). Keep the passphrase in a file, not in shell history,
+   and a copy of it off the laptop (never on the backup drive itself):
 
    ```bash
-   # Fresh install Ubuntu 24.04 with LUKS2 full disk encryption
-   sudo apt install restic git
-   git clone <repo> ~/.dot
-   cd ~/.dot
-   export RESTIC_PASSWORD="your-strong-passphrase"
-   ./restore.sh /mnt/external/backup -t / --packages  # restore in-place + reinstall packages
-   ./install.sh                                        # symlink dotfiles
-   ./update.sh                                         # build dev tools
-   sudo update-grub                                    # apply restored kernel params
-   sudo netplan apply                                  # activate WiFi
+   export RESTIC_PASSWORD_FILE=~/.restic-pw            # mode 0400
+   R=/mnt/external/backup
+   # Named Docker volumes are not in any snapshot: export the ones you keep.
+   mkdir -p ~/docker-keep && docker stop <containers using VOL>
+   docker run --rm -v VOL:/v:ro -v ~/docker-keep:/o alpine tar -C /v -czf /o/VOL.tgz .
+   ./backup.sh $R -i --no-prune                         # -i only for a new repo
+   restic -r $R check --read-data
+   # Drill on a few paths, not the whole home snapshot (it may not fit on the disk):
+   T=$(mktemp -d /var/tmp/rtest.XXXXXX)                 # fresh: a stale copy would mask a gap
+   restic -r $R restore latest --tag home --target $T --verify \
+       --include $HOME/.ssh --include $HOME/.gnupg
+   for p in .ssh .gnupg; do rsync -rlcn --out-format=%n $HOME/$p/ $T$HOME/$p/; done  # lists only files changed since
+   ./restore.sh $R --system-only -t /var/tmp/drill-sys
+   sudo rm -rf $T /var/tmp/drill-sys
    ```
+
+   Commit **and push** `~/.dot` first: step 3 clones it. Also keep off the laptop the
+   restic binary and the 1Password/GitHub recovery material.
+
+2. **Install** with LVM + LUKS passphrase encryption (not TPM-backed), user `remi`, the
+   **same login password** (it unlocks the restored GNOME keyring), the same hostname,
+   automatic login off. Then `sudo apt update && sudo apt full-upgrade` and reboot. Do
+   not touch crypttab, fstab or the LUKS UUID.
+
+3. **Restore**, from a text console (Ctrl+Alt+F3) before any graphical login:
+
+   ```bash
+   sudo apt install git restic
+   git clone https://github.com/remusao/dot /var/tmp/dot   # restore.sh brings back ~/.dot itself
+   export RESTIC_PASSWORD_FILE=/var/tmp/restic-pw           # typed in, mode 0400, deleted afterwards
+   /var/tmp/dot/restore.sh $R --home-only -t /
+   /var/tmp/dot/restore.sh $R --system-only -t /var/tmp/sysrestore
+   cd ~/.dot && ./install.sh                                # runs update.sh itself
+   ```
+
+   If restic must run as root on an ext4 repo that is not group-readable, call it as
+   `sudo --preserve-env=RESTIC_PASSWORD_FILE "$(command -v restic)" ...`.
+
+4. **Copy across by hand** from `/var/tmp/sysrestore` only your own files: netplan
+   `90-NM-*.yaml` (mode 600, then `sudo netplan generate && sudo nmcli connection reload`),
+   `/var/lib/tailscale` (TPM-sealed to this laptop: stop tailscaled, copy, start), the extra
+   `/etc/hosts` lines, `/etc/cups/{printers.conf,ppd}`, `/etc/ufw`, kernel parameters from
+   `/etc/default/grub` (re-add, don't copy). **Never** copy `/etc/apt`, grub or initramfs
+   config, `/etc/systemd/system`, `/etc/{ssh,sudoers.d,modprobe.d,udev}`, `/usr/local`,
+   `/var/lib/dkms`. Then `sudo rm -rf /var/tmp/sysrestore`.
+
+5. **Re-create:** `update.sh` reinstalls the pinned uv tools (their venvs are not in the
+   snapshot; `~/.dot/backup/uv-tools.txt` lists them), `pipx reinstall-all`, Docker volumes
+   from `~/docker-keep`, app logins. Use `comm -23 <(sort ~/.dot/backup/apt-manual.txt)
+   <(apt-mark showmanual | sort)` as a checklist for `install.sh`, not `--packages`.
 
 ## Backup Architecture
 
@@ -272,7 +317,7 @@ Compress directories to `.tar.zst` archives with integrity verification.
 │   ├── python/
 │   ├── javascript/
 │   ├── docker/
-│   ├── go/
+│   ├── lib/
 │   └── utilities/
 ├── vim/                # vim plugins and config
 ├── fonts/              # terminal fonts
