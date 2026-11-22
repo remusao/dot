@@ -1314,10 +1314,9 @@ sudo dpkg-reconfigure -f noninteractive keyboard-configuration
 sudo apt install playerctl xss-lock policykit-1-gnome
 sudo usermod -aG video "$USER"  # required for brightnessctl backlight access
 
-# 7. Webcam (AMD ISP4 — requires libcamera, not raw V4L2)
-sudo add-apt-repository -y ppa:amd-team/isp
+# 7. Webcam: disable the built-in ISP4 camera in BIOS (§9.5); install.sh retired
+# ppa:amd-team/isp, and the archive's libcamera 0.2 has no AMD ISP handler.
 sudo apt-get install -y libspa-0.2-libcamera libcamera-tools
-# Verify: cam -l (should show AMD ISP device)
 # Per-device WirePlumber routing handled by install.sh (51-camera-routing.lua)
 # Browser config (PipeWire camera portal):
 #   Firefox: about:config → media.webrtc.camera.allow-pipewire = true

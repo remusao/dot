@@ -806,13 +806,13 @@ sudo systemctl enable wifi-suspend-fix.service"
 
     # Webcam + sleep summary
     local webcam_loaded=false
-    lsmod 2>/dev/null | grep -q amd_isp && webcam_loaded=true
+    grep -q amd_isp /proc/modules && webcam_loaded=true
     if $webcam_loaded && $iommu_off; then
-        info "Mode: Webcam ON + IOMMU OFF — webcam works, suspend works but with higher drain"
+        info "Mode: Webcam ON + IOMMU OFF — suspend works but with higher drain"
     elif ! $webcam_loaded && $iommu_off; then
         info "Mode: Webcam OFF + IOMMU OFF — optimal sleep (0.14-0.20W). Disable webcam in BIOS for this."
     elif $webcam_loaded && ! $iommu_off; then
-        info "Mode: Webcam ON + IOMMU ON — webcam + NPU work, suspend may fail"
+        info "Mode: Webcam ON + IOMMU ON — NPU works, suspend may fail"
     fi
 
     # Screen blank after wake (amdgpu VRAM eviction bug)
@@ -1396,28 +1396,10 @@ check_peripherals() {
         info "NVMe TRIM granularity: $trim_gran"
     fi
 
-    # Webcam (AMD ISP4) — requires libcamera (ppa:amd-team/isp)
-    if lsmod 2>/dev/null | grep -q amd_isp4; then
-        if cmd_exists cam; then
-            local cam_list
-            cam_list=$(cam -l 2>/dev/null) || cam_list=""
-            if echo "$cam_list" | grep -q '^[[:space:]]*[0-9]'; then
-                ok "AMD ISP4 webcam detected via libcamera"
-            else
-                fail "AMD ISP4 module loaded but libcamera detects no cameras" \
-                    "ensure ppa:amd-team/isp and libspa-0.2-libcamera are installed" \
-                    "sudo add-apt-repository -y ppa:amd-team/isp && sudo apt-get install -y libspa-0.2-libcamera libcamera-tools"
-            fi
-        else
-            fail "libcamera-tools not installed" \
-                "needed to verify ISP4 webcam" \
-                "sudo apt-get install -y libcamera-tools"
-        fi
-        if ! dpkg -l libspa-0.2-libcamera 2>/dev/null | grep -q '^ii'; then
-            fail "libspa-0.2-libcamera not installed" \
-                "PipeWire cannot access libcamera cameras without this package" \
-                "sudo apt-get install -y libspa-0.2-libcamera"
-        fi
+    # Webcam (AMD ISP4): install.sh retired ppa:amd-team/isp.
+    if grep -q amd_isp4 /proc/modules; then
+        fail "AMD ISP4 webcam enabled" \
+            "the archive's libcamera 0.2 has no AMD ISP handler; disable the built-in camera in BIOS"
     fi
 }
 
@@ -1767,9 +1749,9 @@ print_summary() {
   [ ] Security > BIOS Sure Start > Save/Restore GPT of System Hard Drive: DISABLED
       Same as above — prevents partition table restoration. Source: https://h20195.www2.hp.com/v2/getpdf.aspx/4AA5-4453ENW.pdf
 
-  [ ] Webcam: DISABLED recommended (if using external USB webcam)
+  [ ] Webcam: DISABLED
       DISABLED = better sleep (0.14-0.20W) + eliminates smu_dpm_set_power_gate WARN on every resume.
-      ENABLED = built-in webcam works but ~10-15% overnight drain + ISP power gating WARN destabilizes SMU.
+      ENABLED = ~10-15% overnight drain + ISP power gating WARN destabilizes SMU.
       External USB webcams (e.g. Razer Kiyo) are unaffected by this toggle.
       Source: https://bugzilla.kernel.org/show_bug.cgi?id=220702
 BIOS

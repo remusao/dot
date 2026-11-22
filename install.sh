@@ -167,12 +167,18 @@ if ! has_repo_either /etc/apt/sources.list.d/google-chrome.list; then
   REPOS_ADDED=1
 fi
 
-# ── OpenRazer ─────────────────────────────────────────────────────────────
-if ! has_repo /etc/apt/sources.list.d/openrazer-ubuntu-stable-noble.sources; then
-  info "Adding OpenRazer PPA..."
-  sudo add-apt-repository -y ppa:openrazer/stable
-  REPOS_ADDED=1
-fi
+# ── Retired PPAs ──────────────────────────────────────────────────────────
+# openrazer never drove a device here, and its DKMS build could abort kernel
+# installs. amd-team/isp served the BIOS-disabled webcam and replaced
+# linux-libc-dev with a 6.11-rc3 build. Keys are inline in the .sources files.
+for f in /etc/apt/sources.list.d/openrazer-ubuntu-stable-noble.sources \
+         /etc/apt/sources.list.d/amd-team-ubuntu-isp-noble.sources; do
+  if has_repo "$f"; then
+    info "Removing retired PPA ${f##*/}..."
+    sudo rm -f "$f"
+    REPOS_ADDED=1
+  fi
+done
 
 # ── Docker Engine ──────────────────────────────────────────────────────────
 if [ "$SKIP_DOCKER" != "1" ] && ! has_repo /etc/apt/sources.list.d/docker.sources; then
@@ -332,6 +338,36 @@ info "Installing system packages..."
 if [ "$REPOS_ADDED" = "1" ]; then
   sudo apt-get update
 fi
+
+# ── Leftovers of retired PPAs ─────────────────────────────────────────────
+# Before the ALL_PKGS install, which a failing openrazer DKMS build would abort.
+# Reads dpkg's real state: bare `dpkg-query -W` also succeeds for names dpkg
+# merely knows (e.g. docker.io, via docker-ce's Conflicts).
+mapfile -t RAZER < <(dpkg-query -W -f='${db:Status-Status} ${Package}\n' \
+  openrazer-meta openrazer-daemon openrazer-driver-dkms python3-openrazer 2>/dev/null |
+  awk '$1 != "not-installed" {print $2}')
+if [ "${#RAZER[@]}" -gt 0 ]; then
+  sudo apt-get purge -y "${RAZER[@]}"
+  ok "Purged openrazer (${RAZER[*]})"
+fi
+# The isp PPA's "amd" builds sort above the archive's, so apt never downgrades
+# them by itself: downgrade to the newest archive build (libcamera0.3 has none).
+mapfile -t AMD < <(dpkg-query -W -f='${db:Status-Status} ${Package} ${Version}\n' \
+  linux-libc-dev libcamera0.2 libcamera-ipa libcamera-tools libcamera0.3 2>/dev/null |
+  awk '$1 == "installed" && $3 ~ /amd/ {print $2}')
+# An interrupted run deleted the sources without updating: refresh first.
+if [ "${#AMD[@]}" -gt 0 ] && [ "$REPOS_ADDED" != "1" ]; then sudo apt-get update; fi
+ISP=()
+for pkg in "${AMD[@]}"; do
+  if [ "$pkg" = libcamera0.3 ]; then ISP+=("${pkg}-"); continue; fi
+  want=$(apt-cache madison "$pkg" | awk '!v && $3 !~ /amd/ {v = $3} END {print v}')
+  if [ -n "$want" ]; then ISP+=("${pkg}=${want}"); else err "No archive build of ${pkg}"; fi
+done
+if [ "${#ISP[@]}" -gt 0 ]; then
+  sudo apt-get install "${APT_OPTS[@]}" --allow-downgrades "${ISP[@]}"
+  ok "Reverted isp PPA builds (${ISP[*]})"
+fi
+
 ALL_PKGS=(
   ca-certificates curl gnupg lsb-release software-properties-common wget
   zsh git build-essential clang g++ cmake ninja-build gettext unzip pkg-config
@@ -377,7 +413,7 @@ ALL_PKGS=(
   htop dfc earlyoom lm-sensors rasdaemon nvme-cli smartmontools
   screen tmux parallel
   firefox
-  thunderbird brave-browser google-chrome-stable openrazer-meta tailscale gh
+  thunderbird brave-browser google-chrome-stable tailscale gh
   paretosecurity
 )
 if [ "$SKIP_DOCKER" != "1" ]; then
@@ -401,12 +437,6 @@ ok "System packages"
 
 # ── Default browser: Brave (idempotent; brave-browser installed above) ─────
 xdg-settings set default-web-browser brave-browser.desktop 2>/dev/null || true
-
-# ── Purge residual docker.io (triggers Pareto Security false positive) ──
-if dpkg-query -W docker.io &>/dev/null; then
-    sudo dpkg --purge docker.io 2>/dev/null || true
-    ok "Purged residual docker.io from dpkg database"
-fi
 
 # ── Purge distro copies of tools the nuggets now own ──────────────────────
 # PATH order only hides them: anything with a sanitized PATH -- sudo, systemd
@@ -735,19 +765,12 @@ GESTURES
     ln -sf "${DOT_DIR}/power-monitor.py" "${HOME}/.local/bin/power-monitor"
     chmod +x "${DOT_DIR}/power-monitor.py"
 
-    # Webcam: AMD ISP4 requires libcamera (media-controller pipeline, not raw V4L2).
-    # USB cameras use V4L2. Per-device WirePlumber routing prevents:
-    #   - V4L2 device probe crash with AMD ISP on PipeWire 1.0.5
-    #   - libcamera duplicate of USB cameras
-    # NOTE: PipeWire's SPA plugin links against libcamera 0.2, but the ISP4 handler
-    # only matches kernel 6.17's driver in libcamera 0.3. Built-in camera won't appear
-    # in PipeWire until HP OEM repo or AMD PPA ships a SPA plugin linked against 0.3.
-    if ! has_repo /etc/apt/sources.list.d/amd-team-ubuntu-isp-noble.sources; then
-        info "Adding AMD ISP PPA..."
-        sudo add-apt-repository -y ppa:amd-team/isp
-    fi
+    # Cameras: USB ones use V4L2. The built-in ISP4 webcam is disabled in BIOS
+    # and untested without the retired PPA (the archive's libcamera 0.2 has no
+    # AMD ISP handler). The routing below keeps PipeWire 1.0.5 off the ISP's
+    # V4L2 node (crash) and libcamera off Razer USB cameras (duplicates).
     sudo apt-get install "${APT_OPTS[@]}" libspa-0.2-libcamera libcamera-tools
-    ok "Webcam (AMD ISP4 via libcamera + USB via V4L2)"
+    ok "Cameras (USB via V4L2; archive libcamera)"
 
     # WirePlumber: per-device camera routing + mic priorities
     mkdir -p ~/.config/wireplumber/main.lua.d
