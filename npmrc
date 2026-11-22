@@ -3,3 +3,9 @@
 ; nuggets/javascript/packages.sh passes --ignore-scripts explicitly so the repo
 ; does not depend on this file; this covers ad-hoc `npm install` in project dirs.
 ignore-scripts=true
+
+; Pareto's "Package managers delay new releases" requires both: resolve only
+; versions published more than 7 days ago (bypass once: --min-release-age=0),
+; and save exact versions.
+min-release-age=7
+save-exact=true

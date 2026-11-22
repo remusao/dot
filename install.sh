@@ -542,6 +542,18 @@ ok "$HOME/.config/fontconfig/fonts.conf"
 # Copied, never symlinked: npm saves its user config by writing through
 # ~/.npmrc, so a symlink would commit whatever `npm login` puts there.
 [ -f "${HOME}/.npmrc" ] || install -m 600 "${DOT_DIR}/npmrc" "${HOME}/.npmrc"
+# Append each repo key an existing copy does not set; its explicit values win.
+while IFS= read -r kv; do
+    grep -q "^[[:space:]]*${kv%%=*}[[:space:]]*=" "${HOME}/.npmrc" || printf '\n%s\n' "$kv" >> "${HOME}/.npmrc"
+done < <(grep -E '^[a-z-]+=' "${DOT_DIR}/npmrc")
+
+mkdir -p ~/.config/uv
+if [ -e ~/.config/uv/uv.toml ] && [ ! -L ~/.config/uv/uv.toml ]; then
+    err "$HOME/.config/uv/uv.toml exists and is not a symlink, skipping"
+else
+    ln -sf "${DOT_DIR}/uv/uv.toml" ~/.config/uv/uv.toml
+    ok "$HOME/.config/uv/uv.toml"
+fi
 
 mkdir -p ~/.config/rofi ~/.config/picom ~/.config/dunst ~/.config/i3status-rust
 ln -sf "${DOT_DIR}/rofi/config.rasi" ~/.config/rofi/config.rasi

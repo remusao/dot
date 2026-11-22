@@ -1,0 +1,5 @@
+# Supply-chain delay (Pareto: "Package managers delay new releases") for `uv pip`
+# only: at top level it lands in the uv.lock of projects that set none, failing
+# --locked wherever this file is absent. Bypass once: --exclude-newer false.
+[pip]
+exclude-newer = "7 days"
