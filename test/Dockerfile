@@ -26,7 +26,8 @@ RUN for f in /usr/sbin/ufw /usr/sbin/update-grub /usr/sbin/update-initramfs /usr
       '    exec /usr/bin/systemctl.distrib "$@" ;;' \
       '  is-active|is-failed) exit 3 ;;' \
       'esac' > /usr/bin/systemctl && \
-    printf 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n' > /etc/default/grub
+    printf 'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n' > /etc/default/grub && \
+    mkdir -p /etc/grub.d /etc/lvm /etc/ssh /etc/netplan /var/lib/tailscale
 
 COPY --chown=remi:remi . /home/remi/.dot
 

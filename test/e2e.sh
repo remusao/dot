@@ -459,7 +459,7 @@ check "i3/config: no redshift" bash -c '! grep -vE "^[[:space:]]*#" "$HOME/.dot/
 check "i3/config: no scrot" bash -c '! grep -vE "^[[:space:]]*#" "$HOME/.dot/i3/config" | grep -q scrot'
 check "i3/config: i3status-rs" grep -q "i3status-rs" "$HOME/.dot/i3/config"
 check "i3/config: no pasystray" bash -c '! grep -q "pasystray" "$HOME/.dot/i3/config"'
-check "i3status-rs" command -v i3status-rs
+check "i3status-rs" test -x "$HOME/.cargo/bin/i3status-rs"
 check "no copyq" bash -c '! command -v copyq'
 check "no xsel" bash -c '! command -v xsel'
 check "i3/config: no copyq" bash -c '! grep -q "copyq" "$HOME/.dot/i3/config"'
