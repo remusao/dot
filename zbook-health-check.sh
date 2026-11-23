@@ -224,8 +224,12 @@ check_hardware() {
     local bios_ver bios_date
     bios_ver=$(cat /sys/class/dmi/id/bios_version 2>/dev/null) || bios_ver="unknown"
     bios_date=$(cat /sys/class/dmi/id/bios_date 2>/dev/null) || bios_date="unknown"
-    if [[ "$bios_ver" == *"01.03.02"* ]]; then
-        warn "BIOS version $bios_ver ($bios_date)" "v1.03.02 has known fan regression — v1.03.00 was quieter. Check for BIOS update: sudo fwupdmgr update. Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525"
+    # 01.06.02 fixes the fan stopping after display off. Install the BIOS alone:
+    # `fwupdmgr update` would also apply any pending dbx update in the same run.
+    local bios_num min_bios="01.06.02"
+    bios_num=$(grep -oE '[0-9]{2}\.[0-9]{2}\.[0-9]{2}' <<< "$bios_ver" | head -1)
+    if [[ -n "$bios_num" ]] && dpkg --compare-versions "$bios_num" lt "$min_bios"; then
+        warn "BIOS version $bios_ver ($bios_date)" "older than $min_bios (fan stops after display off). Update the BIOS only: fwupdmgr install 6b887c32-2e1f-462a-a1bc-2d08ce9ffac5 0x01060200"
     else
         info "BIOS: $bios_ver ($bios_date)"
     fi
@@ -755,7 +759,7 @@ sudo systemctl enable wifi-suspend-fix.service"
 
     # NPU checks (AMD XDNA 2 — 50 TOPS, but userspace not ready)
     local npu_loaded=false
-    if lsmod 2>/dev/null | grep -q amdxdna; then
+    if grep -q '^amdxdna ' /proc/modules; then
         npu_loaded=true
         local kver
         kver=$(uname -r)
@@ -785,14 +789,14 @@ sudo systemctl enable wifi-suspend-fix.service"
     fi
 
     # Webcam / ISP4 (blocks GPU s2idle power-down)
-    if lsmod 2>/dev/null | grep -q amd_isp; then
+    if grep -q '^amd_isp' /proc/modules; then
         info "AMD ISP4 webcam driver loaded — ISP firmware blocks SMU GPU power-down during s2idle. Expected: ~10-15% overnight drain. Ref: https://bugzilla.kernel.org/show_bug.cgi?id=220702"
     else
         info "AMD ISP4 webcam driver not loaded — optimal sleep power (0.14-0.20W, ~15 days standby on 74.5Wh). Ref: https://github.com/geohot/ztop"
     fi
 
     # ISP power gating WARN on resume (smu_dpm_set_power_gate + isp_poweron in amdgpu)
-    if lsmod 2>/dev/null | grep -q amd_isp; then
+    if grep -q '^amd_isp' /proc/modules; then
         local isp_warn_found=false
         if dmesg 2>/dev/null | grep -q "smu_dpm_set_power_gate.*amdgpu"; then
             isp_warn_found=true
@@ -894,9 +898,9 @@ check_security() {
     fi
 
     # TPM interface (CRB = Pluton, TIS = discrete)
-    if lsmod 2>/dev/null | grep -q tpm_crb; then
+    if grep -q '^tpm_crb ' /proc/modules; then
         info "TPM interface: CRB (Microsoft Pluton) — supported since Linux 6.3. Ref: https://www.phoronix.com/news/Pluton-TPM-CRB-Merged-Linux-6.3"
-    elif lsmod 2>/dev/null | grep -q tpm_tis; then
+    elif grep -q '^tpm_tis ' /proc/modules; then
         info "TPM interface: TIS (discrete TPM, not Pluton)"
     fi
 
@@ -910,11 +914,13 @@ check_security() {
     # SME/TSME (Transparent Secure Memory Encryption — encrypts all RAM)
     if has_root; then
         local sme_status=""
-        sme_status=$(dmesg 2>/dev/null | grep -i "Memory Encryption" | head -1) || true
+        sme_status=$(dmesg 2>/dev/null | grep -i -E "Memory Encryption|TSME enabled" | head -1) || true
         if [[ -z "$sme_status" ]]; then
-            sme_status=$(journalctl -k --no-pager -q 2>/dev/null | grep -i "Memory Encryption" | head -1) || true
+            sme_status=$(journalctl -k --no-pager -q 2>/dev/null | grep -i -E "Memory Encryption|TSME enabled" | head -1) || true
         fi
-        if [[ "$sme_status" == *"active"* ]]; then
+        if [[ "$sme_status" == *"TSME enabled"* ]]; then
+            ok "TSME enabled (reported by the PSP)"
+        elif [[ "$sme_status" == *"active"* ]]; then
             ok "Memory Encryption active: ${sme_status##*Features } — Zen 5 uses 256-bit AES-XTS, ~0.7% performance cost. Ref: https://www.phoronix.com/review/amd-memory-guard-ram-encrypt"
         elif [[ -n "$sme_status" ]]; then
             warn "Memory Encryption status" "$sme_status"
@@ -1155,7 +1161,7 @@ check_wifi() {
     # Driver — only FAIL if no wireless interface is UP (driver may show under a different name)
     local wl_up
     wl_up=$(ip -br link 2>/dev/null | grep -E "^wl.*UP") || wl_up=""
-    if lsmod 2>/dev/null | grep -q mt7925e; then
+    if grep -q '^mt7925e ' /proc/modules; then
         ok "mt7925e driver loaded"
     elif [[ -n "$wl_up" ]]; then
         ok "WiFi interface UP (driver active)"
