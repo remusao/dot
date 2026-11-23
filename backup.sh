@@ -337,7 +337,6 @@ backup_system() {
         /etc/fstab
         /etc/default/grub
         /etc/grub.d/
-        /etc/initramfs-tools/
         /etc/sudoers.d/
         /etc/ssh/
         /etc/lvm/
@@ -368,6 +367,10 @@ backup_system() {
     # Secure Boot: without the MOK keypair, DKMS modules stop loading after a restore
     # and re-enrolment needs a physical console at MOK Manager.
     for d in /var/lib/shim-signed/mok /var/lib/dkms /etc/cryptsetup-initramfs; do
+        [[ -d "$d" ]] && restic_args+=("$d/")
+    done
+    # initramfs config: initramfs-tools up to 24.04, dracut from 26.04.
+    for d in /etc/initramfs-tools /etc/dracut.conf.d; do
         [[ -d "$d" ]] && restic_args+=("$d/")
     done
 
