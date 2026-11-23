@@ -53,13 +53,13 @@ if [ -x "${HOME}/.cargo/bin/sccache" ]; then
 fi
 
 . ./nuggets/rust/ripgrep.sh
-. ./nuggets/rust/alacritty.sh
 . ./nuggets/rust/i3status-rust.sh
 . ./nuggets/rust/cargo-tools.sh
 
 # Python
 . ./nuggets/python/pyenv.sh
 . ./nuggets/python/python.sh
+. ./nuggets/python/uv.sh
 
 # JavaScript
 . ./nuggets/javascript/nodejs.sh

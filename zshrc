@@ -326,7 +326,7 @@ zle -N nvim_fzf
 
 bindkey "^f" nvim_fzf
 
-# User-installed zsh completions (alacritty, etc.)
+# User-installed zsh completions
 fpath=(~/.zsh_functions $fpath)
 
 # Completions (full rebuild once per day, fast load otherwise)

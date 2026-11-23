@@ -71,10 +71,10 @@ floating_modifier $mod
 # Inner `exec` makes i3's `sh -c` wrapper exec-replace into env→urxvt rather than
 # lingering as a waiting /bin/sh for the window's life (one fewer process per window).
 bindsym $mod+Return       exec --no-startup-id exec env XMODIFIERS= urxvt
-bindsym $mod+Shift+Return exec --no-startup-id alacritty
+bindsym $mod+Shift+Return exec --no-startup-id kitty
 
-# Scratchpad dropdown terminal (alacritty)
-exec --no-startup-id alacritty --class Alacritty,scratchpad
+# Scratchpad dropdown terminal (kitty)
+exec --no-startup-id kitty --name scratchpad
 for_window [instance="scratchpad"] floating enable, resize set 1200 700, move scratchpad
 bindsym $mod+grave scratchpad show
 bindsym $mod+Shift+minus move scratchpad

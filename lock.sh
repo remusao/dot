@@ -15,6 +15,9 @@ export PYTHON_VERSION="3.12.16"
 # https://github.com/pyenv/pyenv/releases/latest
 export PYENV_RELEASE="v2.8.15"
 
+# https://github.com/astral-sh/uv/releases/latest (asset: ^uv-x86_64-unknown-linux-gnu\.tar\.gz$ ^sha256\.sum$)
+export UV_VERSION="0.13.6"
+
 # Not RUSTUP_VERSION: live rustup env var, makes `rustup self update` refuse to move.
 # https://github.com/rust-lang/rustup/tags
 export RUSTUP_PIN="1.29.3" # bootstrap only; `rustup self update` moves past it
@@ -86,14 +89,33 @@ export DU_DUST_VERSION="1.2.7"
 # crates.io: difftastic
 export DIFFTASTIC_VERSION="0.72.0"
 
+# crates.io: bandwhich
+export BANDWHICH_VERSION="0.23.1"
+
+# crates.io: cargo-insta
+export CARGO_INSTA_VERSION="1.47.2"
+
+# crates.io: cargo-llvm-cov
+export CARGO_LLVM_COV_VERSION="0.8.7"
+
+# crates.io: cargo-mutants
+export CARGO_MUTANTS_VERSION="27.1.0"
+
+# crates.io: cargo-nextest
+export CARGO_NEXTEST_VERSION="0.9.133"
+
+# crates.io: samply
+export SAMPLY_VERSION="0.13.1"
+
+# crates.io: wasm-pack
+export WASM_PACK_VERSION="0.15.0"
+
 # https://github.com/jesseduffield/lazygit/releases/latest (asset: _linux_x86_64\.tar\.gz$ ^checksums\.txt$)
 export LAZYGIT_VERSION="0.66.3"
 
 # https://github.com/facebook/watchman/releases/latest (asset: linux\.zip$)
 export WATCHMAN_VERSION="2026.11.09.00"
 
-# https://github.com/alacritty/alacritty/releases/latest
-export ALACRITTY_VERSION="0.17.0"
 
 # https://rubygems.org/gems/fusuma -- a gem, not a GitHub release; bump.sh can only warn.
 export FUSUMA_VERSION="3.12.0"

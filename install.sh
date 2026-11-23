@@ -24,8 +24,8 @@ err()   { echo "${RED}${BOLD}  ✗${RESET} $*" >&2; }
 # ── Sanity checks ──────────────────────────────────────────────────────────
 # shellcheck source=/dev/null
 source /etc/os-release
-if [ "$ID" != "ubuntu" ] || [ "$VERSION_ID" != "24.04" ]; then
-  err "Requires Ubuntu 24.04 LTS (detected: $PRETTY_NAME)"; exit 1
+if [ "$ID" != "ubuntu" ] || [ "$VERSION_ID" != "26.04" ]; then
+  err "Requires Ubuntu 26.04 LTS (detected: $PRETTY_NAME)"; exit 1
 fi
 
 sudo -v
@@ -34,6 +34,18 @@ while true; do sudo -n true; sleep 55; kill -0 "$$" || exit; done 2>/dev/null &
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 APT_OPTS=(-y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold")
+# Launchpad PPAs often answer 503; retry index and package downloads alike.
+echo 'Acquire::Retries "10";' | sudo tee /etc/apt/apt.conf.d/80-retries > /dev/null
+
+# The repo blocks below run these before ALL_PKGS installs them. A fresh 26.04
+# desktop ships no curl; minimal images (test/Dockerfile) lack the rest too.
+for cmd in curl wget gpg add-apt-repository; do
+  if ! command -v "$cmd" &>/dev/null; then
+    sudo apt-get update
+    sudo apt-get install "${APT_OPTS[@]}" ca-certificates curl gnupg software-properties-common wget
+    break
+  fi
+done
 
 # Skip flags for Docker/CI environments
 SKIP_SNAP=${DOTFILES_SKIP_SNAP:-0}
@@ -96,19 +108,6 @@ REPOS_ADDED=0
 # APT repositories (each guarded by source-file existence)
 # ══════════════════════════════════════════════════════════════════════════
 
-# ── i3 (latest release) ──────────────────────────────────────────────────
-if ! has_repo /etc/apt/sources.list.d/sur5r-i3.list; then
-  info "Adding i3 official repo..."
-  curl -fsSL "https://debian.sur5r.net/i3/pool/main/s/sur5r-keyring/sur5r-keyring_2025.12.14_all.deb" \
-    -o /tmp/sur5r-keyring.deb
-  sudo apt-get install "${APT_OPTS[@]}" /tmp/sur5r-keyring.deb
-  rm -f /tmp/sur5r-keyring.deb
-  echo "deb [signed-by=/usr/share/keyrings/sur5r-keyring.gpg] http://debian.sur5r.net/i3/ $(# shellcheck source=/dev/null
-  . /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") universe" \
-    | sudo tee /etc/apt/sources.list.d/sur5r-i3.list > /dev/null
-  REPOS_ADDED=1
-fi
-
 # ── Firefox/Mozilla repo ─────────────────────────────────────────────────
 if ! has_repo /etc/apt/sources.list.d/mozilla.list; then
   info "Adding Mozilla apt repo..."
@@ -130,7 +129,7 @@ printf 'Unattended-Upgrade::Origins-Pattern { "site=packages.mozilla.org"; };\n'
   | sudo tee /etc/apt/apt.conf.d/52unattended-upgrades-firefox > /dev/null
 
 # ── Thunderbird PPA ────────────────────────────────────────────────────────
-if ! has_repo /etc/apt/sources.list.d/mozillateam-ubuntu-ppa-noble.sources; then
+if ! has_repo "/etc/apt/sources.list.d/mozillateam-ubuntu-ppa-${VERSION_CODENAME}.sources"; then
   info "Adding Thunderbird PPA..."
   sudo add-apt-repository -y ppa:mozillateam/ppa
   REPOS_ADDED=1
@@ -236,7 +235,7 @@ if ! has_repo /etc/apt/sources.list.d/github-cli.list; then
 fi
 
 # ── Git (latest stable) ───────────────────────────────────────────────────
-if ! has_repo /etc/apt/sources.list.d/git-core-ubuntu-ppa-noble.sources; then
+if ! has_repo "/etc/apt/sources.list.d/git-core-ubuntu-ppa-${VERSION_CODENAME}.sources"; then
   info "Adding git-core PPA..."
   sudo add-apt-repository -y ppa:git-core/ppa
   REPOS_ADDED=1
@@ -260,8 +259,8 @@ fi
 # Keyring refresh (vendor signing-key rotations)
 # ══════════════════════════════════════════════════════════════════════════
 # Only the four keyrings nothing else maintains. Deliberately excluded:
-#   brave-keyring / sur5r-keyring / tailscale-archive-keyring / amdgpu-install
-#     ship their keyring as a deb, so apt upgrades it.
+#   brave-keyring / tailscale-archive-keyring ship their keyring as a deb, so
+#     apt upgrades it.
 #   google-chrome.gpg and 1password-archive-keyring.gpg are rewritten by
 #     google-chrome-stable.postinst and 1password.postinst on every package
 #     upgrade. Refreshing them here would just fight those scripts.
@@ -283,31 +282,6 @@ if has_repo /etc/apt/sources.list.d/pareto.list; then
   refresh_keyring https://pkg.paretosecurity.com/paretosecurity.gpg \
     /usr/share/keyrings/paretosecurity.gpg dearmor
 fi
-
-# ══════════════════════════════════════════════════════════════════════════
-# OEM repos: pin Signed-By
-# ══════════════════════════════════════════════════════════════════════════
-# ubuntu-release-upgrader converted these two from .list to deb822 during a
-# partial upgrade (migrateToDeb822Sources in DistUpgradeController.py). It infers
-# the keyring from the source filename -- trusted.gpg.d/oem-nantou-meta.gpg --
-# which never existed, because the OEM keys live in ubuntu-keyring-2008-oem.gpg
-# and ubuntu-keyring-2020-oem.gpg. That heuristic only works for PPAs added by
-# add-apt-repository, so both files came out with no Signed-By and apt prints
-#   N: Missing Signed-By in the sources.list(5) entry for '...'
-# on every update, verifying them against the deprecated global trusted.gpg.d
-# store instead. apt cannot self-heal this: it would inherit Signed-By from the
-# cached Release file, but that path requires Valid-Until and Canonical's OEM
-# index has no such field. ubuntu-oem-keyring holds both signing keys and is
-# dpkg-managed, so pinning it stays correct across key updates.
-for f in /etc/apt/sources.list.d/oem-nantou-meta.sources \
-         /etc/apt/sources.list.d/oem-stella-chippo-meta.sources; do
-  if [ -f "$f" ] && ! grep -qi '^Signed-By:' "$f"; then
-    info "Pinning Signed-By in $(basename "$f")..."
-    echo "Signed-By: /usr/share/keyrings/ubuntu-oem-keyring.gpg" \
-      | sudo tee -a "$f" > /dev/null
-    REPOS_ADDED=1
-  fi
-done
 
 # ══════════════════════════════════════════════════════════════════════════
 # Snap removal (before apt install replaces them with debs)
@@ -373,6 +347,8 @@ ALL_PKGS=(
   zsh git build-essential clang g++ cmake ninja-build gettext unzip pkg-config
   python3-pip python3-venv python3-dev
   rxvt-unicode
+  # 26.04 ships no Xorg session: i3 needs the server (amdgpu DDX, as on 24.04)
+  xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-amdgpu
   i3 i3lock i3status rofi gammastep feh
   pamixer pulseaudio-utils brightnessctl pavucontrol pulsemixer blueman playerctl dunst
   xss-lock policykit-1-gnome
@@ -385,14 +361,12 @@ ALL_PKGS=(
   xclip
   jq sd hexyl entr just
   ffmpeg v4l-utils vainfo radeontop mitmproxy pandoc socat pv pigz 7zip ncdu
-  zoxide duf btop nmap wireguard
+  zoxide duf btop nmap wireguard ufw
   protobuf-compiler libsnappy-dev libboost-all-dev libzstd-dev
   libssl-dev zlib1g-dev libbz2-dev libreadline-dev
   libsqlite3-dev libncurses-dev libffi-dev liblzma-dev
   libxml2-dev libxmlsec1-dev
   libclang-dev libopenblas-dev libsasl2-dev liburing-dev libzzip-dev
-  # alacritty build deps (source build via nuggets/rust/alacritty.sh)
-  libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev scdoc
   # kitty build deps (source build via nuggets/utilities/kitty.sh)
   libharfbuzz-dev libcairo2-dev libxxhash-dev liblcms2-dev librsync-dev
   libfreetype-dev libpng-dev libcanberra-dev
@@ -403,15 +377,15 @@ ALL_PKGS=(
   libsimde-dev golang-go
   # No python3-sphinx: kitty's docs come prebuilt in the signed release tarball
   # kitty.sh now builds from, and noble's sphinx is too old to build them anyway.
-  google-perftools
   tk-dev xz-utils
   fonts-inconsolata fonts-powerline fonts-dejavu fontconfig
   gimp evince libreoffice
-  libfido2-1 libu2f-udev
+  libfido2-1
   tree editorconfig xdg-utils
-  tldr rsync whois zstd apache2-utils
-  htop dfc earlyoom lm-sensors rasdaemon nvme-cli smartmontools
+  tealdeer rsync whois zstd apache2-utils
+  htop dfc earlyoom lm-sensors rasdaemon nvme-cli smartmontools exfatprogs
   screen tmux parallel
+  encfs vlc nethogs vnstat gparted lz4 libsecret-tools vulkan-tools linux-tools-generic
   firefox
   thunderbird brave-browser google-chrome-stable tailscale gh
   paretosecurity
@@ -510,8 +484,9 @@ ok "UFW firewall (deny incoming, allow outgoing)"
 # staged files are whatever the last restore happened to write (restore an old
 # snapshot and the next install.sh silently reconfigures the running kernel from
 # it), and restore/ is gitignored, so on a fresh clone the glob matched nothing and
-# the step reported ok while doing nothing. All ten of those files turned out to be
-# dpkg-owned package defaults anyway. The settings this repo actually owns are
+# the step reported ok while doing nothing. Eight of those ten files were untouched
+# dpkg-owned package defaults; the other two had settings edited into the procps
+# conffiles, which 26.04 no longer ships. The settings this repo actually owns are
 # declared here, in the repo.
 info "Applying kernel hardening..."
 sudo tee /etc/sysctl.d/40-max-user-watches.conf > /dev/null << 'SYSCTL'
@@ -522,8 +497,46 @@ sudo tee /etc/sysctl.d/60-inotify.conf > /dev/null << 'SYSCTL'
 # Raised for the number of concurrent inotify consumers.
 fs.inotify.max_user_instances=1024
 SYSCTL
+# After 26.04's /usr/lib/sysctl.d/55-*.conf, which set none of these.
+sudo tee /etc/sysctl.d/60-dot-hardening.conf > /dev/null << 'SYSCTL'
+# No loading a new kernel at runtime via kexec (also disables kdump).
+# One-way until reboot.
+kernel.kexec_load_disabled = 1
+# Ubuntu kernels default to 4 (no unprivileged perf at all). 3 behaves like
+# upstream 2: unprivileged user-space profiling (perf, flamegraph) works,
+# kernel profiling needs root. samply wants 1.
+kernel.perf_event_paranoid = 3
+# No ICMP redirects: they let a LAN host rewrite routes.
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+SYSCTL
+# kexec_load_disabled leaves kdump-tools (on the 26.04 desktop image) unable to load
+# its crash kernel, wasting its crashkernel= reservation (up to 4 GiB). Purge it
+# before sysctl applies that: its prerm unloads the crash kernel through kexec.
+if dpkg-query -W -f='${Status}' kdump-tools 2>/dev/null | grep -q 'ok installed'; then
+  sudo apt-get purge "${APT_OPTS[@]}" kdump-tools
+  sudo update-grub
+fi
 sudo sysctl --system > /dev/null 2>&1
 ok "Kernel hardening (sysctl)"
+
+# ── earlyoom: prefer build jobs, spare the session ───────────────────────
+EARLYOOM_CONF='EARLYOOM_ARGS="-r 3600 -p --prefer ^(rustc|cc1plus|cc1|ld|cargo|cargo-mutants|[a-z0-9_]+-[0-9a-f]+)$ --avoid ^(Xorg|gdm-x-session|gdm-session-wor|i3|i3lock|xss-lock|systemd|dbus-daemon|urxvt|claude|ssh-agent|gpg-agent|gnome-keyring-d|ibus-daemon|ibus-x11)$"'
+if ! printf '%s\n' "$EARLYOOM_CONF" | cmp -s - /etc/default/earlyoom; then
+  printf '%s\n' "$EARLYOOM_CONF" | sudo tee /etc/default/earlyoom > /dev/null
+  if systemctl is-active --quiet earlyoom; then sudo systemctl restart earlyoom; fi
+fi
+ok "earlyoom"
+
+# ── /tmp on disk ─────────────────────────────────────────────────────────
+# 26.04 mounts /tmp as tmpfs (systemd tmp.mount: size=50% of RAM, 1M inodes),
+# too small for multi-GB repo clones and cargo targets. Keep it on the root fs
+# (systemd-tmpfiles still ages it); applies from the next boot.
+sudo systemctl mask tmp.mount
 
 # ── Claude Code ────────────────────────────────────────────────────────────
 if [ "$SKIP_AI_TOOLS" != "1" ]; then
@@ -557,9 +570,6 @@ ln -sf "${DOT_DIR}/ssh_config" ~/.ssh/config
 chmod 600 "${DOT_DIR}/ssh_config"
 ok "$HOME/.ssh/config"
 
-mkdir -p ~/.config/alacritty
-ln -sf "${DOT_DIR}/alacritty.toml" ~/.config/alacritty/alacritty.toml
-ok "$HOME/.config/alacritty/alacritty.toml"
 
 mkdir -p ~/.config/kitty
 ln -sf "${DOT_DIR}/kitty.conf" ~/.config/kitty/kitty.conf
@@ -762,72 +772,32 @@ GESTURES
     rm -f /tmp/cool-ryzen-sudoers
 
     # PD cycling diagnostic (real-time power supply state monitor)
+    mkdir -p "${HOME}/.local/bin"
     ln -sf "${DOT_DIR}/power-monitor.py" "${HOME}/.local/bin/power-monitor"
     chmod +x "${DOT_DIR}/power-monitor.py"
 
-    # Cameras: USB ones use V4L2. The built-in ISP4 webcam is disabled in BIOS
-    # and untested without the retired PPA (the archive's libcamera 0.2 has no
-    # AMD ISP handler). The routing below keeps PipeWire 1.0.5 off the ISP's
-    # V4L2 node (crash) and libcamera off Razer USB cameras (duplicates).
+    # Cameras: the built-in ISP4 webcam is disabled in BIOS and untested without
+    # the retired PPA (the archive's libcamera has no AMD ISP handler).
     sudo apt-get install "${APT_OPTS[@]}" libspa-0.2-libcamera libcamera-tools
     ok "Cameras (USB via V4L2; archive libcamera)"
 
-    # WirePlumber: per-device camera routing + mic priorities
-    mkdir -p ~/.config/wireplumber/main.lua.d
-    rm -f ~/.config/wireplumber/main.lua.d/51-disable-libcamera.lua
-    cat > ~/.config/wireplumber/main.lua.d/51-camera-routing.lua << 'WPCONF'
--- Per-device camera routing for PipeWire 1.0.5 + WirePlumber 0.4.17
--- AMD ISP (built-in): libcamera only — V4L2 probe crashes PipeWire 1.0.5
--- USB cameras:        V4L2 only    — libcamera creates duplicates
--- TODO: revisit when PipeWire is updated past 1.0.5
-
-table.insert(v4l2_monitor.rules, {
-  matches = {
-    {
-      { "device.name", "matches", "v4l2_device.*amd_isp*" },
-    },
-  },
-  apply_properties = {
-    ["device.disabled"] = true,
-  },
-})
-
-table.insert(libcamera_monitor.rules, {
-  matches = {
-    {
-      { "node.name", "matches", "libcamera_input.*1532*" },
-    },
-  },
-  apply_properties = {
-    ["node.disabled"] = true,
-  },
-})
-WPCONF
-    ok "Camera routing (AMD ISP→libcamera, USB→V4L2)"
-    cat > ~/.config/wireplumber/main.lua.d/52-mic-priorities.lua << 'WPCONF'
-table.insert(alsa_monitor.rules, {
-  matches = {
-    {
-      { "node.name", "equals", "alsa_input.pci-0000_c3_00.6.HiFi__Mic2__source" },
-    },
-  },
-  apply_properties = {
-    ["priority.driver"] = 3000,
-    ["priority.session"] = 3000,
-  },
-})
-
-table.insert(alsa_monitor.rules, {
-  matches = {
-    {
-      { "node.name", "equals", "alsa_input.usb-Alpha_Imaging_Tech._Corp._Razer_Kiyo-02.analog-stereo" },
-    },
-  },
-  apply_properties = {
-    ["priority.driver"] = 2500,
-    ["priority.session"] = 2500,
-  },
-})
+    # WirePlumber 0.5 reads only SPA-JSON wireplumber.conf.d/*.conf (the old
+    # main.lua.d is silently ignored). Cameras need no rule: 0.5 picks V4L2 or
+    # libcamera per device itself (and before 0.5.18 a device.disabled rule
+    # stalled its event queue, wireplumber#1004).
+    rm -f ~/.config/wireplumber/main.lua.d/{51-disable-libcamera,51-camera-routing,52-mic-priorities}.lua
+    mkdir -p ~/.config/wireplumber/wireplumber.conf.d
+    cat > ~/.config/wireplumber/wireplumber.conf.d/52-mic-priorities.conf << 'WPCONF'
+monitor.alsa.rules = [
+  {
+    matches = [ { node.name = "alsa_input.pci-0000_c3_00.6.HiFi__Mic2__source" } ]
+    actions = { update-props = { priority.driver = 3000, priority.session = 3000 } }
+  }
+  {
+    matches = [ { node.name = "alsa_input.usb-Alpha_Imaging_Tech._Corp._Razer_Kiyo-02.analog-stereo" } ]
+    actions = { update-props = { priority.driver = 2500, priority.session = 2500 } }
+  }
+]
 WPCONF
     ok "Mic priorities (headphone jack > USB mic > built-in)"
 
@@ -836,9 +806,15 @@ WPCONF
     #   2026-05-29 NVMe I/O stall — see HP-ZBook report §8.16). Keep pcie_aspm=off as-is.
     # Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/ZBook-Ultra-G1a-Ryzen-AI-Max-PRO-395-high-APU-PPT-and-broken/td-p/9491525
     # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
+    # + abmlevel=0: ABM off (LCD colour shift).
+    # + Kernel 7.0:
+    #   kho=off: Ubuntu's 7.0 config enables Kexec HandOver by default, which
+    #     reserves ~9 GiB as movable-only CMA that GTT/ROCm cannot use.
+    #   amdgpu.lockup_timeout=10000: 7.0 cut the GPU job timeout to 2 s; restore
+    #     10 s so long GPU jobs are not reset. Never 0 (means "default").
     info "Configuring kernel parameters (ZBook Ultra G1a)..."
     GRUB_CHANGED=0
-    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "amdgpu.cwsr_enable=0" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856" "nvme_core.default_ps_max_latency_us=0" "pcie_port_pm=off"; do
+    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "amdgpu.cwsr_enable=0" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856" "nvme_core.default_ps_max_latency_us=0" "pcie_port_pm=off" "amdgpu.abmlevel=0" "kho=off" "amdgpu.lockup_timeout=10000"; do
         param_name="${kp%%=*}"
         normalized="${param_name//-/_}"
         if ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${normalized}[= \"]" /etc/default/grub 2>/dev/null &&
@@ -851,7 +827,17 @@ WPCONF
     if [[ "$GRUB_CHANGED" == "1" ]]; then
         sudo update-grub
     fi
-    ok "Kernel parameters (amd_pstate pcie_aspm amd_iommu dcdebugmask cwsr_enable ttm.pages_limit ttm.page_pool_size nvme_core.default_ps_max_latency_us pcie_port_pm)"
+    ok "Kernel parameters (amd_pstate pcie_aspm amd_iommu dcdebugmask cwsr_enable ttm.pages_limit ttm.page_pool_size nvme_core.default_ps_max_latency_us pcie_port_pm abmlevel kho lockup_timeout)"
+
+    # NPU: unusable with amd_iommu=off (SVA bind fails), and on 7.0 its npu_7.sbin
+    # firmware (shipped by 26.04's linux-firmware) blocks s0i3 (drm/amd #5319;
+    # upstream a8878e19d2f5, not in Ubuntu 7.0.0-44). Drop if the IOMMU is re-enabled.
+    XDNA_CONF=/etc/modprobe.d/blacklist-amdxdna.conf
+    if ! grep -qx 'blacklist amdxdna' "$XDNA_CONF" 2>/dev/null; then
+        echo 'blacklist amdxdna' | sudo tee "$XDNA_CONF" > /dev/null
+        sudo update-initramfs -u
+    fi
+    ok "amdxdna blacklisted"
 
     # NVMe write pressure: throttle the GNOME tracker indexer. It crash-looped throughout
     # the 2026-05-29 I/O stall and is unneeded under i3. Soft-disable via gsettings —
@@ -875,26 +861,21 @@ SYSCTL
     sudo sysctl -p /etc/sysctl.d/10-vm-nvme.conf > /dev/null
     ok "NVMe write-pressure sysctl (vm.swappiness=10, bounded dirty bytes)"
 
-    # ROCm (Ryzen APU path — uses inbox kernel driver, no DKMS)
-    # Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html
+    # ROCm from the Ubuntu archive (7.1, built for gfx1151; inbox kernel driver, no
+    # DKMS). AMD publishes no ROCm 7.2.x for resolute. rocm-dev, not rocm: the
+    # latter adds ~2.5 GB of rocm-tests. amd-debug-tools provides amd-ttm.
+    # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
     if [ "$SKIP_ROCM" != "1" ]; then
-        info "Installing ROCm (Ryzen APU path)..."
-        wget -q "https://repo.radeon.com/amdgpu-install/7.2.1/ubuntu/noble/amdgpu-install_7.2.1.70201-1_all.deb" \
-            -O /tmp/amdgpu-install.deb
-        sudo apt-get install "${APT_OPTS[@]}" /tmp/amdgpu-install.deb
-        rm -f /tmp/amdgpu-install.deb
-        sudo apt-get update
-        amdgpu-install -y --usecase=rocm --no-dkms
-        ok "ROCm (Ryzen APU)"
-
-        # amd-debug-tools: provides amd-ttm for shared memory config
-        # Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
-        if ! command -v pipx &>/dev/null; then
-            sudo apt-get install "${APT_OPTS[@]}" pipx
+        info "Installing ROCm (Ubuntu archive)..."
+        # A restored pipx copy (built for 24.04's python3.12) would shadow /usr/bin/amd-ttm.
+        if [ -d ~/.local/share/pipx/venvs/amd-debug-tools ]; then
+            pipx uninstall amd-debug-tools > /dev/null 2>&1 || {
+                rm -rf ~/.local/share/pipx/venvs/amd-debug-tools
+                rm -f ~/.local/bin/amd-{ttm,s2idle,pstate,bios}
+            }
         fi
-        pipx install amd-debug-tools 2>/dev/null || pipx upgrade amd-debug-tools 2>/dev/null || true
-        pipx ensurepath
-        ok "amd-debug-tools (amd-ttm)"
+        sudo apt-get install "${APT_OPTS[@]}" rocm-dev amd-debug-tools
+        ok "ROCm + amd-debug-tools (amd-ttm)"
     fi
 
     # WiFi suspend/resume: MT7925 driver timeout -110 after suspend (Ubuntu #2141198)

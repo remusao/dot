@@ -3,7 +3,7 @@ configuration {
     modes: "combi";
     show-icons: true;
     font: "JetBrainsMono Nerd Font 16";
-    terminal: "alacritty";
+    terminal: "kitty";
     display-combi: "";
 }
 

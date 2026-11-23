@@ -46,8 +46,7 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
 
     # The release tarball rather than a git clone: it ships docs/_build, so
     # setup.py skips `make docs` and still installs the same 71 man pages
-    # sphinx would have produced. The signature covers these exact bytes,
-    # where verify_git_tag covered a ref.
+    # sphinx would have produced. The signature covers these exact bytes.
     rel="https://github.com/kovidgoyal/kitty/releases/download/v${KITTY_VERSION}"
     curl_fetch "${rel}/kitty-${KITTY_VERSION}.tar.xz" "${TEMP}/kitty.tar.xz"
     curl_fetch "${rel}/kitty-${KITTY_VERSION}.tar.xz.sig" "${TEMP}/kitty.tar.xz.sig"
@@ -72,7 +71,7 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
     # /usr/bin/python3, not pyenv's: setup.py bakes the running interpreter's
     # sysconfig rpath into the binary, which the next PYTHON_VERSION bump orphans.
     # Staged into a temp prefix because copy_man_pages() rmtree's
-    # <prefix>/share/man/man{1,5} -- aimed at ~/.local it ate alacritty's pages.
+    # <prefix>/share/man/man{1,5} -- aimed at ~/.local it would eat other tools' pages.
     # Only the relative ../lib/kitty is baked in, so the tree relocates.
     # --update-check-interval=0 bakes the disabled update check into
     # kitty/options/types.py (defence in depth — config alone could be lost).

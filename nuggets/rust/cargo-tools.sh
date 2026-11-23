@@ -25,8 +25,11 @@ cargo_ensure() {
     # Match the pinned version anywhere in `--version` output — some tools (eza)
     # print the number on line 2, so don't restrict to the first line. Anchored
     # on non-version chars so a 0.6.1 pin can't match an installed 0.6.14.
-    if ! "${CARGO_BIN}/${binary}" --version 2>/dev/null \
-      | grep -qE "(^|[^0-9.])${version//./\\.}([^0-9.]|\$)"; then
+    # cargo-llvm-cov and cargo-mutants answer only as cargo runs them
+    # (`cargo-<sub> <sub> --version`); cargo-insta only without the <sub>.
+    if ! { "${CARGO_BIN}/${binary}" --version
+      [[ $binary != cargo-* ]] || "${CARGO_BIN}/${binary}" "${binary#cargo-}" --version || true
+    } 2>/dev/null | grep -qE "(^|[^0-9.])${version//./\\.}([^0-9.]|\$)"; then
       needs_build="1"
     fi
   fi
@@ -49,3 +52,15 @@ cargo_ensure tree-sitter-cli tree-sitter "${TREE_SITTER_CLI_VERSION}"
 cargo_ensure eza           eza           "${EZA_VERSION}"
 cargo_ensure du-dust       dust          "${DU_DUST_VERSION}"
 cargo_ensure difftastic    difft         "${DIFFTASTIC_VERSION}"
+cargo_ensure bandwhich     bandwhich     "${BANDWHICH_VERSION}"
+# Packet capture needs these caps; a rebuild or a non-root restore drops them.
+if command -v getcap > /dev/null && [ -x "${CARGO_BIN}/bandwhich" ] &&
+  ! getcap "${CARGO_BIN}/bandwhich" | grep -q cap_net_raw; then
+  sudo setcap cap_net_raw,cap_net_admin=ep "${CARGO_BIN}/bandwhich"
+fi
+cargo_ensure cargo-insta   cargo-insta   "${CARGO_INSTA_VERSION}"
+cargo_ensure cargo-llvm-cov cargo-llvm-cov "${CARGO_LLVM_COV_VERSION}"
+cargo_ensure cargo-mutants cargo-mutants "${CARGO_MUTANTS_VERSION}"
+cargo_ensure cargo-nextest cargo-nextest "${CARGO_NEXTEST_VERSION}"
+cargo_ensure samply        samply        "${SAMPLY_VERSION}"
+cargo_ensure wasm-pack     wasm-pack     "${WASM_PACK_VERSION}"

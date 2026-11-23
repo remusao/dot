@@ -126,27 +126,3 @@ verify_pgp_clearsigned() {
 verify_pgp_detached() {
   _verify_pgp "$3" "$4" "$1" --verify "$2" "$1"
 }
-
-# verify_git_tag <tag> <key.asc> <fpr> -- verify a signed tag in the CWD repo,
-# for alacritty, which builds from a clone rather than an asset. git drives gpg
-# itself, so this cannot go through _verify_pgp; same pinned keyring, same
-# VALIDSIG bind.
-verify_git_tag() {
-  local tag="$1" key="$2" fpr="$3"
-
-  (
-    home=$(mktemp -d)
-    trap 'rm -rf "$home"' EXIT
-    GNUPGHOME="$home" gpg --no-autostart --batch --quiet --import "$key" 2>/dev/null
-
-    # git verify-tag --raw writes the status lines to stderr, mixed with gpg's.
-    status=$(GNUPGHOME="$home" git verify-tag --raw "$tag" 2>&1) || true
-    case "$status" in
-      *"VALIDSIG ${fpr} "*) ;;
-      *)
-        printf 'verify_git_tag: %s is not signed by %s\n' "$tag" "$fpr" >&2
-        exit 1
-        ;;
-    esac
-  )
-}

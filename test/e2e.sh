@@ -51,7 +51,7 @@ section "Shell"
 check "zsh is default shell" test "$(getent passwd "$USER" | cut -d: -f7)" = "$(which zsh)"
 check "powerlevel10k cloned" test -d "$HOME/.zsh/powerlevel10k"
 check "powerlevel10k theme file" test -f "$HOME/.zsh/powerlevel10k/powerlevel10k.zsh-theme"
-check "zsh-syntax-highlighting" test -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+check "zsh-syntax-highlighting" test -f "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # ─── APT CORE PACKAGES ──────────────────────────────────
 section "Apt packages: core tools"
@@ -358,6 +358,10 @@ check "aws-vault ${AWS_VAULT_VERSION}" bash -c "'${HOME}/.local/bin/aws-vault' -
 check "hyperfine ${HYPERFINE_VERSION}" bash -c "'${HOME}/.local/bin/hyperfine' --version | grep -q '${HYPERFINE_VERSION}'"
 check "rclone ${DOTFILES_RCLONE_VERSION}" bash -c "'${HOME}/.local/bin/rclone' version | head -1 | grep -q '${DOTFILES_RCLONE_VERSION}'"
 check "restic ${RESTIC_VERSION}" bash -c "'${HOME}/.local/bin/restic' version | grep -q '${RESTIC_VERSION}'"
+check "uv ${UV_VERSION}" bash -c "'${HOME}/.local/bin/uv' --version | grep -q ' ${UV_VERSION} '"
+for t in aws check-jsonschema j2 maturin ruff; do
+  check "uv tool $t" "${HOME}/.local/bin/$t" --version
+done
 check "cosign ${COSIGN_VERSION}" bash -c "'${HOME}/.local/bin/cosign' version --json | grep -q '${COSIGN_VERSION}'"
 check "lua-language-server ${LUA_LANGUAGE_SERVER_VERSION}" bash -c "'${HOME}/.local/share/lua-language-server/bin/lua-language-server' --version | grep -q '${LUA_LANGUAGE_SERVER_VERSION}'"
 # Through the symlink on purpose: that is how kitty resolves slangc, and it only
@@ -408,7 +412,6 @@ fi
 section "Hardware & security"
 check "titan-key udev" test -f /etc/udev/rules.d/70-titan-key.rules
 check "libfido2" dpkg -s libfido2-1
-check "libu2f-udev" dpkg -s libu2f-udev
 
 # ─── ZBOOK ULTRA G1A ─────────────────────────────────────
 PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)
