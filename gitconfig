@@ -1,6 +1,9 @@
+# user.email is kept out of this public repo: ~/.config/git/identity sets it.
+[include]
+  path = ~/.config/git/identity
+
 [user]
   name = Rémi Berson
-  email = 1299873+remusao@users.noreply.github.com
   username = remusao
 	signingkey = /home/remi/.ssh/id_ed25519.pub
 

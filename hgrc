@@ -1,5 +1,5 @@
 [ui]
-username = remusao - Rémi Berson <1299873+remusao@users.noreply.github.com>
+username = remusao - Rémi Berson
 editor = nvim
 tweakdefaults = true
 interface = curses
@@ -44,5 +44,5 @@ graphshorten = true
 [paths]
 review = https://reviewboard-hg.mozilla.org/autoreview
 [bugzilla]
-username = 1299873+remusao@users.noreply.github.com
+username = REDACTED
 apikey = REDACTED
