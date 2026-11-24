@@ -290,6 +290,8 @@ check "pyenv dir" test -d "$HOME/.pyenv"
 check "pyenv ${PYENV_RELEASE}" bash -c "'${HOME}/.pyenv/bin/pyenv' --version | grep -q '${PYENV_RELEASE#v}'"
 check "python ${PYTHON_VERSION}" test -d "$HOME/.pyenv/versions/${PYTHON_VERSION}"
 check "python binary" "$HOME/.pyenv/versions/${PYTHON_VERSION}/bin/python3" --version
+check "pyenv pip ${PIP_VERSION}" bash -c "'$HOME/.pyenv/versions/${PYTHON_VERSION}/bin/pip' --version | grep -q '^pip ${PIP_VERSION} '"
+check "pip.conf symlink" test -L "$HOME/.config/pip/pip.conf"
 
 section "nvm + Node.js"
 check "nvm dir" test -d "$HOME/.nvm"

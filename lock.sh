@@ -11,6 +11,9 @@ export NEOVIM_VERSION="v0.12.6"
 # https://www.python.org/downloads/
 export PYTHON_VERSION="3.12.16"
 
+# https://pypi.org/project/pip/#history -- the pyenv interpreter's pip: >= 26.1 (pip.conf's uploaded-prior-to), released more than 7 days ago
+export PIP_VERSION="26.3"
+
 # Not PYENV_VERSION: pyenv reads that to pick the active Python, and zshrc sources this file everywhere.
 # https://github.com/pyenv/pyenv/releases/latest
 export PYENV_RELEASE="v2.8.15"

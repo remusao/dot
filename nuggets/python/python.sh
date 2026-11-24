@@ -17,3 +17,9 @@ if [ "${NEEDS_BUILD}" = "1" ]; then
   PYTHON_CFLAGS="-march=native" \
     "${HOME}/.pyenv/bin/pyenv" install --force "${PYTHON_VERSION}"
 fi
+
+# The interpreter bundles a pip that predates uploaded-prior-to (pip.conf).
+PYENV_PIP="${HOME}/.pyenv/versions/${PYTHON_VERSION}/bin/pip"
+if [ "$("$PYENV_PIP" --version | awk '{print $2}')" != "${PIP_VERSION}" ]; then
+  PIP_REQUIRE_VIRTUALENV=false "$PYENV_PIP" install --quiet --disable-pip-version-check "pip==${PIP_VERSION}"
+fi

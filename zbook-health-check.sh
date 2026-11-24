@@ -207,7 +207,9 @@ check_hardware() {
         warn "journald not using persistent storage" "previous boot logs are lost on reboot. Fix: sudo mkdir -p /var/log/journal && sudo systemd-tmpfiles --create --prefix /var/log/journal && sudo systemctl restart systemd-journald"
     fi
 
-    # AMD PMF CPU hogging (workqueue lockup risk — can cause hard lockup/panic)
+    # amd_pmf "hogged CPU" is a workqueue diagnostic, not a lockup precursor: the kernel takes
+    # the work item out of concurrency management so it cannot stall others. The real bug is
+    # the "TEE enact cmd failed" loop below.
     # dmesg requires root; fall back to journalctl -k which works for users in systemd-journal group
     local pmf_hog_line
     pmf_hog_line=$(dmesg 2>/dev/null | grep -o "amd_pmf_invoke_cmd.*hogged CPU for >10000us [0-9]* times" | tail -1) || pmf_hog_line=""
@@ -217,7 +219,12 @@ check_hardware() {
     if [[ -n "$pmf_hog_line" ]]; then
         local pmf_count
         pmf_count=$(echo "$pmf_hog_line" | grep -oP '\d+ times' | grep -oP '\d+') || pmf_count="?"
-        warn "amd_pmf CPU hogging detected (${pmf_count} times this boot)" "amd_pmf_invoke_cmd blocks CPU for >10ms per call. Accumulated hogging can cause hard lockups (caused a kernel panic on 2026-03-23). Cannot blacklist — handles thermal/power management. Awaiting kernel fix. Ref: https://bugs.launchpad.net/ubuntu/+source/linux-hwe-6.8/+bug/2112307"
+        info "amd_pmf_invoke_cmd ran >10 ms without sleeping ${pmf_count} times this boot — a workqueue diagnostic, harmless. Do not blacklist amd_pmf (platform profile, power limits)."
+    fi
+    local pmf_tee_fail
+    pmf_tee_fail=$(journalctl -b 0 -k --no-pager -g 'TEE enact cmd failed' 2>/dev/null | grep -c 'amd-pmf') || pmf_tee_fail=0
+    if [[ "${pmf_tee_fail:-0}" -gt 20 ]]; then
+        warn "amd_pmf 'TEE enact cmd failed' loop ($pmf_tee_fail lines this boot)" "the Smart PC policy engine fails every second after resume (kernel bugzilla 221019). Workaround, at the cost of HP's power-policy binary: echo 'options amd_pmf smart_pc_support=0' | sudo tee /etc/modprobe.d/amd-pmf.conf, then reboot. Ref: https://h30434.www3.hp.com/t5/Business-Notebooks/HP-ZBook-Ultra-G1a-Issues-after-bios-upgrade-to-1-05-07/td-p/9664151"
     fi
 
     # BIOS version — SAFE: only reads bios_version (never serial numbers)
@@ -246,17 +253,17 @@ check_os_kernel() {
     else
         ver=$(grep -oP 'VERSION_ID="\K[^"]+' /etc/os-release 2>/dev/null) || ver=""
     fi
-    if [[ "$ver" == "24.04" ]]; then
-        ok "Ubuntu 24.04 LTS — certified by Canonical for this hardware. Ref: https://ubuntu.com/certified/platforms/15242"
+    if [[ "$ver" == "26.04" ]]; then
+        ok "Ubuntu 26.04 LTS"
     else
-        fail "Not Ubuntu 24.04" "detected: ${ver:-unknown}. This script targets Ubuntu 24.04 LTS only (the Canonical-certified version). Ref: https://ubuntu.com/certified/platforms/15242"
+        fail "Not Ubuntu 26.04" "detected: ${ver:-unknown}. This script and install.sh target Ubuntu 26.04 LTS."
     fi
 
-    # Snap kernel (Ubuntu's experimental TPM FDE uses snap-delivered kernel)
+    # Snap kernel (Ubuntu's TPM-backed FDE ships the kernel as a snap)
     if [[ -d /snap/pc-kernel ]]; then
-        fail "Experimental snap kernel detected" "incompatible with OEM kernel. Ubuntu's TPM FDE snap kernel cannot coexist with linux-oem-24.04. Canonical warns: 'Use only on systems where you don't mind losing data.' Ref: https://documentation.ubuntu.com/desktop/en/24.04/explanation/hardware-backed-disk-encryption/"
+        fail "Snap kernel (TPM-backed FDE) detected" "beta, no DKMS; install.sh expects passphrase LUKS + LVM with the deb kernel. Ref: https://documentation.ubuntu.com/desktop/en/latest/explanation/hardware-backed-disk-encryption/"
     else
-        ok "No snap kernel — snap kernels break OEM kernel compatibility. Ref: https://documentation.ubuntu.com/desktop/en/24.04/explanation/hardware-backed-disk-encryption/"
+        ok "Deb kernel (no snap pc-kernel)"
     fi
 
     # Mesa version (25.0+ required for Strix Halo GPU support)
@@ -275,45 +282,19 @@ check_os_kernel() {
         fi
     fi
 
-    # OEM kernel meta-package (critical for webcam — AMD ISP4 driver not in mainline until ~7.1)
-    if pkg_installed linux-oem-24.04; then
-        ok "linux-oem-24.04 installed — provides AMD ISP4 webcam driver + stability patches. Ref: https://www.phoronix.com/review/hp-zbook-ultra-g1a/2"
+    # Kernel: the HWE meta, and no reboot pending for a newer installed one.
+    if pkg_installed linux-generic-hwe-26.04; then
+        ok "linux-generic-hwe-26.04 installed"
     else
-        fail "linux-oem-24.04 not installed" "OEM kernel is the ONLY way to get the webcam working. AMD ISP4 driver missed every mainline merge window (6.18, 6.19, 7.0). Ref: https://www.phoronix.com/news/AMD-ISP4-Driver-Pending-Review" \
-            "sudo apt install linux-oem-24.04"
+        warn "linux-generic-hwe-26.04 not installed" "the kernel will not follow the 26.04 HWE track. Fix: sudo apt install linux-generic-hwe-26.04"
     fi
-
-    # Running OEM kernel
-    local kver
+    local kver newest
     kver=$(uname -r)
-    if [[ "$kver" == *"-oem"* ]]; then
-        ok "Running OEM kernel: $kver"
-        # Check kernel version
-        if [[ "$kver" == 6.17.* ]]; then
-            ok "OEM kernel is 6.17.x (latest track). Ref: https://canonical-kernel-docs.readthedocs-hosted.com/latest/reference/oem-kernels/"
-        else
-            warn "OEM kernel version $kver" "expected 6.17.x — run: sudo apt update && sudo apt upgrade to get latest OEM kernel. Ref: https://launchpad.net/ubuntu/noble/amd64/linux-oem-24.04c"
-        fi
+    newest=$(printf '%s\n' /boot/vmlinuz-* | sed 's|^/boot/vmlinuz-||' | sort -V | tail -1)
+    if [[ "$kver" == "$newest" ]]; then
+        ok "Running the newest installed kernel: $kver"
     else
-        warn "Not running OEM kernel" "current: $kver — reboot and select the OEM kernel in GRUB (or install: sudo apt install linux-oem-24.04). Required for webcam (AMD ISP4). Ref: https://www.phoronix.com/review/hp-zbook-ultra-g1a/2"
-    fi
-
-    # Lettered OEM kernel variant check (e.g., linux-image-oem-24.04c without the rolling meta)
-    if ! pkg_installed linux-oem-24.04; then
-        local lettered_oem
-        lettered_oem=$(dpkg-query -W -f='${Package}\n' 'linux-image-oem-24.04*' 2>/dev/null | head -1) || lettered_oem=""
-        if [[ -n "$lettered_oem" ]]; then
-            warn "$lettered_oem installed without rolling meta-package" "use linux-oem-24.04 (the rolling meta) instead of lettered variants — lettered packages are transitional and may not track future kernel migrations. Ref: https://canonical-kernel-docs.readthedocs-hosted.com/latest/reference/oem-kernels/"
-        fi
-    fi
-
-    # Stella OEM packages (Canonical's codename for HP hardware enablement)
-    local stella_pkgs
-    stella_pkgs=$(dpkg-query -W -f='${Package}\n' 'oem-stella*' 2>/dev/null) || stella_pkgs=""
-    if [[ -n "$stella_pkgs" ]]; then
-        info "Stella OEM packages (HP firmware/drivers from Canonical): $(echo "$stella_pkgs" | tr '\n' ' '). Ref: https://launchpad.net/ubuntu/noble/+source/oem-stella-sensei-meta"
-    else
-        warn "No Stella OEM packages found" "these provide HP-specific firmware (AMD NPU, Cirrus audio amp DSP). Run: ubuntu-drivers list-oem. Ref: https://launchpad.net/ubuntu/noble/+source/oem-stella-sensei-meta"
+        warn "Running $kver, newest installed is ${newest:-unknown}" "reboot to use it"
     fi
 }
 
@@ -449,27 +430,18 @@ check_kernel_params() {
     fi
 
     if $has_rocm; then
-        # ROCm version check
+        # ROCm comes from the Ubuntu archive (rocm-dev); check that it sees the iGPU.
         local rocm_ver
-        rocm_ver=$(dpkg-query -W -f='${Version}' rocm-core 2>/dev/null) || rocm_ver=""
-        if [[ -n "$rocm_ver" ]]; then
-            local rocm_major rocm_minor
-            rocm_major=$(echo "$rocm_ver" | cut -d. -f1)
-            rocm_minor=$(echo "$rocm_ver" | cut -d. -f2)
-            if [[ "$rocm_major" -ge 7 ]] && [[ "$rocm_minor" -ge 2 ]]; then
-                ok "ROCm $rocm_ver installed — gfx1151 (Strix Halo) supported. Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/"
-            elif [[ "$rocm_major" -ge 7 ]]; then
-                warn "ROCm $rocm_ver installed" "upgrade to 7.2+ recommended for full gfx1151 support and Ubuntu 24.04.4 compatibility"
-            else
-                warn "ROCm $rocm_ver installed" "upgrade to 7.2+ recommended — older versions have limited Strix Halo support"
-            fi
+        rocm_ver=$(dpkg-query -W -f='${Version}' rocm-dev 2>/dev/null) || rocm_ver="unknown"
+        if [[ "$(timeout 20 rocminfo 2>/dev/null)" == *gfx1151* ]]; then
+            ok "ROCm $rocm_ver sees the gfx1151 iGPU (Strix Halo)"
         else
-            info "ROCm installed (/opt/rocm found) but rocm-core package version not detected"
+            warn "ROCm $rocm_ver: rocminfo does not list gfx1151" "check membership of the render and video groups, then log in again"
         fi
 
         # Check if DKMS amdgpu was installed (wrong path for Ryzen APUs)
         if dpkg-query -W amdgpu-dkms &>/dev/null 2>&1; then
-            warn "amdgpu-dkms package installed" "Ryzen APUs should use inbox kernel driver (--no-dkms). DKMS driver may conflict with OEM kernel. Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html"
+            warn "amdgpu-dkms package installed" "Ryzen APUs should use inbox kernel driver (--no-dkms). The DKMS driver may conflict with the inbox one. Ref: https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installryz/native_linux/install-ryzen.html"
         fi
 
         # amdgpu.cwsr_enable=0 — workaround for MES firmware GPU hangs
@@ -485,7 +457,7 @@ check_kernel_params() {
         if command -v amd-ttm &>/dev/null; then
             ok "amd-ttm available — use 'amd-ttm' to query/set shared GPU memory. Ref: https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html"
         else
-            info "amd-ttm not installed — optional tool for shared memory config. Install: pipx install amd-debug-tools"
+            info "amd-ttm not installed — optional tool for shared memory config. Install: sudo apt install amd-debug-tools"
         fi
     else
         skip "ROCm checks (version, cwsr_enable, amd-ttm)" "ROCm not installed (/opt/rocm not found, rocminfo not in PATH)"
@@ -514,15 +486,42 @@ check_storage() {
         return
     fi
 
-    # 1. Recurrence of the write-I/O stall that froze the system on 2026-05-29.
-    #    Scans all persisted boots (journalctl -g greps the message field server-side).
-    local to_total to_days
-    to_total=$(journalctl --no-pager -g 'timeout, aborting' 2>/dev/null | grep -cE 'nvme[0-9]+:') || to_total=0
-    if [[ "${to_total:-0}" -gt 0 ]]; then
-        to_days=$(journalctl --no-pager -g 'timeout, aborting' 2>/dev/null | grep -E 'nvme[0-9]+:' | awk '{print $1, $2}' | sort -u | tr '\n' ' ')
-        warn "NVMe write-I/O timeouts in journal ($to_total events)" "the SSD stalled under sustained write load (froze the system on 2026-05-29). Days seen: ${to_days}. Read SMART (below) and watch 'journalctl -k -f' for 'timeout, aborting'. See HP-ZBook report §8.16."
+    # 1. Write-I/O stalls: froze the system on 2026-05-29; on 2026-11-23 caused by missing TRIM.
+    #    A stall that forces a reboot is in the previous boot's log, so that boot counts too.
+    local to_recent=0 to_days n b
+    for b in 0 -1; do
+        n=$(journalctl -k -b "$b" --no-pager -g 'timeout, aborting' 2>/dev/null | grep -cE 'nvme[0-9]+:') || n=0
+        to_recent=$((to_recent + n))
+    done
+    to_days=$(journalctl --no-pager -g 'timeout, aborting' 2>/dev/null | grep -E 'nvme[0-9]+:' | awk '{print $1, $2}' | sort -u | tr '\n' ' ')
+    if [[ "$to_recent" -gt 0 ]]; then
+        warn "NVMe write-I/O timeouts in this or the previous boot ($to_recent)" "the SSD is stalling under write load. Check TRIM (below) and SMART, and watch 'journalctl -k -f' for 'timeout, aborting'. See HP-ZBook report §8.16."
+    elif [[ -n "$to_days" ]]; then
+        info "NVMe write-I/O timeouts in earlier boots (none in the last two). Days seen: ${to_days}"
     else
         ok "No NVMe 'timeout, aborting' events in journal history"
+    fi
+
+    # TRIM must pass through LUKS and LVM: the Ubuntu installer opens LUKS without
+    # discards, and without TRIM the SSD's write speed collapses (2026-11-23).
+    local root_dev discard_max
+    root_dev=$(readlink -f "$(findmnt -no SOURCE /)" 2>/dev/null) || root_dev=""
+    # lsblk, not /sys/block/<dev>/queue: a partition has no such directory.
+    discard_max=$(lsblk -bndo DISC-MAX "$root_dev" 2>/dev/null | tr -d ' ') || discard_max=""
+    if [[ ! "$discard_max" =~ ^[0-9]+$ ]]; then
+        skip "TRIM check" "cannot read the discard limit of the device under / (${root_dev:-unknown})"
+    elif [[ "$discard_max" -gt 0 ]]; then
+        ok "TRIM reaches the SSD through every layer under /"
+    else
+        local crypt_name
+        crypt_name=$(lsblk -nsro NAME,TYPE "$root_dev" 2>/dev/null | awk '$2=="crypt"{print $1; exit}')
+        fail "TRIM does not reach the SSD from / ($root_dev)" "free blocks are never released, so the SSD's write speed collapses as it fills. Store the discard flag in the LUKS2 header (it replaces any other stored flag, and reveals which blocks are unused, not their content), reboot, then trim once" \
+            "sudo cryptsetup --allow-discards --persistent refresh ${crypt_name:-<crypt name>} && sudo reboot   # after the reboot: sudo fstrim -av"
+    fi
+    if systemctl is-enabled -q fstrim.timer 2>/dev/null; then
+        ok "fstrim.timer enabled (weekly TRIM)"
+    else
+        warn "fstrim.timer not enabled" "free space is never trimmed. Fix: sudo systemctl enable --now fstrim.timer"
     fi
 
     # 2. SMART health — needs nvme-cli/smartmontools + root.
@@ -1095,12 +1094,6 @@ check_fde() {
         local crypttab
         crypttab=$(cat /etc/crypttab 2>/dev/null) || crypttab=""
 
-        if echo "$crypttab" | grep -q "discard"; then
-            ok "crypttab: discard (TRIM) enabled — allows NVMe TRIM through encryption layer. Note: leaks block usage patterns (not content) — acceptable for most threat models. Ref: https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD)"
-        else
-            warn "crypttab: discard not set" "TRIM not passing through LUKS — minor NVMe performance/longevity impact. Fix: add 'discard' to options in /etc/crypttab, then run: sudo update-initramfs -u -k all. Ref: https://wiki.archlinux.org/title/Dm-crypt/Specialties#Discard/TRIM_support_for_solid_state_drives_(SSD)"
-        fi
-
         if echo "$crypttab" | grep -q "no-read-workqueue"; then
             ok "crypttab: no-read-workqueue — bypasses dm-crypt workqueue for lower latency. Ref: https://blog.cloudflare.com/speeding-up-linux-disk-encryption/"
         else
@@ -1123,7 +1116,7 @@ check_fde() {
         ok "Multiple LUKS keyslots active ($keyslot_count) — recovery passphrase available"
     fi
 
-    # Clevis TPM2 binding (recommended for auto-unlock on 24.04)
+    # Clevis TPM2 binding (auto-unlock)
     if cmd_exists clevis; then
         local clevis_out
         clevis_out=$(clevis luks list -d "$luks_device" 2>/dev/null) || clevis_out=""
@@ -1137,7 +1130,7 @@ check_fde() {
             info "Clevis installed but no TPM2 binding — auto-unlock not configured. Ref: https://github.com/latchset/clevis"
         fi
     else
-        info "Clevis not installed — TPM auto-unlock not available. Alternative: systemd-cryptenroll (built-in, faster, but requires dracut — not default on Ubuntu 24.04). Ref: https://www.freedesktop.org/software/systemd/man/systemd-cryptenroll.html"
+        info "Clevis not installed — TPM auto-unlock not available. Alternative: systemd-cryptenroll (built-in; 26.04's dracut initramfs supports it). Ref: https://www.freedesktop.org/software/systemd/man/systemd-cryptenroll.html"
     fi
 
     # LUKS header backup reminder (always)
@@ -1393,15 +1386,6 @@ check_peripherals() {
         warn "User '$REAL_USER' not in 'input' group" "required for trackpad gestures. Fix: sudo gpasswd -a $REAL_USER input (then log out/in)"
     fi
 
-    # NVMe TRIM (important for SSD longevity, especially with LUKS discard)
-    local trim_gran
-    trim_gran=$(lsblk -Drn 2>/dev/null | grep nvme | head -1 | awk '{print $3}') || trim_gran=""
-    if [[ -n "$trim_gran" && "$trim_gran" != "0B" && "$trim_gran" != "0" ]]; then
-        ok "NVMe TRIM supported (DISC-GRAN: $trim_gran) — ensure crypttab has 'discard' if using LUKS"
-    elif [[ -n "$trim_gran" ]]; then
-        info "NVMe TRIM granularity: $trim_gran"
-    fi
-
     # Webcam (AMD ISP4): install.sh retired ppa:amd-team/isp.
     if grep -q amd_isp4 /proc/modules; then
         fail "AMD ISP4 webcam enabled" \
@@ -1587,6 +1571,11 @@ check_display() {
                 local override_rule="/etc/udev/rules.d/40-monitor-hotplug.rules"
                 if [[ -f "$override_rule" ]] && grep -q 'ENV{HOTPLUG}' "$override_rule" 2>/dev/null; then
                     ok "autorandr udev rule override installed — HOTPLUG filter prevents DRM uevent feedback loop"
+                    if [[ -f /etc/systemd/system/autorandr.service.d/debounce.conf ]]; then
+                        ok "autorandr debounce drop-in installed"
+                    else
+                        warn "autorandr debounce drop-in missing" "a burst of hotplug events fails autorandr.service and drops the later ones. Fix: re-run install.sh"
+                    fi
                 elif [[ -f "$sys_rule" ]] && ! grep -q 'ENV{HOTPLUG}' "$sys_rule" 2>/dev/null; then
                     local rate_hits
                     rate_hits=$(journalctl -b -u autorandr --no-pager 2>/dev/null | grep -c "start-limit-hit") || rate_hits=0
@@ -1657,19 +1646,22 @@ check_pareto() {
         skip "Firewall check" "requires root"
     fi
 
-    # docker.io residual (Pareto false positive: dpkg-query -W returns 0 for uninstalled packages in database)
+    # docker.io: Pareto fails its Docker check whenever `dpkg-query -W docker.io` succeeds,
+    # which it does ("un", not installed) as long as docker-ce declares Conflicts: docker.io.
     local docker_io_status
     docker_io_status=$(dpkg-query -W -f='${Status}' docker.io 2>/dev/null) || docker_io_status=""
-    if [[ -z "$docker_io_status" ]]; then
-        ok "No docker.io in dpkg database — Pareto docker.io check OK"
-    elif [[ "$docker_io_status" == "install ok installed" ]]; then
-        fail "docker.io package installed" "Pareto reports: Deprecated docker.io package. Replace with docker-ce" \
-            "sudo apt-get remove docker.io && sudo apt-get install docker-ce docker-ce-cli containerd.io"
-    else
-        # Status is "unknown ok not-installed" or similar — residual entry, triggers Pareto false positive
-        fail "Residual docker.io in dpkg database (status: $docker_io_status)" "triggers Pareto false positive" \
-            "sudo dpkg --purge docker.io"
-    fi
+    case "$docker_io_status" in
+        "")
+            ok "No docker.io in dpkg database — Pareto docker.io check OK" ;;
+        "install ok installed")
+            fail "docker.io package installed" "Pareto reports: Deprecated docker.io package. Replace with docker-ce" \
+                "sudo apt-get remove docker.io && sudo apt-get install docker-ce docker-ce-cli containerd.io" ;;
+        *" not-installed")
+            info "docker.io listed as not installed (docker-ce Conflicts: docker.io) — Pareto's Docker check false positive; nothing to remove" ;;
+        *)
+            fail "Residual docker.io in dpkg database (status: $docker_io_status)" "triggers Pareto false positive" \
+                "sudo dpkg --purge docker.io" ;;
+    esac
 
     # Docker rootless mode (Pareto checks docker info --format {{.SecurityOptions}} for "rootless")
     if cmd_exists docker; then
@@ -1764,17 +1756,13 @@ BIOS
 
     # Important reminders
     printf '\n%s── Important Reminders ──%s\n' "$C_BOLD" "$C_RESET"
-    printf '  - Download and keep the HP OEM ISO (stella-noble-oem-24.04b-*.iso) from\n'
-    printf '    https://support.hp.com/us-en/drivers/hp-zbook-ultra-g1a-14-inch-mobile-workstation-pc/2102737532\n'
-    printf '    There is NO HP recovery partition on the Ubuntu variant.\n'
+    printf '  - There is NO HP recovery partition on the Ubuntu variant.\n'
     printf '  - Back up EFI tools: sudo cp -r /boot/efi/EFI/HP /path/to/backup/ (before any reinstall)\n'
     printf '  - Do NOT use 65W USB-C chargers — firmware-enforced minimum wattage, will not charge.\n'
     printf '    Source: https://h30434.www3.hp.com/t5/Notebook-Hardware-and-Upgrade-Questions/Charging-HP-Zbook-Ultra-G1A-with-65w/td-p/9538308\n'
-    printf '  - Do NOT attempt a major version upgrade (24.04 → 25.x) — breaks OEM kernel track.\n'
-    printf '    Ubuntu 26.04 ships Linux 7.0 — AMD ISP4 missed merge window (targeting 7.1+). Webcam requires OEM kernel.\n'
     printf '  - Reinstalling is safe — BIOS/Sure Start are on isolated SPI chip, unaffected by disk ops.\n'
     printf '    HP Wolf Security software agents (Sure Run, Sure Click, Sure Sense) are Windows-only.\n'
-    printf '  - Verify serial: sudo cat /sys/class/dmi/id/product_serial (expected: REDACTED)\n'
+    printf '  - Verify serial: sudo cat /sys/class/dmi/id/product_serial (compare with the label under the laptop)\n'
     printf '\n'
 }
 

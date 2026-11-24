@@ -538,6 +538,26 @@ ok "earlyoom"
 # (systemd-tmpfiles still ages it); applies from the next boot.
 sudo systemctl mask tmp.mount
 
+# ── Services this laptop does not need ───────────────────────────────────
+# NetworkManager-wait-online holds network-online.target for 8 s of every boot; only
+# docker and cups-browsed order after it and neither needs the network to start.
+# apport reports crashes to Canonical.
+for unit in NetworkManager-wait-online.service apport.service; do
+  if [ "$(systemctl is-enabled "$unit" 2>/dev/null)" = enabled ]; then
+    sudo systemctl disable --now "$unit" || err "Could not disable $unit"
+  fi
+done
+# apport's Python crash hook reads this file, not the unit.
+if [ -f /etc/default/apport ]; then sudo sed -i 's/^enabled=1$/enabled=0/' /etc/default/apport; fi
+ok "Unneeded services off (NetworkManager-wait-online, apport)"
+
+# ext4 reserves 5 % of the root filesystem for root: 190 GiB here. 1 % is plenty.
+if [ "$(findmnt -no FSTYPE /)" = ext4 ]; then
+  sudo tune2fs -m 1 "$(findmnt -no SOURCE /)" > /dev/null && ok "ext4 root reserve 1 %"
+fi
+# Installer (curtin) leftover; apt ignores it.
+sudo rm -f /etc/apt/sources.list.d/ubuntu.sources.curtin.orig
+
 # ── Claude Code ────────────────────────────────────────────────────────────
 if [ "$SKIP_AI_TOOLS" != "1" ]; then
   if ! command -v claude &>/dev/null; then
@@ -587,13 +607,15 @@ while IFS= read -r kv; do
     grep -q "^[[:space:]]*${kv%%=*}[[:space:]]*=" "${HOME}/.npmrc" || printf '\n%s\n' "$kv" >> "${HOME}/.npmrc"
 done < <(grep -E '^[a-z-]+=' "${DOT_DIR}/npmrc")
 
-mkdir -p ~/.config/uv
-if [ -e ~/.config/uv/uv.toml ] && [ ! -L ~/.config/uv/uv.toml ]; then
-    err "$HOME/.config/uv/uv.toml exists and is not a symlink, skipping"
-else
-    ln -sf "${DOT_DIR}/uv/uv.toml" ~/.config/uv/uv.toml
-    ok "$HOME/.config/uv/uv.toml"
-fi
+for conf in uv/uv.toml pip/pip.conf; do
+    mkdir -p ~/.config/"${conf%/*}"
+    if [ -e ~/.config/"$conf" ] && [ ! -L ~/.config/"$conf" ]; then
+        err "$HOME/.config/$conf exists and is not a symlink, skipping"
+    else
+        ln -sf "${DOT_DIR}/$conf" ~/.config/"$conf"
+        ok "$HOME/.config/$conf"
+    fi
+done
 
 mkdir -p ~/.config/rofi ~/.config/picom ~/.config/dunst ~/.config/i3status-rust
 ln -sf "${DOT_DIR}/rofi/config.rasi" ~/.config/rofi/config.rasi
@@ -691,6 +713,23 @@ if [ "$UDEV_CHANGED" = "1" ]; then
   sudo udevadm trigger --subsystem-match=hidraw 2>/dev/null || true
 fi
 ok "Udev rules"
+
+# autorandr's unit allows 1 start per 5 s: the rest of a hotplug burst fails the unit
+# and is lost. Starts requested while one is pending merge into it, so the sleep
+# coalesces a burst; the limit only has to let a dock's later outputs through.
+AUTORANDR_DROPIN=/etc/systemd/system/autorandr.service.d/debounce.conf
+AUTORANDR_CONF='[Unit]
+StartLimitIntervalSec=30
+StartLimitBurst=10
+[Service]
+ExecStartPre=/bin/sleep 1'
+if ! printf '%s\n' "$AUTORANDR_CONF" | cmp -s - "$AUTORANDR_DROPIN"; then
+  sudo install -d "${AUTORANDR_DROPIN%/*}"
+  printf '%s\n' "$AUTORANDR_CONF" | sudo tee "$AUTORANDR_DROPIN" > /dev/null
+  sudo systemctl daemon-reload
+  sudo systemctl reset-failed autorandr.service 2>/dev/null || true
+fi
+ok "autorandr debounce"
 
 # ── Input device configuration (ZBook Ultra G1a) ─────────────────────────
 PRODUCT_NAME=$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)
@@ -812,9 +851,10 @@ WPCONF
     #     reserves ~9 GiB as movable-only CMA that GTT/ROCm cannot use.
     #   amdgpu.lockup_timeout=10000: 7.0 cut the GPU job timeout to 2 s; restore
     #     10 s so long GPU jobs are not reset. Never 0 (means "default").
+    # + ttm.*=29360128: 112 GiB of GTT, the 90 % above which amd-ttm warns (124 GiB left the OS 1 GiB).
     info "Configuring kernel parameters (ZBook Ultra G1a)..."
     GRUB_CHANGED=0
-    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "amdgpu.cwsr_enable=0" "ttm.pages_limit=32505856" "ttm.page_pool_size=32505856" "nvme_core.default_ps_max_latency_us=0" "pcie_port_pm=off" "amdgpu.abmlevel=0" "kho=off" "amdgpu.lockup_timeout=10000"; do
+    for kp in "amd_pstate=active" "pcie_aspm=off" "amd_iommu=off" "amdgpu.dcdebugmask=0x410" "amdgpu.cwsr_enable=0" "ttm.pages_limit=29360128" "ttm.page_pool_size=29360128" "nvme_core.default_ps_max_latency_us=0" "pcie_port_pm=off" "amdgpu.abmlevel=0" "kho=off" "amdgpu.lockup_timeout=10000"; do
         param_name="${kp%%=*}"
         normalized="${param_name//-/_}"
         if ! grep -qP "GRUB_CMDLINE_LINUX_DEFAULT=.*${normalized}[= \"]" /etc/default/grub 2>/dev/null &&
@@ -823,7 +863,13 @@ WPCONF
             GRUB_CHANGED=1
         fi
     done
-    sudo sed -i 's/  \+/ /g; s/" /"/; s/ "/"/g' /etc/default/grub
+    # The loop only adds: move the 124 GiB (32505856) set before 2026-11-24 to 112 GiB.
+    if grep -q '^GRUB_CMDLINE_LINUX_DEFAULT=.*ttm\.page[a-z_-]*=32505856[ "]' /etc/default/grub; then
+        sudo sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/ s/\(ttm\.page[a-z_-]*\)=32505856\([ "]\)/\1=29360128\2/g' /etc/default/grub
+        GRUB_CHANGED=1
+    fi
+    # The loop leaves a leading space in a value that was empty.
+    sudo sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/ s/=" /="/' /etc/default/grub
     if [[ "$GRUB_CHANGED" == "1" ]]; then
         sudo update-grub
     fi
