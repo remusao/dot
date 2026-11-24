@@ -54,6 +54,9 @@
 [gpg]
   program = gpg
 	format = ssh
+[gpg "ssh"]
+  # "<email> ssh-ed25519 <key>" lines; outside this repo, like the identity above.
+  allowedSignersFile = ~/.config/git/allowed_signers
 [pull]
 	rebase = false
 [init]
